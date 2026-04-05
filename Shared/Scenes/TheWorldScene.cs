@@ -1,6 +1,6 @@
-using Godot;
-
 namespace IdyllicMultiplayerProject.Shared.Scenes;
+
+using Godot;
 
 public partial class TheWorldScene : Node3D
 {
