@@ -4,3 +4,4 @@
 .idea/
 .editorconfig
 .runsettings
+*.DotSettings.user
