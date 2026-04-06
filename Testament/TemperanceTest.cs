@@ -53,10 +53,4 @@ public class TemperanceTest
         AssertBool(_componentManager.HasComponent<MovementComponent>(testNode)).IsFalse();
         AssertBool(list.Contains(testNode)).IsFalse();
     }
-
-    [TestCase]
-    public void SignalBusTest()
-    {
-        
-    }
 }
