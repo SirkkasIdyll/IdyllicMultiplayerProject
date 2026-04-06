@@ -16,8 +16,6 @@ namespace IdyllicMultiplayerProject.Temperance;
 [GlobalClass]
 public partial class NodeSystemManager : Node3D
 {
-    public static NodeSystemManager Instance { get; } = new();
-    
     // Used to inject dependencies based on name of NodeSystem
     private readonly Dictionary<string, NodeSystem> _nodeSystemDictionary = [];
 
@@ -75,8 +73,8 @@ public partial class NodeSystemManager : Node3D
                 if (field.FieldType.Name == ComponentManager.Instance.GetType().Name)
                     field.SetValue(nodeSystem, ComponentManager.Instance);
 
-                if (field.FieldType.Name == NodeSystemManager.Instance.GetType().Name)
-                    field.SetValue(nodeSystem, NodeSystemManager.Instance);
+                if (field.FieldType.Name == GetType().Name)
+                    field.SetValue(nodeSystem, this);
                 
                 if (field.FieldType.Name == SignalBus.Instance.GetType().Name)
                     field.SetValue(nodeSystem, SignalBus.Instance);
