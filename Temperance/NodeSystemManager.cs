@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Godot;
@@ -16,6 +17,7 @@ namespace IdyllicMultiplayerProject.Temperance;
 public partial class NodeSystemManager
 {
     public static NodeSystemManager Instance { get; } = new();
+    private Node? _rootScene;
 
     // Used to inject dependencies based on name of NodeSystem
     private readonly Dictionary<string, NodeSystem> _nodeSystemDictionary = [];
@@ -29,6 +31,7 @@ public partial class NodeSystemManager
     /// </summary>
     public void InitializeNodeSystems(Node rootScene)
     {
+        _rootScene = rootScene;
         var globalClassList = ProjectSettings.GetGlobalClassList();
         foreach (var dict in globalClassList)
         {
@@ -75,6 +78,19 @@ public partial class NodeSystemManager
                     field.SetValue(nodeSystem, SignalBus.Instance);
             }
         }
+    }
+    
+    /// <summary>
+    /// Every system should be a child of the root scene,
+    /// retrieve it so that its public functions can be accessed
+    /// </summary>
+    /// <param name="nodeSystem"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public bool TryGetNodeSystem<T>([NotNullWhen(true)] out T? nodeSystem) where T : NodeSystem
+    {
+        nodeSystem = _rootScene?.GetNodeOrNull<T>($"{typeof(T).Name}");
+        return nodeSystem != null;
     }
 }
 
