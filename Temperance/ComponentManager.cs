@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
@@ -15,8 +16,33 @@ namespace IdyllicMultiplayerProject.Temperance;
 public class ComponentManager
 {
     public static ComponentManager Instance { get; } = new();
-    private ComponentManager() { }
-    public readonly Dictionary<string, Component> CompDictionary = [];
+    private readonly Dictionary<string, Component> _componentDictionary = [];
+    public readonly Dictionary<string, List<Node>> NodeDictionary = [];
+
+    private ComponentManager()
+    {
+        GetAllComponents();
+    }
+
+    private void GetAllComponents()
+    {
+        var globalClassList = ProjectSettings.GetGlobalClassList();
+        foreach (var dict in globalClassList)
+        {
+            var resource = ResourceLoader.Load( (StringName) dict["path"], "Script");
+            if (resource is not Script script)
+                continue;
+
+            if (script.IsAbstract())
+                continue;
+
+            if (!script.GetGlobalName().ToString().EndsWith("Component", true, null))
+                continue;
+            
+            var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
+            _componentDictionary.Add(component.Name, component);
+        }
+    }
     
     /// <summary>
     /// Checks if GetNodeOrNull returns the type of T
@@ -29,7 +55,7 @@ public class ComponentManager
     
     public bool TryAddComponent<T>(Node node) where T : Component
     {
-        CompDictionary.TryGetValue(typeof(T).Name, out var component);
+        _componentDictionary.TryGetValue(typeof(T).Name, out var component);
 
         if (component == null)
             return false;
@@ -61,6 +87,17 @@ public class ComponentManager
         
         node.RemoveChild(component);
         component.QueueFree();
+    }
+
+    /// <summary>
+    /// Gets all nodes that have the Component T so that certain checks can be applied to them
+    /// or so that things that need to happen each frame can be applied to each component instance
+    /// </summary>
+    public void GetNodesWithComponent<T>(out List<Node> nodes) where T : Component
+    {
+        nodes = [];
+        if (NodeDictionary.TryGetValue(typeof(T).Name, out var nodeList))
+            nodes = nodeList;
     }
 }
 

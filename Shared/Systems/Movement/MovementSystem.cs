@@ -1,7 +1,7 @@
 ﻿using Godot;
 using IdyllicMultiplayerProject.Temperance;
 
-namespace IdyllicMultiplayerProject.Shared.Systems;
+namespace IdyllicMultiplayerProject.Shared.Systems.Movement;
 
 [GlobalClass]
 public partial class MovementSystem : NodeSystem

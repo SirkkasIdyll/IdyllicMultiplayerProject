@@ -48,7 +48,6 @@ public partial class NodeSystemManager : Node3D
             if (!script.GetGlobalName().ToString().EndsWith("System", true, null))
                 continue;
             
-            
             // We add the NodeSystem as a child so that it can subscribe to signals
             var nodeSystem = (NodeSystem) GD.Load<CSharpScript>(script.ResourcePath).New();
             _nodeSystemDictionary.Add(nodeSystem.Name, nodeSystem);
