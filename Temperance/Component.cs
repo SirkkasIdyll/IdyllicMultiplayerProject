@@ -19,8 +19,12 @@ public abstract partial class Component : Node3D
         base._EnterTree();
         SetName(GetType().Name);
         SetOwner(GetParent());
+        
         if (ComponentManager.Instance.NodeDictionary.TryGetValue(GetType().Name, out var list))
             list.Add(Owner);
+        else
+            ComponentManager.Instance.NodeDictionary[GetType().Name] = [Owner];
+
     }
 
     public override void _ExitTree()

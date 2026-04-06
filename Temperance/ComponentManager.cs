@@ -46,7 +46,7 @@ public class ComponentManager
                 continue;
             
             var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
-            _componentDictionary.Add(component.Name, component);
+            _componentDictionary.Add(component.GetType().Name, component);
         }
     }
 
@@ -77,7 +77,6 @@ public class ComponentManager
         
         var dupe = component.Duplicate();
         node.AddChild(dupe);
-        dupe.SetOwner(node);
         return true;
     }
 
