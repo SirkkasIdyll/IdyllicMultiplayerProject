@@ -24,8 +24,6 @@
         <Folder Include="Server\Scenes\" />
         <Folder Include="Server\Systems\" />
         <Folder Include="Shared\Nodes\" />
-        <Folder Include="Shared\Systems\" />
-        <Folder Include="Temperance\" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="**\*.cs.uid" />
