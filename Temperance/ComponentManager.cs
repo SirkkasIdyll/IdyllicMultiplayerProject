@@ -24,6 +24,12 @@ public class ComponentManager
         GetAllComponents();
     }
 
+    /// <summary>
+    /// Gets all <see cref="Component"/> by looking for classes with the [GlobalClass] attribute
+    /// and if their name ends in "Component"
+    ///
+    /// Populates the internal component and node dictionaries to be used in other functions
+    /// </summary>
     private void GetAllComponents()
     {
         var globalClassList = ProjectSettings.GetGlobalClassList();
@@ -41,6 +47,7 @@ public class ComponentManager
             
             var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
             _componentDictionary.Add(component.Name, component);
+            NodeDictionary.Add(component.Name, []);
         }
     }
     
