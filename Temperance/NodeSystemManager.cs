@@ -10,30 +10,24 @@ namespace IdyllicMultiplayerProject.Temperance;
 /// NCS - Node, Component, (Node)System architecture
 ///
 /// The NodeSystemManager initializes all <see cref="NodeSystem"/>,
-/// attaches them as children of itself so that they are present in the Godot scene tree,
+/// attaches them as children the SceneTree root so that they are present in the Godot scene tree,
 /// then injects any <see cref="NodeSystem"/> dependencies they have with each other
 /// </summary>
-[GlobalClass]
-public partial class NodeSystemManager : Node3D
+public partial class NodeSystemManager
 {
+    public static NodeSystemManager Instance { get; } = new();
+
     // Used to inject dependencies based on name of NodeSystem
     private readonly Dictionary<string, NodeSystem> _nodeSystemDictionary = [];
-
-    public override void _EnterTree()
-    {
-        base._EnterTree();
-        InitializeNodeSystems();
-        InjectDependencies();
-    }
 
     /// <summary>
     /// To initialize all <see cref="NodeSystem"/> we look for the classes with the [GlobalClass] attribute
     /// and if their name ends in "System"
     ///
-    /// We initialize the <see cref="NodeSystem"/> and add it as a child of the NodeSystemManager so that it may
+    /// We initialize the <see cref="NodeSystem"/> and add it as a child of the SceneTree root so that it may
     /// subscribe to user-created signals and be a part of the Godot Scenetree for things like Input/Godot signals
     /// </summary>
-    public void InitializeNodeSystems()
+    public void InitializeNodeSystems(Node rootScene)
     {
         var globalClassList = ProjectSettings.GetGlobalClassList();
         foreach (var dict in globalClassList)
@@ -51,14 +45,16 @@ public partial class NodeSystemManager : Node3D
             // We add the NodeSystem as a child so that it can subscribe to signals
             var nodeSystem = (NodeSystem) GD.Load<CSharpScript>(script.ResourcePath).New();
             _nodeSystemDictionary.Add(nodeSystem.Name, nodeSystem);
-            AddChild(nodeSystem);
+            rootScene.AddChild(nodeSystem);
         }
+        
+        InjectDependencies();
     }
 
     /// <summary>
     /// After all systems are initialized, system dependencies can be injected without worry of order of initialization
     /// </summary>
-    public void InjectDependencies()
+    private void InjectDependencies()
     {
         foreach (var nodeSystem in _nodeSystemDictionary.Values)
         {

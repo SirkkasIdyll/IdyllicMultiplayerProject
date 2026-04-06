@@ -47,8 +47,16 @@ public class ComponentManager
             
             var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
             _componentDictionary.Add(component.Name, component);
-            NodeDictionary.Add(component.Name, []);
         }
+    }
+
+    /// <summary>
+    /// Prevent memory leaks by purging resources, should be signalled when closing
+    /// </summary>
+    public void PurgeDictionary()
+    {
+        foreach (var node in _componentDictionary.Values)
+            node.Free();
     }
     
     /// <summary>
