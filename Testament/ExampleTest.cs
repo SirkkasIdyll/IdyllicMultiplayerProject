@@ -8,7 +8,7 @@ public class GdUnitExampleTest
 { 
     [TestCase]
     public void StringToLower() {
-        AssertString("AbcD".ToLower()).IsEqual("abcd");
+        AssertString("AbcD".ToLower()).IsNotEqual("abcd");
     }
    
     [TestCase]
