@@ -12,10 +12,11 @@ public partial class TheWorldOverHeavenScene : Node3D
 		base._EnterTree();
 
 		NodeSystemManager.Instance.InitializeNodeSystems(this);
-		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
-			AddChild(new Server.Nodes.Server());
-		else
-			AddChild(new Client.Nodes.Client());
+		NodeManager.Instance.InitializeNodeSpawner(this);
+		// if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
+		// 	AddChild(new Server.Nodes.Server());
+		// else
+		// 	AddChild(new Client.Nodes.Client());
 	}
 
 	public override void _ExitTree()

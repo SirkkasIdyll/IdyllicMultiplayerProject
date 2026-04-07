@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Godot;
 using IdyllicMultiplayerProject.Shared.Systems.Movement;
 using IdyllicMultiplayerProject.Temperance;
@@ -12,23 +13,21 @@ using static GdUnit4.Assertions;
 public class TemperanceTest
 {
     private readonly Node _rootScene = new();
-    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
 
     [Before]
     public void Before()
     {
         AddNode(_rootScene);
         _nodeSystemManager.InitializeNodeSystems(_rootScene);
+        _nodeManager.InitializeNodeSpawner(_rootScene);
     }
-
-    [TestCase]
-    public void NodeSystemManagerTest()
-    {
-        _nodeSystemManager.TryGetNodeSystem<MovementSystem>(out var movementSystem);
-        AssertObject(movementSystem).IsNotNull();
-    }
-
+    
+    /// <summary>
+    /// Tests the basic functionality of the ComponentManager
+    /// </summary>
     [TestCase]
     public async Task ComponentManagerTest()
     {
@@ -52,5 +51,55 @@ public class TemperanceTest
         // Has component
         AssertBool(_componentManager.HasComponent<MovementComponent>(testNode)).IsFalse();
         AssertBool(list.Contains(testNode)).IsFalse();
+    }
+
+    /// <summary>
+    /// Tests that there are no duplicate names being used for nodes 
+    /// </summary>
+    [TestCase]
+    public void DuplicateNodePrototypeTest()
+    {
+        Dictionary<string, string> nodeDictionary = []; // second value is the scene_file_path for spawning
+        var files = new List<string>();
+        files.AddRange(ResourceLoader.ListDirectory("res://Shared/Nodes"));
+        files.AddRange(ResourceLoader.ListDirectory("res://Server/Nodes"));
+        files.AddRange(ResourceLoader.ListDirectory("res://Client/Nodes"));
+        
+        foreach (var file in files)
+        {
+            var fileName = file;
+            
+            // We only care about the last part of the file name
+            if (file.LastIndexOf('/') != -1)
+                fileName = file.Substring(0, file.LastIndexOf('/'));
+            
+            // No length means it's a directory
+            if (fileName.Length == 0)
+                continue;
+
+            // If it's not a .tscn then I don't know what it is
+            if (!fileName.EndsWith(".tscn"))
+                continue;
+
+            var nodeName = fileName.Substring(0, file.LastIndexOf('.'));
+            AssertBool(nodeDictionary.TryAdd(nodeName, file)).AppendFailureMessage("Duplicate node " +
+                "prototype with node name: \"" + nodeName + "\". Resolve the error by renaming the node.").IsTrue();
+        }
+    }
+
+    [TestCase]
+    public void NodeManagerTest()
+    {
+        
+    }
+
+    /// <summary>
+    /// Tests the basic functionality of the NodeSystemManager
+    /// </summary>
+    [TestCase]
+    public void NodeSystemManagerTest()
+    {
+        _nodeSystemManager.TryGetNodeSystem<MovementSystem>(out var movementSystem);
+        AssertObject(movementSystem).IsNotNull();
     }
 }

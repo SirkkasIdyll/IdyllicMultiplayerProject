@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cy8hp3r3mtwir"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_lhvki"]
+
+[node name="BaseNode" type="Node3D" unique_id=242226116]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=425868735]
+replication_config = SubResource("SceneReplicationConfig_lhvki")

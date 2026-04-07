@@ -1,8 +1,6 @@
 [gd_scene format=3 uid="uid://kiwc8xqj1qwh"]
 
-[ext_resource type="Script" uid="uid://cc3ov6k1b2ao5" path="res://Server/Nodes/Server.cs" id="2_2pvs4"]
 [ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_cw62i"]
-[ext_resource type="Script" uid="uid://bjn701norwa6k" path="res://Client/Nodes/Client.cs" id="3_gbymf"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8moq5"]
 sky_top_color = Color(0.24178892, 0.47170812, 0.6425777, 1)
@@ -78,15 +76,3 @@ debug_color = Color(0, 11.708403, 13.469126, 1)
 
 [node name="MovementComponent" type="Node3D" parent="CharacterBody3D" unique_id=25220799]
 script = ExtResource("2_cw62i")
-
-[node name="Server" type="Node3D" parent="." unique_id=177711528]
-script = ExtResource("2_2pvs4")
-
-[node name="Client" type="Node3D" parent="." unique_id=7619242]
-script = ExtResource("3_gbymf")
-
-[node name="Client2" type="Node3D" parent="." unique_id=1600145798]
-script = ExtResource("3_gbymf")
-
-[node name="Client3" type="Node3D" parent="." unique_id=1649372682]
-script = ExtResource("3_gbymf")
