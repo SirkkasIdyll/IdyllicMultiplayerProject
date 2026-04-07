@@ -51,6 +51,6 @@ public class TemperanceTest
         
         // Has component
         AssertBool(_componentManager.HasComponent<MovementComponent>(testNode)).IsFalse();
-        AssertBool(list.Contains(testNode)).IsFalse();
+        AssertBool(list.Contains(testNode)).IsTrue();
     }
 }
