@@ -13,7 +13,7 @@ public class NodeManager
 {
     public static NodeManager Instance { get; } = new();
     private Node? _rootScene;
-    private readonly MultiplayerSpawner _mainSpawner = new MultiplayerSpawner();
+    public readonly MultiplayerSpawner MainSpawner = new MultiplayerSpawner();
     private readonly Dictionary<string, string> _nodeDictionary = []; // second value is the scene_file_path for spawning
 
     private NodeManager()
@@ -57,6 +57,7 @@ public class NodeManager
                 continue;
 
             var nodeName = fileName.Substring(0, file.LastIndexOf('.'));
+            // TODO: Does not actually add the full scene file path, missing the res://whatever stuff
             _nodeDictionary.TryAdd(nodeName, file);
         }
     }
@@ -64,8 +65,8 @@ public class NodeManager
     public void InitializeNodeSpawner(Node rootScene)
     {
         _rootScene = rootScene;
-        _rootScene.AddChild(_mainSpawner);
-        _mainSpawner.SpawnPath = _rootScene.GetPath();
+        _rootScene.AddChild(MainSpawner);
+        MainSpawner.SpawnPath = _rootScene.GetPath();
     }
 
     public bool TrySpawnNode(string nodeName, [NotNullWhen(true)] out Node? spawnedNode)

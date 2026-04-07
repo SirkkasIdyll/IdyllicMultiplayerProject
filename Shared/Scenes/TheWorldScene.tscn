@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://kiwc8xqj1qwh"]
 
+[ext_resource type="Script" uid="uid://dfgurxggvff66" path="res://Shared/Scenes/TheWorldScene.cs" id="1_cw62i"]
 [ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_cw62i"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8moq5"]
@@ -21,6 +22,7 @@ glow_enabled = true
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_8moq5"]
 
 [node name="TheWorld" type="Node3D" unique_id=1699927496]
+script = ExtResource("1_cw62i")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=46843460]
 environment = SubResource("Environment_2pvs4")
