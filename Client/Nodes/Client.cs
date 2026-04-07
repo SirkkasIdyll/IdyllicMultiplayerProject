@@ -22,7 +22,6 @@ public partial class Client : Node3D
 		else
 			GD.Print(error);
 		Multiplayer.SetMultiplayerPeer(clientPeer);
-		GD.Print(Multiplayer.IsServer() + " " + Multiplayer.GetUniqueId() + " " + Multiplayer.GetRemoteSenderId());
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
