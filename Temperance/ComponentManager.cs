@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
 using static GdUnit4.Assertions;
+using static Godot.MultiplayerSynchronizer;
+using static Godot.SceneReplicationConfig;
 
 namespace IdyllicMultiplayerProject.Temperance;
 
@@ -113,6 +115,43 @@ public class ComponentManager
         if (NodeDictionary.TryGetValue(typeof(T).Name, out var nodeList))
             nodes = nodeList;
     }
+}
+
+/// <summary>
+/// The PeerSynchronized attribute will add a MultiplayerSynchronizer
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class PeerSynchronized : Attribute
+{
+    /// <summary>
+    /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ON_CHANGE
+    /// </summary>
+    public float DeltaInterval = 0.0f;
+    
+    /// <summary>
+    /// When true, all multiplayer peers get updates sent out.
+    /// When false, visibility should be controlled by adding a visibility filter
+    /// </summary>
+    public bool PublicVisibility = true;
+    
+    /// <summary>
+    /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ALWAYS
+    /// </summary>
+    public float ReplicationInterval = 0.0f;
+    
+    /// <summary>
+    /// Chooses if visibility filters are updated automatically during process frames,
+    /// physics frames, or entirely manually
+    /// </summary>
+    public VisibilityUpdateModeEnum VisibilityUpdateMode = VisibilityUpdateModeEnum.Idle;
+}
+
+[AttributeUsage(AttributeTargets.Field)]
+public class SynchronizedField : Attribute
+{
+    public ReplicationMode ReplicationMode = ReplicationMode.Always;
+
+    public bool SynchronizeOnSpawn = true;
 }
 
 /// <summary>

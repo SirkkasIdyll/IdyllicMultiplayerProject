@@ -11,6 +11,12 @@ public partial class TheWorldScene : Node3D
 		GD.Print("ZA WARUDO!");
 	}
 
+	public override void _ExitTree()
+	{
+		base._ExitTree();
+		GD.Print("TOKI WO TOMARE");
+	}
+
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{

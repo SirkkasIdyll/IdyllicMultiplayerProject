@@ -16,14 +16,11 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Assets\" />
-        <Folder Include="Client\Nodes\" />
         <Folder Include="Client\Scenes\" />
         <Folder Include="Client\Systems\" />
-        <Folder Include="Server\Nodes\" />
+        <Folder Include="Resources\Assets\" />
         <Folder Include="Server\Scenes\" />
         <Folder Include="Server\Systems\" />
-        <Folder Include="Shared\Nodes\" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="**\*.cs.uid" />

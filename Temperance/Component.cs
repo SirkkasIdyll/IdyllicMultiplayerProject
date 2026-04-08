@@ -1,4 +1,6 @@
-﻿using Godot;
+﻿using System.Linq;
+using System.Reflection;
+using Godot;
 
 namespace IdyllicMultiplayerProject.Temperance;
 
@@ -17,14 +19,44 @@ public abstract partial class Component : Node3D
     public override void _EnterTree()
     {
         base._EnterTree();
+        // When adding components in-game, set the name and owner in case we want to save the scene for later
         SetName(GetType().Name);
         SetOwner(GetParent());
         
+        // Add the parent to the list of nodes with this specific component
         if (ComponentManager.Instance.NodeDictionary.TryGetValue(GetType().Name, out var list))
             list.Add(Owner);
         else
             ComponentManager.Instance.NodeDictionary[GetType().Name] = [Owner];
+        
+        // If the component is intended to be multiplayer synchronized,
+        // add a MultiplayerSynchronizer child and give it all the properties intended to be replicated
+        var peerSynchronizedAttribute = GetType().GetCustomAttribute<PeerSynchronized>();
+        if (peerSynchronizedAttribute == null)
+            return;
 
+        var multiplayerSynchronizer = new MultiplayerSynchronizer();
+        multiplayerSynchronizer.DeltaInterval = peerSynchronizedAttribute.DeltaInterval;
+        multiplayerSynchronizer.PublicVisibility = peerSynchronizedAttribute.PublicVisibility;
+        multiplayerSynchronizer.ReplicationInterval = peerSynchronizedAttribute.ReplicationInterval;
+        multiplayerSynchronizer.VisibilityUpdateMode = peerSynchronizedAttribute.VisibilityUpdateMode;
+
+        var sceneReplicationConfig = new SceneReplicationConfig();
+        var fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        foreach (var field in fields)
+        {
+            var attribute = field.GetCustomAttribute<SynchronizedField>();
+            if (attribute == null)
+                continue;
+
+            var nodePath = GetType().Name + ":" + field.Name;
+            sceneReplicationConfig.AddProperty(nodePath);
+            sceneReplicationConfig.PropertySetSpawn(nodePath, attribute.SynchronizeOnSpawn);
+            sceneReplicationConfig.PropertySetReplicationMode(nodePath, attribute.ReplicationMode);
+        }
+
+        multiplayerSynchronizer.ReplicationConfig = sceneReplicationConfig;
+        AddChild(multiplayerSynchronizer, true);
     }
 
     public override void _ExitTree()

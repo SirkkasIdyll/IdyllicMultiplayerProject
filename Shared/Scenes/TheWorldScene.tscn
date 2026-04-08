@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://kiwc8xqj1qwh"]
 
 [ext_resource type="Script" uid="uid://dfgurxggvff66" path="res://Shared/Scenes/TheWorldScene.cs" id="1_cw62i"]
-[ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_cw62i"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8moq5"]
 sky_top_color = Color(0.24178892, 0.47170812, 0.6425777, 1)
@@ -18,8 +17,6 @@ background_mode = 2
 sky = SubResource("Sky_cw62i")
 tonemap_mode = 2
 glow_enabled = true
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_8moq5"]
 
 [node name="TheWorld" type="Node3D" unique_id=1699927496]
 script = ExtResource("1_cw62i")
@@ -65,16 +62,3 @@ size = Vector3(8.561523, 3.95, 1)
 [node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" unique_id=1324519126]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.0307617, 0.025000095, -4.4450693)
 size = Vector3(8.561523, 3.95, 0.5)
-
-[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=816614741]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-
-[node name="Camera3D" type="Camera3D" parent="CharacterBody3D" unique_id=1427520472]
-transform = Transform3D(0.7071068, 0, 0.7071068, 0, 1, 0, -0.7071068, 0, 0.7071068, 0.5, 1.5, 0.5)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=195184351]
-shape = SubResource("CapsuleShape3D_8moq5")
-debug_color = Color(0, 11.708403, 13.469126, 1)
-
-[node name="MovementComponent" type="Node3D" parent="CharacterBody3D" unique_id=25220799]
-script = ExtResource("2_cw62i")

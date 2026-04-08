@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://b68vvdud6xpcr"]
+
+[ext_resource type="PackedScene" uid="uid://cy8hp3r3mtwir" path="res://Shared/Nodes/BaseNode.tscn" id="1_x8bxt"]
+[ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_yr3uu"]
+
+[node name="BaseCharacter" unique_id=242226116 instance=ExtResource("1_x8bxt")]
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." index="0" unique_id=239107965]
+
+[node name="MovementComponent" type="Node3D" parent="CharacterBody3D" index="0" unique_id=135463704]
+script = ExtResource("2_yr3uu")
+metadata/_custom_type_script = "uid://b8mmgwirc3x7b"
