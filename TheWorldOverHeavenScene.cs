@@ -24,6 +24,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 			{
 				GD.Print("Connected to peer: " + peerId);
 				var character = GD.Load<PackedScene>(NodeManager.Instance._nodeDictionary["TestCharacter"]).Instantiate();
+				character.SetMultiplayerAuthority((int)peerId, false);
 				AddChild(character, true);
 			};
 		}
