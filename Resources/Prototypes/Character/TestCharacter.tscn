@@ -1,17 +1,10 @@
 [gd_scene format=3 uid="uid://xp3mn1y0yv3f"]
 
-[ext_resource type="PackedScene" uid="uid://b68vvdud6xpcr" path="res://Shared/Nodes/BaseCharacter.tscn" id="1_vg6n3"]
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_lhvki"]
+[ext_resource type="PackedScene" uid="uid://b68vvdud6xpcr" path="res://Resources/Prototypes/Character/BaseCharacter.tscn" id="1_vg6n3"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_vg6n3"]
 
 [node name="TestCharacter" unique_id=242226116 instance=ExtResource("1_vg6n3")]
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." index="0" unique_id=425868735]
-replication_config = SubResource("SceneReplicationConfig_lhvki")
-
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" parent_id_path=PackedInt32Array(239107965) index="0" unique_id=1250251594]
 shape = SubResource("CapsuleShape3D_vg6n3")
-
-[node name="Camera3D" type="Camera3D" parent="CharacterBody3D" parent_id_path=PackedInt32Array(239107965) index="2" unique_id=1961688339]

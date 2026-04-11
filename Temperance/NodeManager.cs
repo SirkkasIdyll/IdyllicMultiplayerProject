@@ -8,13 +8,14 @@ namespace IdyllicMultiplayerProject.Temperance;
 /// NCS - Node, Component, (Node)System architecture
 ///
 /// The NodeManager is responsible for getting, removing, or spawning specific Nodes
+/// The NodeManager is an actual Node to get access to interact with Godot's MultiplayerSpawner 
 /// </summary>
-public class NodeManager
+public partial class NodeManager : Node
 {
     public static NodeManager Instance { get; } = new();
     private Node? _rootScene;
     public readonly MultiplayerSpawner MainSpawner = new();
-    public readonly Dictionary<string, string> _nodeDictionary = []; // second value is the scene_file_path for spawning
+    public readonly Dictionary<string, string> NodeDictionary = []; // second value is the scene_file_path for spawning
 
     private NodeManager()
     {
@@ -28,37 +29,45 @@ public class NodeManager
     /// </summary>
     private void GetAllNodePrototypes()
     {
-        var directories = new List<string> { "res://Resources/Prototypes" };
-
-        foreach (var directory in directories)
+        var prototypePaths = RecursiveListDirectory("res://Resources/Prototypes");
+        foreach (var prototypePath in prototypePaths)
         {
-            var files = ResourceLoader.ListDirectory(directory);
-            foreach (var file in files)
-            {
-                var fileName = file;
-            
-                // We only care about the last part of the file name
-                if (file.LastIndexOf('/') != -1)
-                    fileName = file.Substring(0, file.LastIndexOf('/'));
-            
-                // No length means it's a directory
-                if (fileName.Length == 0)
-                    continue;
-            
-                // Don't care for Base nodes that are just used to created inherited scenes,
-                // they're not intended to be spawned
-                if (fileName.StartsWith("Base", true, null))
-                    continue;
+            var nodeNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
+            var nodeName = nodeNameWithExtension.Substring(0, nodeNameWithExtension.LastIndexOf('.'));
 
-                // If it's not a .tscn then I don't know what it is
-                if (!fileName.EndsWith(".tscn"))
-                    continue;
-
-                var nodeName = fileName.Substring(0, file.LastIndexOf('.'));
-                var sceneFilePath = directory + "/" + file;
-                _nodeDictionary.TryAdd(nodeName, sceneFilePath);
-            }   
+            if (nodeName.StartsWith("Base", true, null))
+                continue;
+            
+            NodeDictionary.TryAdd(nodeName, prototypePath);
         }
+    }
+
+    /// <summary>
+    /// Recursively looks through a directory and returns only the res://file_path that end with a given extension
+    /// </summary>
+    /// <param name="directory"></param>
+    /// <param name="extension"></param>
+    /// <returns></returns>
+    private List<string> RecursiveListDirectory(string directory, string extension = ".tscn")
+    {
+        var result = new List<string>();
+        var listedDirectory = ResourceLoader.ListDirectory(directory);
+        foreach (var listedFile in listedDirectory)
+        {
+            // File is a directory, grab all files within it
+            if (listedFile.EndsWith('/'))
+                result.AddRange(RecursiveListDirectory(directory + '/' + listedFile, extension));
+
+            if (!listedFile.EndsWith(extension))
+                continue;
+            
+            if (directory.EndsWith('/'))
+                result.Add(directory + listedFile);
+            else
+                result.Add(directory + '/' + listedFile);
+        }
+
+        return result;
     }
     
     public void InitializeNodeSpawner(Node rootScene)
@@ -66,19 +75,27 @@ public class NodeManager
         _rootScene = rootScene;
         _rootScene.AddChild(MainSpawner);
         MainSpawner.SpawnPath = _rootScene.GetPath();
-        foreach (var (nodeName, sceneFilePath) in _nodeDictionary)
+        MainSpawner.SpawnFunction = new Callable(this, MethodName.SpawnNode);
+        foreach (var (_, sceneFilePath) in NodeDictionary)
         {
             MainSpawner.AddSpawnableScene(sceneFilePath);
         }
     }
-
-    public bool TrySpawnNode(string nodeName, [NotNullWhen(true)] out Node? spawnedNode)
+    
+    /// <summary>
+    /// One of the rare instances we use a Godot dictionary,
+    /// because I absolutely HATE having to use Godot's <see cref="Variant"/>.
+    ///
+    /// Just have to assume the correct arguments are being passed.
+    /// </summary>
+    public Node3D SpawnNode(Godot.Collections.Dictionary dictionary)
     {
-        spawnedNode = null;
-        
-        if (spawnedNode == null)
-            return false;
+        var nodeName = dictionary["name"];
+        var node = GD.Load<PackedScene>(NodeDictionary[(string)nodeName]).Instantiate<Node3D>();
 
-        return true;
+        if (dictionary.TryGetValue("spawnPosition", out var spawnPosition))
+            node.GlobalPosition = (Vector3)spawnPosition;
+        
+        return node;
     }
 }

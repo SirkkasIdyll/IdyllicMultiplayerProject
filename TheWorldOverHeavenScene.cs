@@ -13,6 +13,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 
 		NodeSystemManager.Instance.InitializeNodeSystems(this);
 		NodeManager.Instance.InitializeNodeSpawner(this);
+		AddChild(NodeManager.Instance);
 
 		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
 		{
@@ -23,8 +24,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 			Multiplayer.PeerConnected += (peerId) =>
 			{
 				GD.Print("Connected to peer: " + peerId);
-				var character = GD.Load<PackedScene>(NodeManager.Instance._nodeDictionary["TestCharacter"]).Instantiate();
-				character.SetMultiplayerAuthority((int)peerId, false);
+				var character = NodeManager.Instance.MainSpawner.Spawn("wow!");
 				AddChild(character, true);
 			};
 		}
@@ -42,17 +42,13 @@ public partial class TheWorldOverHeavenScene : Node3D
 		{
 			var node = GD.Load<PackedScene>("res://Shared/Scenes/TheWorldScene.tscn").Instantiate<Node3D>();
 			AddChild(node);
-			var timer = new Timer();
-			timer.OneShot = true;
-			timer.WaitTime = 10;
-			timer.Autostart = true;
-			timer.Timeout += node.QueueFree;
-			AddChild(timer);
+			// var timer = new Timer();
+			// timer.OneShot = true;
+			// timer.WaitTime = 3;
+			// timer.Autostart = true;
+			// timer.Timeout += node.QueueFree;
+			// AddChild(timer);
 		}
-		// if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
-		// 	AddChild(new Server.Nodes.Server());
-		// else
-		// 	AddChild(new Client.Nodes.Client());
 	}
 
 	public override void _ExitTree()

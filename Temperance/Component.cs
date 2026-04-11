@@ -40,6 +40,7 @@ public abstract partial class Component : Node3D
         multiplayerSynchronizer.PublicVisibility = peerSynchronizedAttribute.PublicVisibility;
         multiplayerSynchronizer.ReplicationInterval = peerSynchronizedAttribute.ReplicationInterval;
         multiplayerSynchronizer.VisibilityUpdateMode = peerSynchronizedAttribute.VisibilityUpdateMode;
+        multiplayerSynchronizer.SetRootPath(GetParent().GetPath());
 
         var sceneReplicationConfig = new SceneReplicationConfig();
         var fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
