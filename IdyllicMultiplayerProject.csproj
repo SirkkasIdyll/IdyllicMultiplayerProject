@@ -26,12 +26,5 @@
         <Content Include="**\*.cs.uid" />
         <Content Include="**\*.tscn" />
         <Content Include="Testament\.runsettings" />
-        <Content Remove="gdunit4_testadapter_v5\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <Compile Remove="gdunit4_testadapter_v5\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Remove="gdunit4_testadapter_v5\**" />
     </ItemGroup>
 </Project>
