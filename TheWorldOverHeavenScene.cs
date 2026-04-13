@@ -1,6 +1,6 @@
 using Godot;
-using System;
 using IdyllicMultiplayerProject.Temperance;
+using IdyllicMultiplayerProject.Temperance.Networking;
 
 namespace IdyllicMultiplayerProject;
 
@@ -12,43 +12,19 @@ public partial class TheWorldOverHeavenScene : Node3D
 		base._EnterTree();
 
 		NodeSystemManager.Instance.InitializeNodeSystems(this);
-		NodeManager.Instance.InitializeNodeSpawner(this);
 		AddChild(NodeManager.Instance);
 
 		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
 		{
-			// Create server.
-			var peer = new ENetMultiplayerPeer();
-			peer.CreateServer(3802, 2);
-			Multiplayer.MultiplayerPeer = peer;
-			Multiplayer.PeerConnected += (peerId) =>
-			{
-				GD.Print("Connected to peer: " + peerId);
-				var character = NodeManager.Instance.MainSpawner.Spawn("wow!");
-				AddChild(character, true);
-			};
+			var server = new Server();
+			AddChild(server);
 		}
 		else
 		{
-			// Create client.
-			var peer = new ENetMultiplayerPeer();
-			peer.CreateClient("127.0.0.1", 3802);
-			Multiplayer.MultiplayerPeer = peer;
-			Multiplayer.ConnectedToServer += () => GD.Print("Connected to server");
+			var client = new Client();
+			AddChild(client);
 		}
 		
-		NodeManager.Instance.MainSpawner.AddSpawnableScene("res://Shared/Scenes/TheWorldScene.tscn");
-		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
-		{
-			var node = GD.Load<PackedScene>("res://Shared/Scenes/TheWorldScene.tscn").Instantiate<Node3D>();
-			AddChild(node);
-			// var timer = new Timer();
-			// timer.OneShot = true;
-			// timer.WaitTime = 3;
-			// timer.Autostart = true;
-			// timer.Timeout += node.QueueFree;
-			// AddChild(timer);
-		}
 	}
 
 	public override void _ExitTree()

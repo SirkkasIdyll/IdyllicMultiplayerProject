@@ -22,7 +22,6 @@ public class TemperanceTest
     {
         AddNode(_rootScene);
         _nodeSystemManager.InitializeNodeSystems(_rootScene);
-        _nodeManager.InitializeNodeSpawner(_rootScene);
     }
     
     /// <summary>
@@ -61,9 +60,7 @@ public class TemperanceTest
     {
         Dictionary<string, string> nodeDictionary = []; // second value is the scene_file_path for spawning
         var files = new List<string>();
-        files.AddRange(ResourceLoader.ListDirectory("res://Shared/Nodes"));
-        files.AddRange(ResourceLoader.ListDirectory("res://Server/Nodes"));
-        files.AddRange(ResourceLoader.ListDirectory("res://Client/Nodes"));
+        files.AddRange(ResourceLoader.ListDirectory("res://Resources/Prototypes"));
         
         foreach (var file in files)
         {

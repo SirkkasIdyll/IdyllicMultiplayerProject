@@ -14,7 +14,6 @@ public partial class NodeManager : Node
 {
     public static NodeManager Instance { get; } = new();
     private Node? _rootScene;
-    public readonly MultiplayerSpawner MainSpawner = new();
     public readonly Dictionary<string, string> NodeDictionary = []; // second value is the scene_file_path for spawning
 
     private NodeManager()
@@ -70,32 +69,20 @@ public partial class NodeManager : Node
         return result;
     }
     
-    public void InitializeNodeSpawner(Node rootScene)
-    {
-        _rootScene = rootScene;
-        _rootScene.AddChild(MainSpawner);
-        MainSpawner.SpawnPath = _rootScene.GetPath();
-        MainSpawner.SpawnFunction = new Callable(this, MethodName.SpawnNode);
-        foreach (var (_, sceneFilePath) in NodeDictionary)
-        {
-            MainSpawner.AddSpawnableScene(sceneFilePath);
-        }
-    }
-    
     /// <summary>
     /// One of the rare instances we use a Godot dictionary,
     /// because I absolutely HATE having to use Godot's <see cref="Variant"/>.
     ///
     /// Just have to assume the correct arguments are being passed.
     /// </summary>
-    public Node3D SpawnNode(Godot.Collections.Dictionary dictionary)
-    {
-        var nodeName = dictionary["name"];
-        var node = GD.Load<PackedScene>(NodeDictionary[(string)nodeName]).Instantiate<Node3D>();
-
-        if (dictionary.TryGetValue("spawnPosition", out var spawnPosition))
-            node.GlobalPosition = (Vector3)spawnPosition;
-        
-        return node;
-    }
+    // public Node3D SpawnNode(Godot.Collections.Dictionary dictionary)
+    // {
+    //     var nodeName = dictionary["name"];
+    //     var node = GD.Load<PackedScene>(NodeDictionary[(string)nodeName]).Instantiate<Node3D>();
+    //
+    //     if (dictionary.TryGetValue("spawnPosition", out var spawnPosition))
+    //         node.GlobalPosition = (Vector3)spawnPosition;
+    //     
+    //     return node;
+    // }
 }
