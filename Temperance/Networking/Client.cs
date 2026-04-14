@@ -20,18 +20,6 @@ public partial class Client : Node3D
         address.SetHost(Server.Ip);
 
         _peer = _client.Connect(address);
-        var timer = new Timer();
-        timer.WaitTime = 10;
-        timer.Autostart = true;
-        timer.Timeout += () =>
-        {
-            var packet = default(Packet);
-            var data = new byte[64];
-
-            packet.Create(data);
-            _peer.Send(0, ref packet);
-        };
-        AddChild(timer);
     }
 
     public override void _ExitTree()
@@ -68,6 +56,13 @@ public partial class Client : Node3D
 
             case EventType.Receive:
                 GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+                var buffer = new byte[64];
+                BitBuffer data = new BitBuffer(1024);
+                netEvent.Packet.CopyTo(buffer);
+                data.FromArray(buffer, netEvent.Packet.Length);
+                GD.Print(data.ReadString());
+                GD.Print(data.ReadBool());
+                GD.Print(data.ReadString());
                 netEvent.Packet.Dispose();
                 break;
         }
