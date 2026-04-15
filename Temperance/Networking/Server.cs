@@ -1,6 +1,7 @@
 ﻿using System;
 using ENet;
 using Godot;
+using Google.Protobuf;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -35,18 +36,22 @@ public partial class Server : Node3D
             _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
 
         var timer = new Timer();
-        timer.WaitTime = 2;
+        timer.WaitTime = 4;
         timer.Autostart = true;
+        timer.OneShot = true;
         timer.Timeout += () =>
         {
+            var thing = new test
+            {
+                ExDouble = 23.423f,
+                ThisThing = true,
+                GreatMindsThinkLikeThis = "I'm really the most smartest and beautifulest person in the world :3"
+            };
+            
+            var buffer = new byte[thing.CalculateSize()];
+            thing.WriteTo(buffer);
+
             var packet = new Packet();
-            var buffer = new byte[64];
-            BitBuffer data = new BitBuffer(1024);
-            data.AddString("Wow, this is some pretty cool data.")
-                .AddBool(true)
-                .AddString(1.23452341f.ToString("R"))
-                .ToArray(buffer);
-            data.Clear();
             packet.Create(buffer);
             _server.Broadcast((byte)ChannelIDs.Unreliable, ref packet);
         };

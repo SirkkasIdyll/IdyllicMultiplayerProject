@@ -56,14 +56,14 @@ public partial class Client : Node3D
 
             case EventType.Receive:
                 GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
-                var buffer = new byte[64];
-                BitBuffer data = new BitBuffer(1024);
+                var buffer = new byte[netEvent.Packet.Length];
                 netEvent.Packet.CopyTo(buffer);
-                data.FromArray(buffer, netEvent.Packet.Length);
-                GD.Print(data.ReadString());
-                GD.Print(data.ReadBool());
-                GD.Print(data.ReadString());
                 netEvent.Packet.Dispose();
+                
+                var something = test.Parser.ParseFrom(buffer);
+                GD.Print(something.ExDouble);
+                GD.Print(something.ThisThing);
+                GD.Print(something.GreatMindsThinkLikeThis);
                 break;
         }
         

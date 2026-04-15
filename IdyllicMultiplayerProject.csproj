@@ -7,6 +7,7 @@
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.34.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0"/>
         <PackageReference Include="ENet-CSharp" Version="2.4.8" />
         <PackageReference Include="gdUnit4.api" Version="5.1.0-rc3"/>
@@ -26,6 +27,7 @@
     <ItemGroup>
         <Content Include="**\*.cs.uid" />
         <Content Include="**\*.tscn" />
+        <Content Include="Resources\ProtocolBuffers\something.proto" />
         <Content Include="Testament\.runsettings" />
     </ItemGroup>
 </Project>
