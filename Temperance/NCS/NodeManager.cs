@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Godot;
 
-namespace IdyllicMultiplayerProject.Temperance;
+namespace IdyllicMultiplayerProject.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture

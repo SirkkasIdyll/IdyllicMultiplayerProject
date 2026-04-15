@@ -5,7 +5,7 @@ using System.Reflection;
 using Godot;
 using Godot.Collections;
 
-namespace IdyllicMultiplayerProject.Temperance;
+namespace IdyllicMultiplayerProject.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture

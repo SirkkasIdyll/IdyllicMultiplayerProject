@@ -9,305 +9,309 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-/// <summary>Holder for reflection information generated from Resources/ProtocolBuffers/something.proto</summary>
-public static partial class SomethingReflection {
+namespace Resources.ProtocolBuffers {
 
-  #region Descriptor
-  /// <summary>File descriptor for Resources/ProtocolBuffers/something.proto</summary>
-  public static pbr::FileDescriptor Descriptor {
-    get { return descriptor; }
-  }
-  private static pbr::FileDescriptor descriptor;
+  /// <summary>Holder for reflection information generated from Resources/ProtocolBuffers/something.proto</summary>
+  public static partial class SomethingReflection {
 
-  static SomethingReflection() {
-    byte[] descriptorData = global::System.Convert.FromBase64String(
-        string.Concat(
-          "CilSZXNvdXJjZXMvUHJvdG9jb2xCdWZmZXJzL3NvbWV0aGluZy5wcm90byJS",
-          "CgR0ZXN0EhEKCWV4X2RvdWJsZRgBIAEoARISCgp0aGlzX3RoaW5nGAIgASgI",
-          "EiMKG2dyZWF0X21pbmRzX3RoaW5rX2xpa2VfdGhpcxgDIAEoCWIGcHJvdG8z"));
-    descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-        new pbr::FileDescriptor[] { },
-        new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::test), global::test.Parser, new[]{ "ExDouble", "ThisThing", "GreatMindsThinkLikeThis" }, null, null, null, null)
-        }));
+    #region Descriptor
+    /// <summary>File descriptor for Resources/ProtocolBuffers/something.proto</summary>
+    public static pbr::FileDescriptor Descriptor {
+      get { return descriptor; }
+    }
+    private static pbr::FileDescriptor descriptor;
+
+    static SomethingReflection() {
+      byte[] descriptorData = global::System.Convert.FromBase64String(
+          string.Concat(
+            "CilSZXNvdXJjZXMvUHJvdG9jb2xCdWZmZXJzL3NvbWV0aGluZy5wcm90byJS",
+            "CgR0ZXN0EhEKCWV4X2RvdWJsZRgBIAEoARISCgp0aGlzX3RoaW5nGAIgASgI",
+            "EiMKG2dyZWF0X21pbmRzX3RoaW5rX2xpa2VfdGhpcxgDIAEoCUIcqgIZUmVz",
+            "b3VyY2VzLlByb3RvY29sQnVmZmVyc2IGcHJvdG8z"));
+      descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
+          new pbr::FileDescriptor[] { },
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Resources.ProtocolBuffers.test), global::Resources.ProtocolBuffers.test.Parser, new[]{ "ExDouble", "ThisThing", "GreatMindsThinkLikeThis" }, null, null, null, null)
+          }));
+    }
+    #endregion
+
   }
+  #region Messages
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class test : pb::IMessage<test>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<test> _parser = new pb::MessageParser<test>(() => new test());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<test> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Resources.ProtocolBuffers.SomethingReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public test() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public test(test other) : this() {
+      exDouble_ = other.exDouble_;
+      thisThing_ = other.thisThing_;
+      greatMindsThinkLikeThis_ = other.greatMindsThinkLikeThis_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public test Clone() {
+      return new test(this);
+    }
+
+    /// <summary>Field number for the "ex_double" field.</summary>
+    public const int ExDoubleFieldNumber = 1;
+    private double exDouble_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public double ExDouble {
+      get { return exDouble_; }
+      set {
+        exDouble_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "this_thing" field.</summary>
+    public const int ThisThingFieldNumber = 2;
+    private bool thisThing_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool ThisThing {
+      get { return thisThing_; }
+      set {
+        thisThing_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "great_minds_think_like_this" field.</summary>
+    public const int GreatMindsThinkLikeThisFieldNumber = 3;
+    private string greatMindsThinkLikeThis_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GreatMindsThinkLikeThis {
+      get { return greatMindsThinkLikeThis_; }
+      set {
+        greatMindsThinkLikeThis_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as test);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(test other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ExDouble, other.ExDouble)) return false;
+      if (ThisThing != other.ThisThing) return false;
+      if (GreatMindsThinkLikeThis != other.GreatMindsThinkLikeThis) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ExDouble != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ExDouble);
+      if (ThisThing != false) hash ^= ThisThing.GetHashCode();
+      if (GreatMindsThinkLikeThis.Length != 0) hash ^= GreatMindsThinkLikeThis.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (ExDouble != 0D) {
+        output.WriteRawTag(9);
+        output.WriteDouble(ExDouble);
+      }
+      if (ThisThing != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(ThisThing);
+      }
+      if (GreatMindsThinkLikeThis.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GreatMindsThinkLikeThis);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (ExDouble != 0D) {
+        output.WriteRawTag(9);
+        output.WriteDouble(ExDouble);
+      }
+      if (ThisThing != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(ThisThing);
+      }
+      if (GreatMindsThinkLikeThis.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GreatMindsThinkLikeThis);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (ExDouble != 0D) {
+        size += 1 + 8;
+      }
+      if (ThisThing != false) {
+        size += 1 + 1;
+      }
+      if (GreatMindsThinkLikeThis.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GreatMindsThinkLikeThis);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(test other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ExDouble != 0D) {
+        ExDouble = other.ExDouble;
+      }
+      if (other.ThisThing != false) {
+        ThisThing = other.ThisThing;
+      }
+      if (other.GreatMindsThinkLikeThis.Length != 0) {
+        GreatMindsThinkLikeThis = other.GreatMindsThinkLikeThis;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 9: {
+            ExDouble = input.ReadDouble();
+            break;
+          }
+          case 16: {
+            ThisThing = input.ReadBool();
+            break;
+          }
+          case 26: {
+            GreatMindsThinkLikeThis = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 9: {
+            ExDouble = input.ReadDouble();
+            break;
+          }
+          case 16: {
+            ThisThing = input.ReadBool();
+            break;
+          }
+          case 26: {
+            GreatMindsThinkLikeThis = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   #endregion
 
 }
-#region Messages
-[global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-public sealed partial class test : pb::IMessage<test>
-#if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    , pb::IBufferMessage
-#endif
-{
-  private static readonly pb::MessageParser<test> _parser = new pb::MessageParser<test>(() => new test());
-  private pb::UnknownFieldSet _unknownFields;
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public static pb::MessageParser<test> Parser { get { return _parser; } }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public static pbr::MessageDescriptor Descriptor {
-    get { return global::SomethingReflection.Descriptor.MessageTypes[0]; }
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  pbr::MessageDescriptor pb::IMessage.Descriptor {
-    get { return Descriptor; }
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public test() {
-    OnConstruction();
-  }
-
-  partial void OnConstruction();
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public test(test other) : this() {
-    exDouble_ = other.exDouble_;
-    thisThing_ = other.thisThing_;
-    greatMindsThinkLikeThis_ = other.greatMindsThinkLikeThis_;
-    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public test Clone() {
-    return new test(this);
-  }
-
-  /// <summary>Field number for the "ex_double" field.</summary>
-  public const int ExDoubleFieldNumber = 1;
-  private double exDouble_;
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public double ExDouble {
-    get { return exDouble_; }
-    set {
-      exDouble_ = value;
-    }
-  }
-
-  /// <summary>Field number for the "this_thing" field.</summary>
-  public const int ThisThingFieldNumber = 2;
-  private bool thisThing_;
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public bool ThisThing {
-    get { return thisThing_; }
-    set {
-      thisThing_ = value;
-    }
-  }
-
-  /// <summary>Field number for the "great_minds_think_like_this" field.</summary>
-  public const int GreatMindsThinkLikeThisFieldNumber = 3;
-  private string greatMindsThinkLikeThis_ = "";
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public string GreatMindsThinkLikeThis {
-    get { return greatMindsThinkLikeThis_; }
-    set {
-      greatMindsThinkLikeThis_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-    }
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public override bool Equals(object other) {
-    return Equals(other as test);
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public bool Equals(test other) {
-    if (ReferenceEquals(other, null)) {
-      return false;
-    }
-    if (ReferenceEquals(other, this)) {
-      return true;
-    }
-    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ExDouble, other.ExDouble)) return false;
-    if (ThisThing != other.ThisThing) return false;
-    if (GreatMindsThinkLikeThis != other.GreatMindsThinkLikeThis) return false;
-    return Equals(_unknownFields, other._unknownFields);
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public override int GetHashCode() {
-    int hash = 1;
-    if (ExDouble != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ExDouble);
-    if (ThisThing != false) hash ^= ThisThing.GetHashCode();
-    if (GreatMindsThinkLikeThis.Length != 0) hash ^= GreatMindsThinkLikeThis.GetHashCode();
-    if (_unknownFields != null) {
-      hash ^= _unknownFields.GetHashCode();
-    }
-    return hash;
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public override string ToString() {
-    return pb::JsonFormatter.ToDiagnosticString(this);
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public void WriteTo(pb::CodedOutputStream output) {
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    output.WriteRawMessage(this);
-  #else
-    if (ExDouble != 0D) {
-      output.WriteRawTag(9);
-      output.WriteDouble(ExDouble);
-    }
-    if (ThisThing != false) {
-      output.WriteRawTag(16);
-      output.WriteBool(ThisThing);
-    }
-    if (GreatMindsThinkLikeThis.Length != 0) {
-      output.WriteRawTag(26);
-      output.WriteString(GreatMindsThinkLikeThis);
-    }
-    if (_unknownFields != null) {
-      _unknownFields.WriteTo(output);
-    }
-  #endif
-  }
-
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-    if (ExDouble != 0D) {
-      output.WriteRawTag(9);
-      output.WriteDouble(ExDouble);
-    }
-    if (ThisThing != false) {
-      output.WriteRawTag(16);
-      output.WriteBool(ThisThing);
-    }
-    if (GreatMindsThinkLikeThis.Length != 0) {
-      output.WriteRawTag(26);
-      output.WriteString(GreatMindsThinkLikeThis);
-    }
-    if (_unknownFields != null) {
-      _unknownFields.WriteTo(ref output);
-    }
-  }
-  #endif
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public int CalculateSize() {
-    int size = 0;
-    if (ExDouble != 0D) {
-      size += 1 + 8;
-    }
-    if (ThisThing != false) {
-      size += 1 + 1;
-    }
-    if (GreatMindsThinkLikeThis.Length != 0) {
-      size += 1 + pb::CodedOutputStream.ComputeStringSize(GreatMindsThinkLikeThis);
-    }
-    if (_unknownFields != null) {
-      size += _unknownFields.CalculateSize();
-    }
-    return size;
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public void MergeFrom(test other) {
-    if (other == null) {
-      return;
-    }
-    if (other.ExDouble != 0D) {
-      ExDouble = other.ExDouble;
-    }
-    if (other.ThisThing != false) {
-      ThisThing = other.ThisThing;
-    }
-    if (other.GreatMindsThinkLikeThis.Length != 0) {
-      GreatMindsThinkLikeThis = other.GreatMindsThinkLikeThis;
-    }
-    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-  }
-
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public void MergeFrom(pb::CodedInputStream input) {
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    input.ReadRawMessage(this);
-  #else
-    uint tag;
-    while ((tag = input.ReadTag()) != 0) {
-    if ((tag & 7) == 4) {
-      // Abort on any end group tag.
-      return;
-    }
-    switch(tag) {
-        default:
-          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-          break;
-        case 9: {
-          ExDouble = input.ReadDouble();
-          break;
-        }
-        case 16: {
-          ThisThing = input.ReadBool();
-          break;
-        }
-        case 26: {
-          GreatMindsThinkLikeThis = input.ReadString();
-          break;
-        }
-      }
-    }
-  #endif
-  }
-
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
-    uint tag;
-    while ((tag = input.ReadTag()) != 0) {
-    if ((tag & 7) == 4) {
-      // Abort on any end group tag.
-      return;
-    }
-    switch(tag) {
-        default:
-          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
-          break;
-        case 9: {
-          ExDouble = input.ReadDouble();
-          break;
-        }
-        case 16: {
-          ThisThing = input.ReadBool();
-          break;
-        }
-        case 26: {
-          GreatMindsThinkLikeThis = input.ReadString();
-          break;
-        }
-      }
-    }
-  }
-  #endif
-
-}
-
-#endregion
-
 
 #endregion Designer generated code

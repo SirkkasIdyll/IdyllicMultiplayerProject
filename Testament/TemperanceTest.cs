@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Godot;
 using IdyllicMultiplayerProject.Shared.Systems.Movement;
-using IdyllicMultiplayerProject.Temperance;
+using IdyllicMultiplayerProject.Temperance.NCS;
 
 namespace IdyllicMultiplayerProject.Testament;
 

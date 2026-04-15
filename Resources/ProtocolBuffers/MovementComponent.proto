@@ -1,0 +1,13 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Resources.ProtocolBuffers";
+
+import "Resources/ProtocolBuffers/GodotTypes.proto";
+
+message MovementComponentUnreliable {
+  
+}
+
+message MovementComponentReliable {
+  
+}

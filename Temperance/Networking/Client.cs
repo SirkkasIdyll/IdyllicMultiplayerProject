@@ -1,6 +1,6 @@
-﻿using System;
-using ENet;
+﻿using ENet;
 using Godot;
+using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 

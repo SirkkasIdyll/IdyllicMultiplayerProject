@@ -1,5 +1,5 @@
 ﻿using Godot;
-using IdyllicMultiplayerProject.Temperance;
+using IdyllicMultiplayerProject.Temperance.NCS;
 
 namespace IdyllicMultiplayerProject.Shared.Systems.Camera;
 

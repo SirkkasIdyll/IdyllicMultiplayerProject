@@ -1,7 +1,7 @@
-﻿using System;
-using ENet;
+﻿using ENet;
 using Godot;
 using Google.Protobuf;
+using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -50,7 +50,7 @@ public partial class Server : Node3D
             
             var buffer = new byte[thing.CalculateSize()];
             thing.WriteTo(buffer);
-
+            
             var packet = new Packet();
             packet.Create(buffer);
             _server.Broadcast((byte)ChannelIDs.Unreliable, ref packet);

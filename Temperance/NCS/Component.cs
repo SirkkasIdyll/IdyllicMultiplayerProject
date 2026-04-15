@@ -1,8 +1,7 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using Godot;
 
-namespace IdyllicMultiplayerProject.Temperance;
+namespace IdyllicMultiplayerProject.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture
@@ -31,16 +30,9 @@ public abstract partial class Component : Node3D
         
         // If the component is intended to be multiplayer synchronized,
         // add a MultiplayerSynchronizer child and give it all the properties intended to be replicated
-        var peerSynchronizedAttribute = GetType().GetCustomAttribute<PeerSynchronized>();
-        if (peerSynchronizedAttribute == null)
+        var synchronizedAttribute = GetType().GetCustomAttribute<Synchronized>();
+        if (synchronizedAttribute == null)
             return;
-
-        var multiplayerSynchronizer = new MultiplayerSynchronizer();
-        multiplayerSynchronizer.DeltaInterval = peerSynchronizedAttribute.DeltaInterval;
-        multiplayerSynchronizer.PublicVisibility = peerSynchronizedAttribute.PublicVisibility;
-        multiplayerSynchronizer.ReplicationInterval = peerSynchronizedAttribute.ReplicationInterval;
-        multiplayerSynchronizer.VisibilityUpdateMode = peerSynchronizedAttribute.VisibilityUpdateMode;
-        multiplayerSynchronizer.SetRootPath(GetParent().GetPath());
 
         var sceneReplicationConfig = new SceneReplicationConfig();
         var fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -55,9 +47,6 @@ public abstract partial class Component : Node3D
             sceneReplicationConfig.PropertySetSpawn(nodePath, attribute.SynchronizeOnSpawn);
             sceneReplicationConfig.PropertySetReplicationMode(nodePath, attribute.ReplicationMode);
         }
-
-        multiplayerSynchronizer.ReplicationConfig = sceneReplicationConfig;
-        AddChild(multiplayerSynchronizer, true);
     }
 
     public override void _ExitTree()
