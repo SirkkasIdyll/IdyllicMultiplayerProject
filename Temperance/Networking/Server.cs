@@ -64,9 +64,9 @@ public partial class Server : Node3D
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddGrpc();
         var app = builder.Build();
-        app.MapGet("/", () => "Hello world!");
+        app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
         app.MapGrpcService<GreeterService>();
-        app.RunAsync("https://127.0.0.1:" + GrpcPort);
+        app.RunAsync("https://" + Ip + ":" + GrpcPort);
     }
 
     public override void _ExitTree()

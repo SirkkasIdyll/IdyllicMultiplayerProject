@@ -25,7 +25,8 @@ public partial class Client : Node3D
         _peer = _client.Connect(address);
         _grpcChannel = GrpcChannel.ForAddress("https://" + Server.Ip + ":" + Server.GrpcPort);
         var client = new Greeter.GreeterClient(_grpcChannel);
-        client.SayHello(new HelloRequest { Name = "JOJOOO" });
+        var reply = client.SayHello(new HelloRequest { Name = "JOJOOO" });
+        GD.Print(reply.Message);
     }
 
     public override void _ExitTree()
