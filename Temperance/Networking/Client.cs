@@ -1,5 +1,7 @@
-﻿using ENet;
+﻿using System;
+using ENet;
 using Godot;
+using Grpc.Net.Client;
 using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
@@ -8,6 +10,7 @@ public partial class Client : Node3D
 {
     private readonly Host _client = new();
     private Peer _peer;
+    private GrpcChannel? _grpcChannel;
     
     public override void _Ready()
     {
@@ -20,6 +23,9 @@ public partial class Client : Node3D
         address.SetHost(Server.Ip);
 
         _peer = _client.Connect(address);
+        _grpcChannel = GrpcChannel.ForAddress("https://" + Server.Ip + ":" + Server.GrpcPort);
+        var client = new Greeter.GreeterClient(_grpcChannel);
+        client.SayHello(new HelloRequest { Name = "JOJOOO" });
     }
 
     public override void _ExitTree()
@@ -28,6 +34,7 @@ public partial class Client : Node3D
         
         _peer.DisconnectNow(0);
         _client.Dispose();
+        _grpcChannel?.Dispose();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -59,11 +66,12 @@ public partial class Client : Node3D
                 var buffer = new byte[netEvent.Packet.Length];
                 netEvent.Packet.CopyTo(buffer);
                 netEvent.Packet.Dispose();
-                
-                var something = test.Parser.ParseFrom(buffer);
-                GD.Print(something.ExDouble);
-                GD.Print(something.ThisThing);
-                GD.Print(something.GreatMindsThinkLikeThis);
+
+                GD.Print(_grpcChannel?.State.ToString());
+                // var something = test.Parser.ParseFrom(buffer);
+                // GD.Print(something.ExDouble);
+                // GD.Print(something.ThisThing);
+                // GD.Print(something.GreatMindsThinkLikeThis);
                 break;
         }
         

@@ -1,6 +1,9 @@
 ﻿using ENet;
 using Godot;
 using Google.Protobuf;
+using IdyllicMultiplayerProject.Resources.ProtocolBuffers;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
@@ -20,6 +23,7 @@ public partial class Server : Node3D
     private const ushort MaxDuplicatePeers = 0;
     public const string Ip = "127.0.0.1";
     public const ushort Port = 3802;
+    public const ushort GrpcPort = 3803;
     private readonly Host _server = new();
 
     public override void _Ready()
@@ -56,6 +60,13 @@ public partial class Server : Node3D
             _server.Broadcast((byte)ChannelIDs.Unreliable, ref packet);
         };
         AddChild(timer);
+
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddGrpc();
+        var app = builder.Build();
+        app.MapGet("/", () => "Hello world!");
+        app.MapGrpcService<GreeterService>();
+        app.RunAsync("https://127.0.0.1:" + GrpcPort);
     }
 
     public override void _ExitTree()
