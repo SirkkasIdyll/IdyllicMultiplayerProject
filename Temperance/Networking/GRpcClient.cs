@@ -49,9 +49,4 @@ public partial class GRpcClient : Node
 
         await readTask;
     }
-
-    private async Task letsdothis(AsyncDuplexStreamingCall<SpawnInfoRequest, SpawnInfoReply> spawnStream)
-    {
-        await spawnStream.RequestStream.WriteAsync(new SpawnInfoRequest { NodeNetworkId = 2});
-    }
 }
