@@ -2,7 +2,7 @@
 
 option csharp_namespace = "Resources.ProtocolBuffers";
 
-import "Resources/ProtocolBuffers/GodotTypes.proto";
+import "Resources/ProtocolBuffers/godot_types.proto";
 
 message MovementComponentUnreliable {
   
