@@ -36,10 +36,9 @@
     <ItemGroup>
         <Content Include="**\*.cs.uid" />
         <Content Include="**\*.tscn" />
-        <Protobuf Include="Resources\ProtocolBuffers\dotnet.proto" />
-        <Protobuf Include="Resources\ProtocolBuffers\GodotTypes.proto" />
-        <Protobuf Include="Resources\ProtocolBuffers\MovementComponent.proto" />
-        <Protobuf Include="Resources\ProtocolBuffers\something.proto" />
+        <Protobuf Include="Resources\ProtocolBuffers\godot_types.proto" />
+        <Protobuf Include="Resources\ProtocolBuffers\movement_component.proto" />
+        <Protobuf Include="Resources\ProtocolBuffers\spawn.proto" />
         <Content Include="Testament\.runsettings" />
     </ItemGroup>
 </Project>

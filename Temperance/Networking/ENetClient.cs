@@ -1,43 +1,34 @@
-﻿using System;
-using ENet;
+﻿using ENet;
 using Godot;
-using Grpc.Net.Client;
-using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
-public partial class Client : Node3D
+public partial class ENetClient : Node
 {
     private readonly Host _client = new();
-    private Peer _peer;
-    private GrpcChannel? _grpcChannel;
-    
+    private Peer? _peer;
+
     public override void _Ready()
     {
         base._Ready();
-        
+
         _client.Create();
-        
+
         var address = new Address();
-        address.Port = Server.Port;
-        address.SetHost(Server.Ip);
+        address.Port = ENetServer.Port;
+        address.SetHost(ENetServer.Ip);
 
         _peer = _client.Connect(address);
-        _grpcChannel = GrpcChannel.ForAddress("https://" + Server.Ip + ":" + Server.GrpcPort);
-        var client = new Greeter.GreeterClient(_grpcChannel);
-        var reply = client.SayHello(new HelloRequest { Name = "JOJOOO" });
-        GD.Print(reply.Message);
     }
 
     public override void _ExitTree()
     {
         base._ExitTree();
-        
-        _peer.DisconnectNow(0);
-        _client.Dispose();
-        _grpcChannel?.Dispose();
-    }
 
+        _peer?.DisconnectNow(0);
+        _client.Dispose();
+    }
+    
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
@@ -64,15 +55,6 @@ public partial class Client : Node3D
 
             case EventType.Receive:
                 GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
-                var buffer = new byte[netEvent.Packet.Length];
-                netEvent.Packet.CopyTo(buffer);
-                netEvent.Packet.Dispose();
-
-                GD.Print(_grpcChannel?.State.ToString());
-                // var something = test.Parser.ParseFrom(buffer);
-                // GD.Print(something.ExDouble);
-                // GD.Print(something.ThisThing);
-                // GD.Print(something.GreatMindsThinkLikeThis);
                 break;
         }
         

@@ -16,13 +16,13 @@ public partial class TheWorldOverHeavenScene : Node3D
 
 		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
 		{
-			var server = new Server();
-			AddChild(server);
+			AddChild(new ENetServer());
+			AddChild(new GRpcServer());
 		}
 		else
 		{
-			var client = new Client();
-			AddChild(client);
+			AddChild(new ENetClient());
+			AddChild(new GRpcClient());
 		}
 		
 	}

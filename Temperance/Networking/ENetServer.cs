@@ -1,31 +1,17 @@
 ﻿using ENet;
 using Godot;
 using Google.Protobuf;
-using IdyllicMultiplayerProject.Resources.ProtocolBuffers;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
-public partial class Server : Node3D
+public partial class ENetServer : Node
 {
-    public enum ChannelIDs : byte
-    {
-        Unreliable = 0,
-        Reliable = 1,
-    }
-    
-    /// <summary>
-    /// Maximum amount of duplicate connections from the same host,
-    /// set to a non-zero value if you want to limit it
-    /// </summary>
-    private const ushort MaxDuplicatePeers = 0;
     public const string Ip = "127.0.0.1";
     public const ushort Port = 3802;
-    public const ushort GrpcPort = 3803;
+    private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
-
+    
     public override void _Ready()
     {
         base._Ready();
@@ -33,40 +19,10 @@ public partial class Server : Node3D
         var address = new Address();
         address.SetHost(Ip);
         address.Port = Port;
-        
         _server.Create(address, 2);
         
         if (MaxDuplicatePeers > 0)
             _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
-
-        var timer = new Timer();
-        timer.WaitTime = 4;
-        timer.Autostart = true;
-        timer.OneShot = true;
-        timer.Timeout += () =>
-        {
-            var thing = new test
-            {
-                ExDouble = 23.423f,
-                ThisThing = true,
-                GreatMindsThinkLikeThis = "I'm really the most smartest and beautifulest person in the world :3"
-            };
-            
-            var buffer = new byte[thing.CalculateSize()];
-            thing.WriteTo(buffer);
-            
-            var packet = new Packet();
-            packet.Create(buffer);
-            _server.Broadcast((byte)ChannelIDs.Unreliable, ref packet);
-        };
-        AddChild(timer);
-
-        var builder = WebApplication.CreateBuilder();
-        builder.Services.AddGrpc();
-        var app = builder.Build();
-        app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
-        app.MapGrpcService<GreeterService>();
-        app.RunAsync("https://" + Ip + ":" + GrpcPort);
     }
 
     public override void _ExitTree()
@@ -75,7 +31,7 @@ public partial class Server : Node3D
         
         _server.Dispose();
     }
-
+    
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
@@ -109,4 +65,32 @@ public partial class Server : Node3D
         
         _server.Flush();
     }
+
+    private void SendUnreliable(IMessage message)
+    {
+        var buffer = new byte[message.CalculateSize()];
+        message.WriteTo(buffer);
+
+        var packet = new Packet();
+        packet.Create(buffer);
+
+        _server.Broadcast((byte)ENetChannels.Unreliable, ref packet);
+    }
+
+    private void SendReliable(IMessage message)
+    {
+        var buffer = new byte[message.CalculateSize()];
+        message.WriteTo(buffer);
+
+        var packet = new Packet();
+        packet.Create(buffer, PacketFlags.Reliable);
+        
+        _server.Broadcast((byte)ENetChannels.Reliable, ref packet);
+    }
+}
+
+public enum ENetChannels : byte
+{
+    Unreliable = 0,
+    Reliable = 1,
 }

@@ -1,9 +1,0 @@
-﻿syntax = "proto3";
-
-option csharp_namespace = "Resources.ProtocolBuffers";
-
-message test {
-  double ex_double = 1;
-  bool this_thing = 2;
-  string great_minds_think_like_this = 3;
-}
