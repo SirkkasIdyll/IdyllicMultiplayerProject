@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://pimkdt5f1dyb"]
+
+[ext_resource type="Script" uid="uid://dnp5rk2sbnxyd" path="res://Client/Scenes/DebugDisplay.cs" id="1_7ndsf"]
+
+[node name="DebugDisplay" type="Control" unique_id=1585188777 node_paths=PackedStringArray("_fpsCounter", "_pingCounter", "_packetLossCounter")]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+grow_horizontal = 0
+script = ExtResource("1_7ndsf")
+_fpsCounter = NodePath("HBoxContainer/FPS_HBoxContainer/FPS-Counter_Label")
+_pingCounter = NodePath("HBoxContainer/Ping_HBoxContainer/Ping-Counter_Label")
+_packetLossCounter = NodePath("HBoxContainer/PacketLoss_HBoxContainer/PacketLoss-Counter_Label")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1815693675]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -202.0
+offset_bottom = 40.0
+grow_horizontal = 0
+theme_override_constants/separation = 30
+
+[node name="FPS_HBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=92648689]
+layout_mode = 2
+
+[node name="FPS-Title_Label" type="Label" parent="HBoxContainer/FPS_HBoxContainer" unique_id=114374434]
+unique_name_in_owner = true
+layout_mode = 2
+text = "FPS: "
+
+[node name="FPS-Counter_Label" type="Label" parent="HBoxContainer/FPS_HBoxContainer" unique_id=778755161]
+layout_mode = 2
+text = "123"
+
+[node name="Ping_HBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=1817590539]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Ping-Title_Label" type="Label" parent="HBoxContainer/Ping_HBoxContainer" unique_id=294152982]
+layout_mode = 2
+text = "Ping: "
+
+[node name="Ping-Counter_Label" type="Label" parent="HBoxContainer/Ping_HBoxContainer" unique_id=1627464217]
+layout_mode = 2
+text = "123"
+
+[node name="Ping-ms_Label" type="Label" parent="HBoxContainer/Ping_HBoxContainer" unique_id=591611969]
+layout_mode = 2
+text = "ms"
+
+[node name="PacketLoss_HBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=2111442247]
+layout_mode = 2
+
+[node name="PacketLoss-Title_Label" type="Label" parent="HBoxContainer/PacketLoss_HBoxContainer" unique_id=1421124503]
+layout_mode = 2
+text = "Packet Loss: "
+
+[node name="PacketLoss-Counter_Label" type="Label" parent="HBoxContainer/PacketLoss_HBoxContainer" unique_id=298823186]
+layout_mode = 2
+text = "123%"

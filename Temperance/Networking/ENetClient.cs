@@ -59,7 +59,31 @@ public partial class ENetClient : Node
         
         _client.Flush();
     }
+    
+    /// <summary>
+    /// Returns percent of packets lost compared to packets sent
+    /// </summary>
+    /// <returns>Also returns 0 if not connected</returns>
+    public ulong GetPacketLoss()
+    {
+        if (_peer != null && _peer.Value.PacketsSent != 0)
+            return _peer.Value.PacketsLost / _peer.Value.PacketsSent;
+        
+        return 0;
+    }
+    
+    /// <summary>
+    /// Returns last-known round trip time if connected to server
+    /// </summary>
+    /// <returns>0 if not connected</returns>
+    public uint GetPing()
+    {
+        return _peer?.LastRoundTripTime ?? 0;
+    }
 
+    /// <summary>
+    /// Check if ENet client is connected to server
+    /// </summary>
     public bool IsConnected()
     {
         return _peer?.State == PeerState.Connected;
