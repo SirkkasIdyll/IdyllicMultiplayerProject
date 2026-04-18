@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
 using Grpc.Net.Client;
-using Resources.ProtocolBuffers;
 using static Resources.ProtocolBuffers.Spawner;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
 public partial class GRpcClient : Node
 {
+    public static GRpcClient Instance { get; } = new();
+    
     private GrpcChannel? _grpcChannel;
     
     public override void _Ready()

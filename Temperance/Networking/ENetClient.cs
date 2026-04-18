@@ -5,6 +5,8 @@ namespace IdyllicMultiplayerProject.Temperance.Networking;
 
 public partial class ENetClient : Node
 {
+    public static ENetClient Instance { get; } = new();
+    
     private readonly Host _client = new();
     private Peer? _peer;
 
@@ -13,12 +15,6 @@ public partial class ENetClient : Node
         base._Ready();
 
         _client.Create();
-
-        var address = new Address();
-        address.Port = ENetServer.Port;
-        address.SetHost(ENetServer.Ip);
-
-        _peer = _client.Connect(address);
     }
 
     public override void _ExitTree()
@@ -32,6 +28,9 @@ public partial class ENetClient : Node
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
+
+        if (_peer == null)
+            return;
         
         if (_client.CheckEvents(out var netEvent) <= 0)
             if (_client.Service(0, out netEvent) <= 0)
@@ -42,7 +41,7 @@ public partial class ENetClient : Node
                 break;
 
             case EventType.Connect:
-                GD.Print("Client connected to server");
+                GD.Print("Client connected to server.");
                 break;
 
             case EventType.Disconnect:
@@ -59,5 +58,50 @@ public partial class ENetClient : Node
         }
         
         _client.Flush();
+    }
+
+    public bool IsConnected()
+    {
+        return _peer?.State == PeerState.Connected;
+    }
+
+    /// <summary>
+    /// Connects to a server if not connected
+    /// If already connected, disconnect from server
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="port"></param>
+    public void ToggleConnection(string host, ushort port)
+    {
+        if (_peer?.State == PeerState.Connected)
+        {
+            TryDisconnect();
+            return;
+        }
+        
+        TryConnect(host, port);
+    }
+
+    /// <summary>
+    /// Attempts to connect to a given hostname and port
+    /// Check <see cref="_peer"/> to see how the connection went
+    /// </summary>
+    /// <param name="host">Can be a host name or IP address</param>
+    /// <param name="port"></param>
+    private void TryConnect(string host, ushort port)
+    {
+        var address = new Address();
+        address.Port = port;
+        address.SetHost(host);
+
+        _peer = _client.Connect(address);
+    }
+
+    /// <summary>
+    /// Attempts to disconnect from a server after all queued outgoing packets have been sent
+    /// </summary>
+    private void TryDisconnect()
+    {
+        _peer?.DisconnectLater(0);
     }
 }

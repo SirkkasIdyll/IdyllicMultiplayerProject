@@ -52,7 +52,7 @@ public class ComponentManager
     }
 
     /// <summary>
-    /// Prevent memory leaks by purging resources, should be signalled when closing
+    /// Prevent memory leaks by purging resources, should be signaled when closing
     /// </summary>
     public void PurgeDictionary()
     {

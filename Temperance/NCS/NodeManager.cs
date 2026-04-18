@@ -14,6 +14,7 @@ public partial class NodeManager : Node
     public static NodeManager Instance { get; } = new();
     private Node? _rootScene;
     public readonly Dictionary<string, string> NodeDictionary = []; // second value is the scene_file_path for spawning
+    
 
     private NodeManager()
     {

@@ -1,12 +1,13 @@
 ﻿using ENet;
 using Godot;
 using Google.Protobuf;
-using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
 public partial class ENetServer : Node
 {
+    public static ENetServer Instance { get; } = new();
+    
     public const string Ip = "127.0.0.1";
     public const ushort Port = 3802;
     private const ushort MaxDuplicatePeers = 0;
