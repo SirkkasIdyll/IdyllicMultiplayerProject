@@ -28,7 +28,6 @@
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Client\Scenes\" />
-        <Folder Include="Client\Systems\" />
         <Folder Include="Resources\Assets\" />
         <Folder Include="Server\Scenes\" />
         <Folder Include="Server\Systems\" />

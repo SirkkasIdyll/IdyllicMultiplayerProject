@@ -6,6 +6,14 @@ namespace IdyllicMultiplayerProject;
 
 public partial class TheWorldOverHeavenScene : Node3D
 {
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		base._UnhandledInput(@event);
+		
+		if (@event.IsActionPressed("ui_cancel"))
+			AddChild(GD.Load<PackedScene>("res://Client/Scenes/ConnectToServerScene.tscn").Instantiate());
+	}
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _EnterTree()
 	{
@@ -32,9 +40,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 			AddChild(GRpcClient.Instance);
 			ENetServer.Instance.Free();
 			GRpcServer.Instance.Free();
-			AddChild(GD.Load<PackedScene>("res://Client/Scenes/ConnectToServerScene.tscn").Instantiate());
 		}
-		
 	}
 
 	public override void _ExitTree()
