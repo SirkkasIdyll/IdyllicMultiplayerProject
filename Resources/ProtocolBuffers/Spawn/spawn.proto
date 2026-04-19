@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-option csharp_namespace = "Resources.ProtocolBuffers";
+option csharp_namespace = "Resources.ProtocolBuffers.Spawn";
 
 service Spawner {
   rpc SpawnStream (stream SpawnInfoRequest) returns (stream SpawnInfoReply);

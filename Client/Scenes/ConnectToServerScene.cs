@@ -1,5 +1,4 @@
 using Godot;
-using System;
 using IdyllicMultiplayerProject.Temperance.Networking;
 
 namespace IdyllicMultiplayerProject.Client.Scenes;

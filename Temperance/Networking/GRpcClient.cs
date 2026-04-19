@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
 using Grpc.Net.Client;
-using static Resources.ProtocolBuffers.Spawner;
+using static Resources.ProtocolBuffers.Spawn.Spawner;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -47,7 +47,7 @@ public partial class GRpcClient : Node
                 GD.Print("ID: " + response.NodeNetworkId + " - Name: " + response.NodeName);
             }
         });
-
+    
         await readTask;
     }
 }

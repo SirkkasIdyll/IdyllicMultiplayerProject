@@ -1,6 +1,6 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "Resources.ProtocolBuffers";
+option csharp_namespace = "Resources.ProtocolBuffers.ENet";
 
 message ConnectionVerificationRequest {
   string guid = 1;

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using Godot;
-using IdyllicMultiplayerProject.Resources.ProtocolBuffers;
+using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +19,23 @@ public partial class GRpcServer : Node
     {
         base._Ready();
 
+        _app = ConfigureWebApplication();
+        MapServices(ref _app);
+        _app.RunAsync("https://" + Ip + ":" + Port);
+    }
+    
+    public override void _ExitTree()
+    {
+        base._ExitTree();
+
+        _ = _app?.DisposeAsync().AsTask();
+    }
+
+    /// <summary>
+    /// Required configurations to keep the connection with clients alive even during periods with no messages
+    /// </summary>
+    private WebApplication ConfigureWebApplication()
+    {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddGrpc();
         builder.WebHost.ConfigureKestrel(options =>
@@ -28,19 +44,15 @@ public partial class GRpcServer : Node
             options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
         });
         
-        var app = builder.Build();
-        app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
-        app.MapGrpcService<SpawnerService>();
-        // app.MapGrpcService<GreeterService>();
-        
-        app.RunAsync("https://" + Ip + ":" + Port);
-        _app = app;
+        return builder.Build();
     }
-
-    public override void _ExitTree()
+    
+    /// <summary>
+    /// Servces mapped here are enabled to communicate over the web app
+    /// </summary>
+    private void MapServices(ref WebApplication app)
     {
-        base._ExitTree();
-
-        _app?.DisposeAsync();
+        app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
+        app.MapGrpcService<SpawnService>();
     }
 }

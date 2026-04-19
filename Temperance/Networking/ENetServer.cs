@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using ENet;
 using Godot;
 using Google.Protobuf;
-using Resources.ProtocolBuffers;
+using Resources.ProtocolBuffers.ENet;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -107,7 +107,7 @@ public partial class ENetServer : Node
                 netEvent.Peer.DisconnectNow(0);
                 return;
             }
-
+            
             // Check if they're trying to verify themselves with a guid that belongs to another peer
             if (_verifiedPeers.ContainsValue(guid))
             {
@@ -115,7 +115,7 @@ public partial class ENetServer : Node
                 netEvent.Peer.DisconnectNow(0);
                 return;
             }
-
+            
             // Not really sure if I want to disconnect just the weird actor, or potentially both people in this case
             if (!_verifiedPeers.TryAdd(netEvent.Peer, guid) && _verifiedPeers[netEvent.Peer] != guid)
             {

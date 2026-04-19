@@ -2,7 +2,7 @@
 using ENet;
 using Godot;
 using Google.Protobuf;
-using Resources.ProtocolBuffers;
+using Resources.ProtocolBuffers.ENet;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 

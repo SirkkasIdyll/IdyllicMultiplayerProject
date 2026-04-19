@@ -2,12 +2,12 @@
 using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
-using Resources.ProtocolBuffers;
-using static Resources.ProtocolBuffers.Spawner;
+using Resources.ProtocolBuffers.Spawn;
+using static Resources.ProtocolBuffers.Spawn.Spawner;
 
-namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers;
+namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
-public class SpawnerService : SpawnerBase
+public class SpawnService : SpawnerBase
 {
     public override async Task SpawnStream(IAsyncStreamReader<SpawnInfoRequest> requestStream,
         IServerStreamWriter<SpawnInfoReply> responseStream, ServerCallContext context)
