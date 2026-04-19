@@ -11,7 +11,7 @@ namespace IdyllicMultiplayerProject.Temperance.Networking;
 public partial class GRpcClient : Node
 {
     public static GRpcClient Instance { get; } = new();
-    
+
     private GrpcChannel? _grpcChannel;
     
     public override void _Ready()

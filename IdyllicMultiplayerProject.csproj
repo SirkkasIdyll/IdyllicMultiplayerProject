@@ -38,6 +38,7 @@
         <Protobuf Include="Resources\ProtocolBuffers\godot_types.proto" />
         <Protobuf Include="Resources\ProtocolBuffers\movement_component.proto" />
         <Protobuf Include="Resources\ProtocolBuffers\spawn.proto" />
+        <Protobuf Include="Resources\ProtocolBuffers\enet.proto" />
         <Content Include="Testament\.runsettings" />
     </ItemGroup>
 </Project>

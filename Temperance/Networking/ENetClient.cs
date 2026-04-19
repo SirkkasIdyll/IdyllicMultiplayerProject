@@ -1,5 +1,8 @@
-﻿using ENet;
+﻿using System;
+using ENet;
 using Godot;
+using Google.Protobuf;
+using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -7,6 +10,7 @@ public partial class ENetClient : Node
 {
     public static ENetClient Instance { get; } = new();
     
+    private Guid _enetGuid = Guid.CreateVersion7();
     private readonly Host _client = new();
     private Peer? _peer;
 
@@ -41,7 +45,8 @@ public partial class ENetClient : Node
                 break;
 
             case EventType.Connect:
-                GD.Print("Client connected to server.");
+                GD.Print("Client connected to server. " + _enetGuid);
+                SendReliable(ENetChannels.Connections, new SendClientGuid { Guid = _enetGuid.ToString() });
                 break;
 
             case EventType.Disconnect:
@@ -105,6 +110,28 @@ public partial class ENetClient : Node
         
         TryConnect(host, port);
     }
+    
+    private void SendUnreliable(ENetChannels channel, IMessage message)
+    {
+        var buffer = new byte[message.CalculateSize()];
+        message.WriteTo(buffer);
+
+        var packet = new Packet();
+        packet.Create(buffer);
+
+        GD.Print(_peer?.Send((byte)channel, ref packet));
+    }
+
+    private void SendReliable(ENetChannels channel, IMessage message)
+    {
+        var buffer = new byte[message.CalculateSize()];
+        message.WriteTo(buffer);
+
+        var packet = new Packet();
+        packet.Create(buffer, PacketFlags.Reliable);
+        
+        GD.Print(_peer?.Send((byte)channel, ref packet));
+    }
 
     /// <summary>
     /// Attempts to connect to a given hostname and port
@@ -118,7 +145,7 @@ public partial class ENetClient : Node
         address.Port = port;
         address.SetHost(host);
 
-        _peer = _client.Connect(address);
+        _peer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
     }
 
     /// <summary>

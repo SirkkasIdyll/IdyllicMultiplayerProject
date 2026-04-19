@@ -1,6 +1,9 @@
-﻿using ENet;
+﻿using System;
+using System.Collections.Generic;
+using ENet;
 using Godot;
 using Google.Protobuf;
+using Resources.ProtocolBuffers;
 
 namespace IdyllicMultiplayerProject.Temperance.Networking;
 
@@ -12,6 +15,7 @@ public partial class ENetServer : Node
     public const ushort Port = 3802;
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
+    private Dictionary<Peer, Guid> _peers = new();
     
     public override void _Ready()
     {
@@ -22,6 +26,7 @@ public partial class ENetServer : Node
         address.Port = Port;
         _server.Create(address, 2);
         
+        _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
         if (MaxDuplicatePeers > 0)
             _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
     }
@@ -40,6 +45,31 @@ public partial class ENetServer : Node
         if (_server.CheckEvents(out var netEvent) <= 0)
             if (_server.Service(0, out netEvent) <= 0)
                 return;
+
+        if (netEvent.Type == EventType.Receive && netEvent.ChannelID == (byte)ENetChannels.Connections)
+        {
+            var buffer = new byte[netEvent.Packet.Length];
+            netEvent.Packet.CopyTo(buffer);
+            var message = SendClientGuid.Parser.ParseFrom(buffer);
+            var guid = Guid.Parse(message.Guid);
+
+            if (_peers.ContainsValue(guid))
+            {
+                GD.Print("Connection attempt failed, peer with that guid already exists. Disconnecting.");
+                netEvent.Peer.DisconnectNow(0);
+            }
+            else
+            {
+                GD.Print("Registered peer id: " + netEvent.Peer.ID + ", Guid: " + message.Guid);
+                _peers[netEvent.Peer] = guid;
+            }
+        }
+
+        if (netEvent.Type == EventType.Disconnect)
+        {
+            GD.Print("Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _peers[netEvent.Peer]);
+            _peers.Remove(netEvent.Peer);
+        }
 
         switch (netEvent.Type) {
             case EventType.None:
@@ -67,7 +97,7 @@ public partial class ENetServer : Node
         _server.Flush();
     }
 
-    private void SendUnreliable(IMessage message)
+    private void BroadcastUnreliable(ENetChannels channel, IMessage message)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);
@@ -75,10 +105,10 @@ public partial class ENetServer : Node
         var packet = new Packet();
         packet.Create(buffer);
 
-        _server.Broadcast((byte)ENetChannels.Unreliable, ref packet);
+        _server.Broadcast((byte)channel, ref packet);
     }
 
-    private void SendReliable(IMessage message)
+    private void BroadcastReliable(ENetChannels channel, IMessage message)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);
@@ -86,12 +116,11 @@ public partial class ENetServer : Node
         var packet = new Packet();
         packet.Create(buffer, PacketFlags.Reliable);
         
-        _server.Broadcast((byte)ENetChannels.Reliable, ref packet);
+        _server.Broadcast((byte)channel, ref packet);
     }
 }
 
 public enum ENetChannels : byte
 {
-    Unreliable = 0,
-    Reliable = 1,
+    Connections = 0, // Used for notifying ENetServer of connections
 }
