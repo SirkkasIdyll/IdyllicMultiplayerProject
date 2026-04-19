@@ -10,7 +10,7 @@ public partial class ENetClient : Node
 {
     public static ENetClient Instance { get; } = new();
     
-    private readonly Guid _enetGuid = Guid.CreateVersion7();
+    private Guid _enetGuid = Guid.CreateVersion7();
     private readonly Host _client = new();
     private Peer? _peer;
 
@@ -166,6 +166,7 @@ public partial class ENetClient : Node
         address.Port = port;
         address.SetHost(host);
 
+        // TODO: Does not gracefully handle rejections when SetMaxDuplicatePeers is 1/hit
         _peer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
     }
 
