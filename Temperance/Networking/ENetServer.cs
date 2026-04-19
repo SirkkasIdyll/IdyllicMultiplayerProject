@@ -45,13 +45,7 @@ public partial class ENetServer : Node
         if (_server.CheckEvents(out var netEvent) <= 0)
             if (_server.Service(0, out netEvent) <= 0)
                 return;
-
-        if (netEvent.Type == EventType.Disconnect)
-        {
-            GD.Print("Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _verifiedPeers[netEvent.Peer]);
-            _verifiedPeers.Remove(netEvent.Peer);
-        }
-
+        
         switch (netEvent.Type) {
             case EventType.None:
                 GD.Print("Doing nothing");
@@ -85,8 +79,8 @@ public partial class ENetServer : Node
 
     private void OnPeerDisconnected(Event netEvent)
     {
-        GD.Print("Client disconnected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
-
+        GD.Print("Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _verifiedPeers[netEvent.Peer]);
+        _verifiedPeers.Remove(netEvent.Peer);
     }
 
     private void OnPeerTimeout(Event netEvent)
