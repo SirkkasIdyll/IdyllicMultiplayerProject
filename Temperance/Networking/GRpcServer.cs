@@ -13,7 +13,7 @@ public partial class GRpcServer : Node
     public static GRpcServer Instance { get; } = new();
     
     public const string Ip = "127.0.0.1";
-    public const ushort Port = 3803;
+    public const ushort Port = 3802;
     private WebApplication? _app;
     
     public override void _Ready()
