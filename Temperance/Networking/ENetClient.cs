@@ -10,7 +10,7 @@ public partial class ENetClient : Node
 {
     public static ENetClient Instance { get; } = new();
     
-    private Guid _enetGuid = Guid.CreateVersion7();
+    private readonly Guid _enetGuid = Guid.CreateVersion7();
     private readonly Host _client = new();
     private Peer? _peer;
 
@@ -39,32 +39,58 @@ public partial class ENetClient : Node
         if (_client.CheckEvents(out var netEvent) <= 0)
             if (_client.Service(0, out netEvent) <= 0)
                 return;
+        
 
         switch (netEvent.Type) {
             case EventType.None:
                 break;
-
+        
             case EventType.Connect:
-                GD.Print("Client connected to server. " + _enetGuid);
-                SendReliable(ENetChannels.Connections, new SendClientGuid { Guid = _enetGuid.ToString() });
+                OnPeerConnected(netEvent);
                 break;
-
+        
             case EventType.Disconnect:
-                GD.Print("Client disconnected from server");
+                OnPeerDisconnected(netEvent);
                 break;
-
+        
             case EventType.Timeout:
-                GD.Print("Client connection timeout");
+                OnPeerTimeout(netEvent);
                 break;
-
+        
             case EventType.Receive:
-                GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+                OnPeerReceivedPacket(netEvent);
                 break;
         }
         
         _client.Flush();
     }
     
+    private void OnPeerConnected(Event netEvent)
+    {
+        GD.Print("Client connected to server. " + _enetGuid);
+        
+        // Send connection verification so that other packets sent
+        // do not get rejected causing an immediate disconnection
+        var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = _enetGuid.ToString() };
+        Send(ENetChannels.ConnectionVerification, connectionVerificationRequest, PacketFlags.Reliable);
+    }
+
+    private void OnPeerDisconnected(Event netEvent)
+    {
+        GD.Print("Client disconnected from server");
+    }
+
+    private void OnPeerTimeout(Event netEvent)
+    {
+        GD.Print("Client connection timeout");
+    }
+
+    private void OnPeerReceivedPacket(Event netEvent)
+    {
+        GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " +
+                 netEvent.Packet.Length);
+    }
+
     /// <summary>
     /// Returns percent of packets lost compared to packets sent
     /// </summary>
@@ -110,27 +136,22 @@ public partial class ENetClient : Node
         
         TryConnect(host, port);
     }
-    
-    private void SendUnreliable(ENetChannels channel, IMessage message)
+
+    /// <summary>
+    /// Send a message to the server on this channel
+    /// </summary>
+    /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
+    /// <param name="message">A protobuf message</param>
+    /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
+    private void Send(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);
 
         var packet = new Packet();
-        packet.Create(buffer);
+        packet.Create(buffer, flag);
 
-        GD.Print(_peer?.Send((byte)channel, ref packet));
-    }
-
-    private void SendReliable(ENetChannels channel, IMessage message)
-    {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
-        var packet = new Packet();
-        packet.Create(buffer, PacketFlags.Reliable);
-        
-        GD.Print(_peer?.Send((byte)channel, ref packet));
+        _peer?.Send((byte)channel, ref packet);
     }
 
     /// <summary>

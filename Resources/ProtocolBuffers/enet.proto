@@ -2,6 +2,6 @@
 
 option csharp_namespace = "Resources.ProtocolBuffers";
 
-message SendClientGuid {
+message ConnectionVerificationRequest {
   string guid = 1;
 }
