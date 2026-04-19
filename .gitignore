@@ -5,3 +5,5 @@
 .editorconfig
 .runsettings
 *.DotSettings.user
+/Exports
+/gdunit4_testadapter_v5

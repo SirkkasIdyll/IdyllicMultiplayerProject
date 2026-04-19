@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://fj3iktcijxnc"]
+
+[ext_resource type="Script" uid="uid://drsd5h36gf4gh" path="res://Client/Scenes/ConnectToServerScene.cs" id="1_5ew31"]
+
+[node name="ConnectToServerScene" type="Control" unique_id=711225557 node_paths=PackedStringArray("_connectButton", "_closeButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5ew31")
+_connectButton = NodePath("HBoxContainer/ConnectButton")
+_closeButton = NodePath("HBoxContainer/CloseButton")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=745312851]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/separation = 30
+
+[node name="ConnectButton" type="Button" parent="HBoxContainer" unique_id=644500874]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Connect/Disconnect"
+
+[node name="CloseButton" type="Button" parent="HBoxContainer" unique_id=1697999529]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close Menu"

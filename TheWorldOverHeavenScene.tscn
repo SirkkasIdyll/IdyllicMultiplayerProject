@@ -1,9 +1,6 @@
 [gd_scene format=3 uid="uid://dv0vo145uw016"]
 
 [ext_resource type="Script" uid="uid://bc026urhtvldy" path="res://TheWorldOverHeavenScene.cs" id="1_kpuni"]
-[ext_resource type="PackedScene" uid="uid://kiwc8xqj1qwh" path="res://Shared/Scenes/TheWorldScene.tscn" id="1_qxx8i"]
 
 [node name="TheWorldOverHeaven" type="Node3D" unique_id=1242228496]
 script = ExtResource("1_kpuni")
-
-[node name="TheWorld" parent="." unique_id=1699927496 instance=ExtResource("1_qxx8i")]

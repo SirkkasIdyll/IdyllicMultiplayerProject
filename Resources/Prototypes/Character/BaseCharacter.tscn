@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://b68vvdud6xpcr"]
+
+[ext_resource type="PackedScene" uid="uid://cy8hp3r3mtwir" path="res://Resources/Prototypes/BaseNode.tscn" id="1_x8bxt"]
+[ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_yr3uu"]
+[ext_resource type="Script" uid="uid://bmq3pauk0ua5j" path="res://Shared/Systems/Camera/CameraComponent.cs" id="3_4ctj6"]
+
+[node name="BaseCharacter" unique_id=242226116 instance=ExtResource("1_x8bxt")]
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." index="0" unique_id=239107965]
+
+[node name="MovementComponent" type="Node3D" parent="." index="1" unique_id=135463704]
+script = ExtResource("2_yr3uu")
+metadata/_custom_type_script = "uid://b8mmgwirc3x7b"
+
+[node name="CameraComponent" type="Node3D" parent="." index="2" unique_id=365384217]
+script = ExtResource("3_4ctj6")
+metadata/_custom_type_script = "uid://bmq3pauk0ua5j"
