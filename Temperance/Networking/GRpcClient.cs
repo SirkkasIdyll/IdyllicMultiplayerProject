@@ -21,11 +21,23 @@ public partial class GRpcClient : Node
         _grpcChannel?.Dispose();
     }
 
+    public void ToggleConnection(string host, ushort port)
+    {
+        if (_grpcChannel?.State == ConnectivityState.Ready)
+        {
+            _grpcChannel?.ShutdownAsync();
+            _grpcChannel = null;
+            return;
+        }
+        
+        ConfigureGrpcChannel(host, port);
+    }
+
     /// <summary>
     /// Required configurations to keep the connection with the server alive during periods without messages
     /// </summary>
     /// <returns></returns>
-    public void ConfigureGrpcChannel(string host, ushort port)
+    private void ConfigureGrpcChannel(string host, ushort port)
     {
         var handler = new SocketsHttpHandler
         {

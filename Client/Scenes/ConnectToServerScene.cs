@@ -14,7 +14,7 @@ public partial class ConnectToServerScene : Control
 		_connectButton?.Pressed += () =>
 		{
 			ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
-			GRpcClient.Instance.ConfigureGrpcChannel(GRpcServer.Ip, GRpcServer.Port);
+			GRpcClient.Instance.ToggleConnection(GRpcServer.Ip, GRpcServer.Port);
 		};
 		_closeButton?.Pressed += QueueFree;
 	}
