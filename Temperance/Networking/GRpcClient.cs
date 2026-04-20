@@ -14,21 +14,6 @@ public partial class GRpcClient : Node
 
     private GrpcChannel? _grpcChannel;
     
-    public override void _Ready()
-    {
-        base._Ready();
-
-        var handler = new SocketsHttpHandler
-        {
-            KeepAlivePingDelay = TimeSpan.FromMinutes(1),
-            KeepAlivePingTimeout = TimeSpan.FromMinutes(1)
-        };
-        
-        var grpcChannelOptions = new GrpcChannelOptions() { HttpHandler =  handler };
-        _grpcChannel = GrpcChannel.ForAddress("https://" + GRpcServer.Ip + ":" + GRpcServer.Port, grpcChannelOptions);
-        _ = SetupSpawner(new SpawnerClient(_grpcChannel));
-    }
-
     public override void _ExitTree()
     {
         base._ExitTree();
@@ -36,9 +21,32 @@ public partial class GRpcClient : Node
         _grpcChannel?.Dispose();
     }
 
-    private async Task SetupSpawner(SpawnerClient client)
+    /// <summary>
+    /// Required configurations to keep the connection with the server alive during periods without messages
+    /// </summary>
+    /// <returns></returns>
+    public void ConfigureGrpcChannel(string host, ushort port)
     {
-        using var stream = client.SpawnStream();
+        var handler = new SocketsHttpHandler
+        {
+            KeepAlivePingDelay = TimeSpan.FromMinutes(1),
+            KeepAlivePingTimeout = TimeSpan.FromMinutes(1)
+        };
+        
+        _grpcChannel = GrpcChannel.ForAddress("https://" + host + ":" + port, new GrpcChannelOptions()
+        {
+            HttpHandler =  handler
+        });
+        
+        var headers = new Metadata();
+        headers.Add("Authorization", $"{ENetClient.Instance.EnetGuid}");
+        _ = SetupSpawner(new SpawnerClient(_grpcChannel), headers);
+    }
+
+    private async Task SetupSpawner(SpawnerClient client, Metadata headers)
+    {
+        using var stream = client.SpawnStream(headers);
+        
         // Infinitely going read task, I think?
         var readTask = Task.Run(async () =>
         {
@@ -47,6 +55,11 @@ public partial class GRpcClient : Node
                 GD.Print("ID: " + response.NodeNetworkId + " - Name: " + response.NodeName);
             }
         });
+
+        // while (!readTask.IsCompleted)
+        // {
+        //     
+        // }
     
         await readTask;
     }

@@ -12,6 +12,7 @@ public class SpawnService : SpawnerBase
     public override async Task SpawnStream(IAsyncStreamReader<SpawnInfoRequest> requestStream,
         IServerStreamWriter<SpawnInfoReply> responseStream, ServerCallContext context)
     {
+        GD.Print(context.RequestHeaders.Get("Authorization"));
         var physicsTickLength = (long)1 / Engine.GetPhysicsTicksPerSecond();
         
         var i = 60;

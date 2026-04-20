@@ -1,6 +1,6 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "Resources.ProtocolBuffers";
+option csharp_namespace = "Resources.ProtocolBuffers.Movement";
 
 import "Resources/ProtocolBuffers/Godot/godot_types.proto";
 

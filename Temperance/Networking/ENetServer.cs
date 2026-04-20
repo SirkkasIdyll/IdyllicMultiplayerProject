@@ -74,24 +74,24 @@ public partial class ENetServer : Node
     
     private void OnPeerConnected(Event netEvent)
     {
-        GD.Print("Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+        GD.Print("ENet Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
     }
 
     private void OnPeerDisconnected(Event netEvent)
     {
-        GD.Print("Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _verifiedPeers[netEvent.Peer]);
+        GD.Print("ENet Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _verifiedPeers[netEvent.Peer]);
         _verifiedPeers.Remove(netEvent.Peer);
     }
 
     private void OnPeerTimeout(Event netEvent)
     {
-        GD.Print("Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+        GD.Print("ENet Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
 
     }
 
     private void OnPeerReceivedPacket(Event netEvent)
     {
-        GD.Print("Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+        GD.Print("ENet Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
         var buffer = new byte[netEvent.Packet.Length];
         
         // For connection verifications, we don't want to pre-check if the peer is verified
@@ -103,7 +103,7 @@ public partial class ENetServer : Node
             // Check for a valid guid
             if (!Guid.TryParse(clientGuidMessage.Guid, out var guid))
             {
-                GD.Print("Peer id: " + netEvent.Peer.ID + " attempted to verify with invalid guid: " + guid + ". Disconnecting.");
+                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " attempted to verify with invalid guid: " + guid + ". Disconnecting.");
                 netEvent.Peer.DisconnectNow(0);
                 return;
             }
@@ -111,7 +111,7 @@ public partial class ENetServer : Node
             // Check if they're trying to verify themselves with a guid that belongs to another peer
             if (_verifiedPeers.ContainsValue(guid))
             {
-                GD.Print("Peer id: " + netEvent.Peer.ID + " attempted to connect with already verified guid: " + guid + ". Disconnecting.");
+                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " attempted to connect with already verified guid: " + guid + ". Disconnecting.");
                 netEvent.Peer.DisconnectNow(0);
                 return;
             }
@@ -119,12 +119,12 @@ public partial class ENetServer : Node
             // Not really sure if I want to disconnect just the weird actor, or potentially both people in this case
             if (!_verifiedPeers.TryAdd(netEvent.Peer, guid) && _verifiedPeers[netEvent.Peer] != guid)
             {
-                GD.Print("Peer id: " + netEvent.Peer.ID + " is already verified but attempting to connect with different guid. Disconnecting.");
+                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " is already verified but attempting to connect with different guid. Disconnecting.");
                 netEvent.Peer.DisconnectNow(0);
                 return;
             }
             
-            GD.Print("Registered peer id: " + netEvent.Peer.ID + ", Guid: " + guid);
+            GD.Print("ENet Registered peer id: " + netEvent.Peer.ID + ", Guid: " + guid);
             return;
         }
         

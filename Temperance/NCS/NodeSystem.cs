@@ -8,7 +8,7 @@ namespace IdyllicMultiplayerProject.Temperance.NCS;
 /// Added to the Godot scene tree by the <see cref="NodeSystemManager"/>
 /// NodeSystems implement specific logic and coordinate the application of signals to nodes
 /// </summary>
-public abstract partial class NodeSystem : Node3D
+public abstract partial class NodeSystem : Node
 {
     /// <summary>
     /// Set node name to the type that it is for easier retrieval in <see cref="NodeSystemManager"/>

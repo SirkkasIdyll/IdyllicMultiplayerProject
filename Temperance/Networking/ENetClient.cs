@@ -9,8 +9,8 @@ namespace IdyllicMultiplayerProject.Temperance.Networking;
 public partial class ENetClient : Node
 {
     public static ENetClient Instance { get; } = new();
-    
-    private Guid _enetGuid = Guid.CreateVersion7();
+
+    public Guid EnetGuid = Guid.CreateVersion7();
     private readonly Host _client = new();
     private Peer? _peer;
 
@@ -67,27 +67,27 @@ public partial class ENetClient : Node
     
     private void OnPeerConnected(Event netEvent)
     {
-        GD.Print("Client connected to server. " + _enetGuid);
+        GD.Print("ENet Client connected to server. " + EnetGuid);
         
         // Send connection verification so that other packets sent
         // do not get rejected causing an immediate disconnection
-        var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = _enetGuid.ToString() };
+        var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = EnetGuid.ToString() };
         Send(ENetChannels.ConnectionVerification, connectionVerificationRequest, PacketFlags.Reliable);
     }
 
     private void OnPeerDisconnected(Event netEvent)
     {
-        GD.Print("Client disconnected from server");
+        GD.Print("ENet Client disconnected from server");
     }
 
     private void OnPeerTimeout(Event netEvent)
     {
-        GD.Print("Client connection timeout");
+        GD.Print("ENet Client connection timeout");
     }
 
     private void OnPeerReceivedPacket(Event netEvent)
     {
-        GD.Print("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " +
+        GD.Print("ENet Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " +
                  netEvent.Packet.Length);
     }
 

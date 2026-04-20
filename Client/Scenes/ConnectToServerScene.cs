@@ -11,7 +11,11 @@ public partial class ConnectToServerScene : Control
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		_connectButton?.Pressed += () => ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
+		_connectButton?.Pressed += () =>
+		{
+			ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
+			GRpcClient.Instance.ConfigureGrpcChannel(GRpcServer.Ip, GRpcServer.Port);
+		};
 		_closeButton?.Pressed += QueueFree;
 	}
 }
