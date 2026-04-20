@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using Godot.Collections;
+using IdyllicMultiplayerProject.Temperance.Signals;
 
 namespace IdyllicMultiplayerProject.Temperance.NCS;
 

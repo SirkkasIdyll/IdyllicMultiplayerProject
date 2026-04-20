@@ -1,4 +1,4 @@
-﻿namespace IdyllicMultiplayerProject.Temperance;
+﻿namespace IdyllicMultiplayerProject.Temperance.Signals;
 
 /// <summary>
 /// Signals are what Godot calls messages, events that get triggered and can be subscribed to

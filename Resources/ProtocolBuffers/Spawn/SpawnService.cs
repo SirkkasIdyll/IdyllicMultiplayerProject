@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
+using IdyllicMultiplayerProject.Temperance.Networking;
 using Resources.ProtocolBuffers.Spawn;
 using static Resources.ProtocolBuffers.Spawn.Spawner;
 
@@ -12,7 +13,15 @@ public class SpawnService : SpawnerBase
     public override async Task SpawnStream(IAsyncStreamReader<SpawnInfoRequest> requestStream,
         IServerStreamWriter<SpawnInfoReply> responseStream, ServerCallContext context)
     {
-        GD.Print(context.RequestHeaders.Get("Authorization"));
+        if (context.RequestHeaders.Get("Authorization") == null)
+            return;
+
+        if (!Guid.TryParse(context.RequestHeaders.Get("Authorization")?.Value, out var guid))
+            return;
+        
+        if (!ENetServer.Instance.IsPeerVerified(guid))
+            return;
+        
         var physicsTickLength = (long)1 / Engine.GetPhysicsTicksPerSecond();
         
         var i = 60;

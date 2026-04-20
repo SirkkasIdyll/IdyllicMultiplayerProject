@@ -209,6 +209,14 @@ public partial class ENetServer : Node
         peer.DisconnectNow(0);
         return false;
     }
+
+    public bool IsPeerVerified(Guid guid)
+    {
+        if (_verifiedPeers.ContainsValue(guid))
+            return true;
+
+        return false;
+    }
 }
 
 public enum ENetChannels : byte

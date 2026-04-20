@@ -1,6 +1,6 @@
 ﻿using Godot;
-using IdyllicMultiplayerProject.Temperance;
 using IdyllicMultiplayerProject.Temperance.NCS;
+using IdyllicMultiplayerProject.Temperance.Signals;
 
 namespace IdyllicMultiplayerProject.Shared.Systems.Movement;
 
