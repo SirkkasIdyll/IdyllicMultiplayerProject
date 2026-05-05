@@ -59,27 +59,20 @@ public class TemperanceTest
     public void DuplicateNodePrototypeTest()
     {
         Dictionary<string, string> nodeDictionary = []; // second value is the scene_file_path for spawning
-        var files = new List<string>();
-        files.AddRange(ResourceLoader.ListDirectory("res://Resources/Prototypes"));
         
-        foreach (var file in files)
+        var prototypePaths = _nodeManager.RecursiveListDirectory("res://Resources/Prototypes");
+            
+        foreach (var prototypePath in prototypePaths)
         {
-            var fileName = file;
-            
-            // We only care about the last part of the file name
-            if (file.LastIndexOf('/') != -1)
-                fileName = file.Substring(0, file.LastIndexOf('/'));
-            
-            // No length means it's a directory
-            if (fileName.Length == 0)
-                continue;
-
             // If it's not a .tscn then I don't know what it is
-            if (!fileName.EndsWith(".tscn"))
+            if (!prototypePath.EndsWith(".tscn"))
                 continue;
 
-            var nodeName = fileName.Substring(0, file.LastIndexOf('.'));
-            AssertBool(nodeDictionary.TryAdd(nodeName, file)).AppendFailureMessage("Duplicate node " +
+            var nodeNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
+            var nodeName = nodeNameWithExtension.Substring(0, nodeNameWithExtension.LastIndexOf('.'));
+            GD.Print("Node name: " + nodeName);
+            
+            AssertBool(nodeDictionary.TryAdd(nodeName, prototypePath)).AppendFailureMessage("Duplicate node " +
                 "prototype with node name: \"" + nodeName + "\". Resolve the error by renaming the node.").IsTrue();
         }
     }

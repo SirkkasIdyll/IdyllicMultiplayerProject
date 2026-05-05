@@ -1,6 +1,6 @@
 using Godot;
 using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Networking;
+using IdyllicMultiplayerProject.Temperance.Network;
 
 namespace IdyllicMultiplayerProject;
 
@@ -19,7 +19,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 		// Add the required server or client instances depending on which we are
 		// so that they may initialize themselves upon entry to the SceneTree
 		// and delete the unused counterpart to prevent having an orphaned node
-		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
+		if (Networking.IsServer())
 		{
 			AddChild(ENetServer.Instance);
 			AddChild(GRpcServer.Instance);
