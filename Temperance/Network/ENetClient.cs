@@ -4,7 +4,7 @@ using Godot;
 using Google.Protobuf;
 using Resources.ProtocolBuffers.ENet;
 
-namespace IdyllicMultiplayerProject.Temperance.Networking;
+namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class ENetClient : Node
 {

@@ -6,7 +6,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using static Resources.ProtocolBuffers.Spawn.Spawner;
 
-namespace IdyllicMultiplayerProject.Temperance.Networking;
+namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class GRpcClient : Node
 {
@@ -65,13 +65,18 @@ public partial class GRpcClient : Node
             await foreach (var response in stream.ResponseStream.ReadAllAsync())
             {
                 GD.Print("ID: " + response.NodeNetworkId + " - Name: " + response.NodeName);
+                    
+                // Use NodeManager to spawn given nodes by name and assign them the network id
             }
         });
 
-        // while (!readTask.IsCompleted)
-        // {
-        //     
-        // }
+        var physicsTickLength = (long)1 / Engine.GetPhysicsTicksPerSecond();
+        while (!readTask.IsCompleted)
+        {
+            // Use NodeManager to get requested spawns to send to server
+            
+            await Task.Delay(TimeSpan.FromMilliseconds(physicsTickLength));
+        }
     
         await readTask;
     }

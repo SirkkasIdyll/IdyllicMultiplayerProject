@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using ENet;
 using Godot;
 using Google.Protobuf;
+using IdyllicMultiplayerProject.Temperance.Signals;
 using Resources.ProtocolBuffers.ENet;
 
-namespace IdyllicMultiplayerProject.Temperance.Networking;
+namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class ENetServer : Node
 {
@@ -15,7 +16,7 @@ public partial class ENetServer : Node
     public const ushort Port = 3802;
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
-    private Dictionary<Peer, Guid> _verifiedPeers = new();
+    private readonly Dictionary<Peer, Guid> _verifiedPeers = new();
     
     public override void _Ready()
     {
@@ -48,7 +49,6 @@ public partial class ENetServer : Node
         
         switch (netEvent.Type) {
             case EventType.None:
-                GD.Print("Doing nothing");
                 break;
 
             case EventType.Connect:
@@ -75,6 +75,7 @@ public partial class ENetServer : Node
     private void OnPeerConnected(Event netEvent)
     {
         GD.Print("ENet Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+        SignalBus.Instance.EmitPeerConnectedSignal(netEvent);
     }
 
     private void OnPeerDisconnected(Event netEvent)

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IdyllicMultiplayerProject.Temperance.Networking;
+namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class GRpcServer : Node
 {
