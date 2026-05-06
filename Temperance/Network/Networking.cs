@@ -5,6 +5,8 @@ namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public static class Networking
 {
+    public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond() * 1000;
+    
     public static bool IsServer()
     {
         if (OS.GetCmdlineUserArgs().Contains("--server"))
@@ -17,5 +19,11 @@ public static class Networking
             return true;
 
         return false;
+    }
+
+    public static void ConnectToServer()
+    {
+        ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
+        GRpcClient.Instance.ToggleConnection(GRpcServer.Ip, GRpcServer.Port);
     }
 }
