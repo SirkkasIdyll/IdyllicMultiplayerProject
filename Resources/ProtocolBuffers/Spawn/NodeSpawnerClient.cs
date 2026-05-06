@@ -8,14 +8,13 @@ using Resources.ProtocolBuffers.Spawn;
 
 namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
-public partial class NodeSpawnerClient : NodeSpawner.NodeSpawnerClient
+public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSpawnerClient(channel)
 {
-    public NodeSpawnerClient(ChannelBase channel) : base(channel) { }
-
     /// <summary>
     /// Bidirectional stream
-    /// Receive: Name of node to spawn and the network guid associated with it
-    /// Send: Network guids that the client doesn't have information on so it can spawn it and update it properly
+    /// 
+    /// Receives: Name of node to spawn and the network guid associated with it
+    /// Sends: Network guids that the client doesn't have information on so it can spawn it and update it properly
     /// </summary>
     public async Task Run(Metadata headers, CancellationToken cancellationToken)
     {
