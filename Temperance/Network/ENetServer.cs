@@ -231,14 +231,15 @@ public partial class ENetServer : Node
     public async Task<bool> IsPeerVerifiedAsync(Guid guid, CancellationToken cancellationToken, long timeout = 5)
     {
         long i = 0;
+        var retryTimeMs = 200;
 
-        while (i < timeout || !cancellationToken.IsCancellationRequested)
+        while (i < timeout * 1000 || !cancellationToken.IsCancellationRequested)
         {
             if (_verifiedPeers.ContainsValue(guid))
                 return true;
 
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-            i++;
+            await Task.Delay(TimeSpan.FromMilliseconds(retryTimeMs), cancellationToken);
+            i += retryTimeMs;
             GD.Print("Waiting for peer verification: " + i);
         }
 
