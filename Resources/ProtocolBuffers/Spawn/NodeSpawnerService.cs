@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Godot;
 using Grpc.Core;
 using IdyllicMultiplayerProject.Temperance.Network;
 using Resources.ProtocolBuffers.Spawn;
@@ -10,10 +10,10 @@ namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
 public partial class NodeSpawnerService : NodeSpawnerBase
 {
+    public Queue<string> spawnQueue = new();
+    
     public override async Task NodeSpawnStream(IAsyncStreamReader<RequestNodeSpawnInfo> requestStream, IServerStreamWriter<ReplyNodeSpawnInfo> responseStream, ServerCallContext context)
     {
-        GD.Print("hewoo");
-
         if (context.RequestHeaders.Get("Authorization") == null)
             return;
 
@@ -23,17 +23,21 @@ public partial class NodeSpawnerService : NodeSpawnerBase
         if (!await ENetServer.Instance.IsPeerVerifiedAsync(guid, context.CancellationToken, 20))
             return;
         
-        var i = 5;
+        spawnQueue.Enqueue("TheWorld");
         while (!context.CancellationToken.IsCancellationRequested)
         {
-            GD.Print("Sending node spawn info");
-            await responseStream.WriteAsync(new ReplyNodeSpawnInfo
+            if (spawnQueue.TryDequeue(out var nodeName))
             {
-                NodeNetworkGuid = Guid.CreateVersion7().ToString(),
-                NodeName = "Test Node"
-            });
-            await Task.Delay(TimeSpan.FromSeconds(i), context.CancellationToken);
-            i += 5;
+                var nodeNetworkGuid = Guid.CreateVersion7().ToString();
+                
+                await responseStream.WriteAsync(new ReplyNodeSpawnInfo
+                {
+                    NodeNetworkGuid = nodeNetworkGuid,
+                    NodeName = nodeName
+                });
+            }
+            
+            await Task.Delay(TimeSpan.FromMilliseconds(Networking.PhysicsTickLength), context.CancellationToken);
         } 
     }
 }

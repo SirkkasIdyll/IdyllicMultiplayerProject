@@ -2,6 +2,7 @@
 using ENet;
 using Godot;
 using Google.Protobuf;
+using IdyllicMultiplayerProject.Temperance.Signals;
 using Resources.ProtocolBuffers.ENet;
 
 namespace IdyllicMultiplayerProject.Temperance.Network;
@@ -78,6 +79,7 @@ public partial class ENetClient : Node
     private void OnPeerDisconnected(Event netEvent)
     {
         GD.Print("ENet Client disconnected from server");
+        SignalBus.Instance.EmitPeerDisconnectedSignal(netEvent);
     }
 
     private void OnPeerTimeout(Event netEvent)

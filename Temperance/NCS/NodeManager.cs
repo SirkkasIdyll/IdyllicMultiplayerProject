@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using ENet;
 using Godot;
 using IdyllicMultiplayerProject.Temperance.Network;
+using IdyllicMultiplayerProject.Temperance.Signals;
 
 namespace IdyllicMultiplayerProject.Temperance.NCS;
 
@@ -15,15 +17,52 @@ namespace IdyllicMultiplayerProject.Temperance.NCS;
 public partial class NodeManager : Node
 {
     public static NodeManager Instance { get; } = new();
-    private Node? _rootScene;
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
     public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
+    public readonly Queue<Tuple<string, string>> SpawnQueue = new(); // nodeName, networkGuid, gets dequeued in _Process()
 
     private NodeManager()
     {
         GetAllNodePrototypes();
     }
-    
+
+    public override void _Ready()
+    {
+        base._Ready();
+
+        SignalBus.Instance.PeerDisconnectedSignal += OnPeerDisconnected;
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+
+        while (SpawnQueue.Count > 0)
+        {
+            var tuple = SpawnQueue.Dequeue();
+            var nodeName = tuple.Item1;
+            var nodeNetworkGuid = Guid.Parse(tuple.Item2);
+            if (TrySpawnNode(nodeName, out var node3D))
+                NetGuidDictionary.TryAdd(nodeNetworkGuid, new NodeUpdateInfo(node3D));
+        }
+    }
+
+    private void OnPeerDisconnected(Event netEvent)
+    {
+        ClearNetGuidDictionary();
+    }
+
+    private void ClearNetGuidDictionary()
+    {
+        foreach (var (guid, nodeUpdateInfo) in NetGuidDictionary)
+        {
+            var node3D = nodeUpdateInfo.Node;
+            node3D.QueueFree();
+        }
+        
+        NetGuidDictionary.Clear();
+    }
+
     /// <summary>
     /// Grabs all non-base nodes and their scene_file_paths for the _nodeDictionary
     /// so that we can spawn nodes freely by their name. Nodes are grabbed from the
@@ -108,7 +147,7 @@ public partial class NodeManager : Node
             return false;
 
         node3D = GD.Load<PackedScene>(sceneFilePath).Instantiate<Node3D>();
-        _rootScene?.AddChild(node3D);
+        GetParent().AddChild(node3D);
         
         node3D.SetGlobalPosition(globalPosition);
         node3D.SetGlobalRotation(globalRotation);
@@ -119,23 +158,6 @@ public partial class NodeManager : Node
         
         return true;
     }
-    
-    /// <summary>
-    /// One of the rare instances we use a Godot dictionary,
-    /// because I absolutely HATE having to use Godot's <see cref="Variant"/>.
-    ///
-    /// Just have to assume the correct arguments are being passed.
-    /// </summary>
-    // public Node3D SpawnNode(Godot.Collections.Dictionary dictionary)
-    // {
-    //     var nodeName = dictionary["name"];
-    //     var node = GD.Load<PackedScene>(NodeDictionary[(string)nodeName]).Instantiate<Node3D>();
-    //
-    //     if (dictionary.TryGetValue("spawnPosition", out var spawnPosition))
-    //         node.GlobalPosition = (Vector3)spawnPosition;
-    //     
-    //     return node;
-    // }
 }
 
 public struct NodeUpdateInfo

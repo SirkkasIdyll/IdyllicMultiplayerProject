@@ -10,4 +10,11 @@ public partial class SignalBus
     {
         PeerConnectedSignal?.Invoke(netEvent);
     }
+
+    public delegate void PeerDisconnectedSignalHandler(Event netEvent);
+    public event PeerDisconnectedSignalHandler? PeerDisconnectedSignal;
+    public void EmitPeerDisconnectedSignal(Event netEvent)
+    {
+        PeerDisconnectedSignal?.Invoke(netEvent);
+    }
 }

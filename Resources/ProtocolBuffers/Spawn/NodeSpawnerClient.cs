@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
+using IdyllicMultiplayerProject.Temperance.NCS;
 using IdyllicMultiplayerProject.Temperance.Network;
 using Resources.ProtocolBuffers.Spawn;
 
@@ -10,6 +11,8 @@ namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
 public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSpawnerClient(channel)
 {
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    
     /// <summary>
     /// Bidirectional stream
     /// 
@@ -26,6 +29,7 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
             await foreach (var response in stream.ResponseStream.ReadAllAsync())
             {
                 GD.Print("ID: " + response.NodeNetworkGuid + " - Name: " + response.NodeName);
+                _nodeManager.SpawnQueue.Enqueue(new Tuple<string, string>(response.NodeName, response.NodeNetworkGuid));
             }
         });
 
