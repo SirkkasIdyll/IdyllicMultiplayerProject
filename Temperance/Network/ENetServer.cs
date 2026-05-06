@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using ENet;
 using Godot;
 using Google.Protobuf;
@@ -215,6 +217,30 @@ public partial class ENetServer : Node
     {
         if (_verifiedPeers.ContainsValue(guid))
             return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Waits for an amount of time until peer is verified
+    /// </summary>
+    /// <param name="guid">ENet Peer Guid</param>
+    /// <param name="cancellationToken"></param>
+    /// <param name="timeout">Time to wait in seconds before giving up</param>
+    /// <returns></returns>
+    public async Task<bool> IsPeerVerifiedAsync(Guid guid, CancellationToken cancellationToken, long timeout = 5)
+    {
+        long i = 0;
+
+        while (i < timeout || !cancellationToken.IsCancellationRequested)
+        {
+            if (_verifiedPeers.ContainsValue(guid))
+                return true;
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            i++;
+            GD.Print("Waiting for peer verification: " + i);
+        }
 
         return false;
     }

@@ -53,6 +53,6 @@ public partial class GRpcServer : Node
     private void MapServices(ref WebApplication app)
     {
         app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
-        app.MapGrpcService<SpawnService>();
+        app.MapGrpcService<NodeSpawnerService>();
     }
 }

@@ -15,3 +15,16 @@ message SpawnInfoReply {
   int32 node_network_id = 1;
   string node_name = 2;
 }
+
+service NodeSpawner {
+  rpc NodeSpawnStream (stream RequestNodeSpawnInfo) returns (stream ReplyNodeSpawnInfo);
+}
+
+message RequestNodeSpawnInfo {
+  string node_network_guid = 1;
+}
+
+message ReplyNodeSpawnInfo {
+  string node_network_guid = 1;
+  string node_name = 2;
+}

@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Godot;
+using IdyllicMultiplayerProject.Temperance.Network;
 
 namespace IdyllicMultiplayerProject.Temperance.NCS;
 
@@ -13,8 +16,8 @@ public partial class NodeManager : Node
 {
     public static NodeManager Instance { get; } = new();
     private Node? _rootScene;
-    public readonly Dictionary<string, string> NodeDictionary = []; // second value is the scene_file_path for spawning
-    
+    public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
+    public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
 
     private NodeManager()
     {
@@ -37,7 +40,7 @@ public partial class NodeManager : Node
             if (nodeName.StartsWith("Base", true, null))
                 continue;
             
-            NodeDictionary.TryAdd(nodeName, prototypePath);
+            NodeScenePathDictionary.TryAdd(nodeName, prototypePath);
         }
     }
 
@@ -47,7 +50,7 @@ public partial class NodeManager : Node
     /// <param name="directory"></param>
     /// <param name="extension"></param>
     /// <returns></returns>
-    private List<string> RecursiveListDirectory(string directory, string extension = ".tscn")
+    public List<string> RecursiveListDirectory(string directory, string extension = ".tscn")
     {
         var result = new List<string>();
         var listedDirectory = ResourceLoader.ListDirectory(directory);
@@ -68,6 +71,54 @@ public partial class NodeManager : Node
 
         return result;
     }
+
+    /// <summary>
+    /// Tries to spawn a node at default position, rotation, and scale then add it as a child of the root scene
+    /// </summary>
+    public bool TrySpawnNode(string nodeName, [NotNullWhen(true)] out Node3D? node3D)
+    {
+        return TrySpawnNode(nodeName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), out node3D);
+    }
+
+    /// <summary>
+    /// Tries to spawn a node at global position, default rotation, and scale then add it as a child of the root scene
+    /// </summary>
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, [NotNullWhen(true)] out Node3D? node3D)
+    {
+        return TrySpawnNode(nodeName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), out node3D);
+    }
+
+    /// <summary>
+    /// Tries to spawn a node at global position, global rotation, and default scale then add it as a child of the root scene
+    /// </summary>
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation,
+        [NotNullWhen(true)] out Node3D? node3D)
+    {
+        return TrySpawnNode(nodeName, globalPosition, globalRotation, new Vector3(1, 1, 1), out node3D);
+    }
+
+    /// <summary>
+    /// Tries to spawn a node at global position, global rotation, and global scale then add it as a child of the root scene
+    /// </summary>
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale,
+        [NotNullWhen(true)] out Node3D? node3D)
+    {
+        node3D = null;
+        if (!NodeScenePathDictionary.TryGetValue(nodeName, out var sceneFilePath))
+            return false;
+
+        node3D = GD.Load<PackedScene>(sceneFilePath).Instantiate<Node3D>();
+        _rootScene?.AddChild(node3D);
+        
+        node3D.SetGlobalPosition(globalPosition);
+        node3D.SetGlobalRotation(globalRotation);
+        node3D.GlobalScale(globalScale);
+        
+        if (Networking.IsServer())
+            NetGuidDictionary.Add(Guid.CreateVersion7(), new NodeUpdateInfo(node3D));
+        
+        return true;
+    }
     
     /// <summary>
     /// One of the rare instances we use a Godot dictionary,
@@ -85,4 +136,15 @@ public partial class NodeManager : Node
     //     
     //     return node;
     // }
+}
+
+public struct NodeUpdateInfo
+{
+    public readonly Node3D Node;
+    public uint LastUpdated;
+
+    public NodeUpdateInfo(Node3D node)
+    {
+        Node = node;
+    }
 }

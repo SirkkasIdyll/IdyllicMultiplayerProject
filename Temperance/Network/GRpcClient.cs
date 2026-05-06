@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Threading;
 using Godot;
 using Grpc.Core;
 using Grpc.Net.Client;
-using static Resources.ProtocolBuffers.Spawn.Spawner;
+using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
 namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class GRpcClient : Node
 {
     public static GRpcClient Instance { get; } = new();
-
+    
     private GrpcChannel? _grpcChannel;
+    private CancellationTokenSource? _cancellationTokenSource;
+
     
     public override void _ExitTree()
     {
@@ -21,12 +23,20 @@ public partial class GRpcClient : Node
         _grpcChannel?.Dispose();
     }
 
+    /// <summary>
+    /// Gets rid of the gRPC channel and triggers cancellation of all gRPC services
+    /// </summary>
     public void ToggleConnection(string host, ushort port)
     {
         if (_grpcChannel?.State == ConnectivityState.Ready)
         {
             _grpcChannel?.ShutdownAsync();
+            _grpcChannel?.Dispose();
             _grpcChannel = null;
+            
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
             return;
         }
         
@@ -45,39 +55,17 @@ public partial class GRpcClient : Node
             KeepAlivePingTimeout = TimeSpan.FromMinutes(1)
         };
         
+        _cancellationTokenSource = new CancellationTokenSource();
         _grpcChannel = GrpcChannel.ForAddress("https://" + host + ":" + port, new GrpcChannelOptions()
         {
             HttpHandler =  handler
         });
+
         
         var headers = new Metadata();
         headers.Add("Authorization", $"{ENetClient.Instance.EnetGuid}");
-        _ = SetupSpawner(new SpawnerClient(_grpcChannel), headers);
-    }
-
-    private async Task SetupSpawner(SpawnerClient client, Metadata headers)
-    {
-        using var stream = client.SpawnStream(headers);
         
-        // Infinitely going read task, I think?
-        var readTask = Task.Run(async () =>
-        {
-            await foreach (var response in stream.ResponseStream.ReadAllAsync())
-            {
-                GD.Print("ID: " + response.NodeNetworkId + " - Name: " + response.NodeName);
-                    
-                // Use NodeManager to spawn given nodes by name and assign them the network id
-            }
-        });
-
-        var physicsTickLength = (long)1 / Engine.GetPhysicsTicksPerSecond();
-        while (!readTask.IsCompleted)
-        {
-            // Use NodeManager to get requested spawns to send to server
-            
-            await Task.Delay(TimeSpan.FromMilliseconds(physicsTickLength));
-        }
-    
-        await readTask;
+        // Set up all relevant gRPC clients using authorization headers and cancellation tokens to end the clients
+        _ = new NodeSpawnerClient(_grpcChannel).Run(headers, _cancellationTokenSource.Token);
     }
 }
