@@ -9,6 +9,7 @@ namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class ENetClient : Node
 {
+    private readonly SignalBus _signalBus = SignalBus.Instance;
     public static ENetClient Instance { get; } = new();
 
     public Guid EnetGuid = Guid.CreateVersion7();
@@ -79,7 +80,7 @@ public partial class ENetClient : Node
     private void OnPeerDisconnected(Event netEvent)
     {
         GD.Print("ENet Client disconnected from server");
-        SignalBus.Instance.EmitPeerDisconnectedSignal(netEvent);
+        _signalBus.EmitPeerDisconnectedSignal(netEvent);
     }
 
     private void OnPeerTimeout(Event netEvent)

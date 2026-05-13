@@ -12,6 +12,7 @@ namespace IdyllicMultiplayerProject.Temperance.Network;
 
 public partial class ENetServer : Node
 {
+    private readonly SignalBus _signalBus = SignalBus.Instance;
     public static ENetServer Instance { get; } = new();
     
     public const string Ip = "127.0.0.1";
@@ -77,7 +78,7 @@ public partial class ENetServer : Node
     private void OnPeerConnected(Event netEvent)
     {
         GD.Print("ENet Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
-        SignalBus.Instance.EmitPeerConnectedSignal(netEvent);
+        _signalBus.EmitPeerConnectedSignal(netEvent);
     }
 
     private void OnPeerDisconnected(Event netEvent)

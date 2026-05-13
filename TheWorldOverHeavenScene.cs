@@ -35,6 +35,14 @@ public partial class TheWorldOverHeavenScene : Node3D
 		}
 	}
 
+	public override void _Ready()
+	{
+		base._Ready();
+		
+		if (Networking.IsServer())
+			NodeManager.Instance.TrySpawnNode("TheWorld", null, out _);
+	}
+
 	public override void _ExitTree()
 	{
 		base._ExitTree();

@@ -19,7 +19,8 @@ public partial class NodeManager : Node
     public static NodeManager Instance { get; } = new();
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
     public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
-    public readonly Queue<Tuple<string, string>> SpawnQueue = new(); // nodeName, networkGuid, gets dequeued in _Process()
+    private readonly SignalBus _signalBus = SignalBus.Instance;
+    private readonly Queue<Tuple<Guid, string>> _deferredQueue = new();
 
     private NodeManager()
     {
@@ -30,26 +31,33 @@ public partial class NodeManager : Node
     {
         base._Ready();
 
-        SignalBus.Instance.PeerDisconnectedSignal += OnPeerDisconnected;
+        _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
+        _signalBus.RequestSpawnNodeSignal += OnRequestSpawnNode;
     }
 
-    public override void _Process(double delta)
+    public override void _PhysicsProcess(double delta)
     {
-        base._Process(delta);
+        base._PhysicsProcess(delta);
 
-        while (SpawnQueue.Count > 0)
+        while (_deferredQueue.Count > 0)
         {
-            var tuple = SpawnQueue.Dequeue();
-            var nodeName = tuple.Item1;
-            var nodeNetworkGuid = Guid.Parse(tuple.Item2);
-            if (TrySpawnNode(nodeName, out var node3D))
-                NetGuidDictionary.TryAdd(nodeNetworkGuid, new NodeUpdateInfo(node3D));
+            var (netGuid, nodeName) = _deferredQueue.Dequeue();
+            TrySpawnNode(nodeName, netGuid, out _);
         }
     }
 
     private void OnPeerDisconnected(Event netEvent)
     {
         ClearNetGuidDictionary();
+    }
+
+    /// <summary>
+    /// Client has received a message from the server telling it to spawn a node
+    /// Defer the spawn to be handled in _process (async thread to main thraed)
+    /// </summary>
+    private void OnRequestSpawnNode(Guid netGuid, string nodeName)
+    {
+        _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName));
     }
 
     private void ClearNetGuidDictionary()
@@ -113,37 +121,49 @@ public partial class NodeManager : Node
 
     /// <summary>
     /// Tries to spawn a node at default position, rotation, and scale then add it as a child of the root scene
+    /// Leave the netGuid null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, [NotNullWhen(true)] out Node3D? node3D)
+    public bool TrySpawnNode(string nodeName, Guid? netGuid, [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), out node3D);
+        return TrySpawnNode(nodeName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), netGuid, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, default rotation, and scale then add it as a child of the root scene
+    /// Leave the netGuid null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, [NotNullWhen(true)] out Node3D? node3D)
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Guid? netGuid, [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), out node3D);
+        return TrySpawnNode(nodeName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), netGuid, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, global rotation, and default scale then add it as a child of the root scene
+    /// Leave the netGuid null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation,
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Guid? netGuid,
         [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, globalPosition, globalRotation, new Vector3(1, 1, 1), out node3D);
+        return TrySpawnNode(nodeName, globalPosition, globalRotation, new Vector3(1, 1, 1), netGuid, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, global rotation, and global scale then add it as a child of the root scene
+    /// Leave the netGuid null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale,
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale, Guid? netGuid,
         [NotNullWhen(true)] out Node3D? node3D)
     {
         node3D = null;
         if (!NodeScenePathDictionary.TryGetValue(nodeName, out var sceneFilePath))
+            return false;
+        
+        // Server can come up with its own guid, clients should have received the guid from the server
+        if (Networking.IsServer())
+            netGuid ??= Guid.CreateVersion7();
+
+        // If it doesn't have a network guid then it doesn't exist on the server 
+        if (netGuid == null)
             return false;
 
         node3D = GD.Load<PackedScene>(sceneFilePath).Instantiate<Node3D>();
@@ -153,8 +173,8 @@ public partial class NodeManager : Node
         node3D.SetGlobalRotation(globalRotation);
         node3D.GlobalScale(globalScale);
         
-        if (Networking.IsServer())
-            NetGuidDictionary.Add(Guid.CreateVersion7(), new NodeUpdateInfo(node3D));
+        NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D));
+        SignalBus.Instance.EmitNodeSpawnedSignal(netGuid.Value);
         
         return true;
     }
