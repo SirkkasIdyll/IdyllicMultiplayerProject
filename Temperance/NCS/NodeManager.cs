@@ -46,6 +46,9 @@ public partial class NodeManager : Node
         }
     }
 
+    /// <summary>
+    /// When disconnecting from the server, despawn everything
+    /// </summary>
     private void OnPeerDisconnected(Event netEvent)
     {
         ClearNetGuidDictionary();
@@ -60,6 +63,9 @@ public partial class NodeManager : Node
         _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName));
     }
 
+    /// <summary>
+    /// Despawn everything and clear out the network-tracked dictionary
+    /// </summary>
     private void ClearNetGuidDictionary()
     {
         foreach (var (guid, nodeUpdateInfo) in NetGuidDictionary)

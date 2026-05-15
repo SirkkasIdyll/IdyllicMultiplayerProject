@@ -11,12 +11,19 @@ using static Resources.ProtocolBuffers.Spawn.NodeSpawner;
 
 namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 
+/// <summary>
+/// Server-side gRPC service that is instantiated each time a new connection with a client is made
+/// </summary>
 public partial class NodeSpawnerService : NodeSpawnerBase
 {
     private readonly NodeManager _nodeManager = NodeManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
     private readonly Queue<Tuple<Guid, string>> _queue = new();
 
+    /// <summary>
+    /// When a node is spawned on the server,
+    /// queue it up to be communicated to clients
+    /// </summary>
     private void OnNodeSpawned(Guid nodeNetworkGuid)
     {
         if (!_nodeManager.NetGuidDictionary.TryGetValue(nodeNetworkGuid, out var nodeUpdateInfo))
