@@ -32,6 +32,11 @@ public partial class NodeSpawnerService : NodeSpawnerBase
         _queue.Enqueue(Tuple.Create(nodeNetworkGuid, nodeUpdateInfo.Node.Name.ToString()));
     }
     
+    /// <summary>
+    /// 1. Send the client everything they need to spawn to catch up to the server
+    /// 2. Listen for the client sending network GUIDs they need to spawn and tell them what to spawn
+    /// 3. Tell clients to spawn something when a node is spawned on the server
+    /// </summary>
     public override async Task NodeSpawnStream(IAsyncStreamReader<RequestNodeSpawnInfo> requestStream, IServerStreamWriter<ReplyNodeSpawnInfo> responseStream, ServerCallContext context)
     {
         if (context.RequestHeaders.Get("Authorization") == null)
@@ -45,7 +50,18 @@ public partial class NodeSpawnerService : NodeSpawnerBase
 
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
         
-        // Server tells client what to spawn based off of requested network GUID
+        // On first connection, server tells client to spawn everything available
+        foreach (var (netGuid, nodeUpdateInfo) in _nodeManager.NetGuidDictionary)
+        {
+            // Send client the information needed to spawn the node
+            await responseStream.WriteAsync(new ReplyNodeSpawnInfo
+            {
+                NodeNetworkGuid = netGuid.ToString(),
+                NodeName = nodeUpdateInfo.Node.Name.ToString()
+            });
+        }
+        
+        // Receive network GUIDs from clients, and tell them what to spawn based on the network GUID on the server
         var readTask = Task.Run(async () =>
         {
             // Receive client message
@@ -68,21 +84,11 @@ public partial class NodeSpawnerService : NodeSpawnerBase
             }
         });
         
-        // On first connection, server tells client to spawn everything available
-        foreach (var (netGuid, nodeUpdateInfo) in _nodeManager.NetGuidDictionary)
-        {
-            // Send client the information needed to spawn the node
-            await responseStream.WriteAsync(new ReplyNodeSpawnInfo
-            {
-                NodeNetworkGuid = netGuid.ToString(),
-                NodeName = nodeUpdateInfo.Node.Name.ToString()
-            });
-        }
-        
-        // Server tells client to spawn thing without the client asking for it
+        // When the Server tells client to spawn thing without the client asking for it
         while (!context.CancellationToken.IsCancellationRequested || !readTask.IsCompleted)
         {
-            if (_queue.TryDequeue(out var tuple))
+            // Loop through everything we need to spawn
+            while (_queue.TryDequeue(out var tuple))
             {
                 var nodeNetworkGuid = tuple.Item1;
                 var nodeName = tuple.Item2;
