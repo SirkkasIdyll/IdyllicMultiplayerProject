@@ -5,7 +5,8 @@ namespace IdyllicMultiplayerProject.Temperance.NCS;
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture
 ///
-/// Added to the Godot scene tree by the <see cref="NodeSystemManager"/>
+/// USE THE GLOBALCLASS ATTRIBUTE
+/// GLOBALCLASS ONLY ADDED TO THE GODOT SCENE TREE BY THE <see cref="NodeSystemManager"/>
 /// NodeSystems implement specific logic and coordinate the application of signals to nodes
 /// </summary>
 public abstract partial class NodeSystem : Node

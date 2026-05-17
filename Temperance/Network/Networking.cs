@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Godot;
 
 namespace IdyllicMultiplayerProject.Temperance.Network;
@@ -6,6 +7,7 @@ namespace IdyllicMultiplayerProject.Temperance.Network;
 public static class Networking
 {
     public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond() * 1000;
+    public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromMilliseconds(PhysicsTickLength);
     
     public static bool IsServer()
     {
