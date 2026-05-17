@@ -34,7 +34,7 @@ public partial class MetadataSystem : NodeSystem
         if (!_componentManager.TryGetComponent<MetadataComponent>(node, out var metadataComponent))
             return;
 
-        metadataComponent.ComponentDictionary.TryAdd(node.Comp.GetType().Name, node.Comp);
+        metadataComponent.ComponentDictionary.Remove(node.Comp.GetType().Name);
     }
     
     private void OnNodeSpawned(Guid netGuid)

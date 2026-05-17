@@ -186,8 +186,8 @@ public class ComponentManager
         if (component == null)
             return;
         
-        node.RemoveChild(component);
         _signalBus.EmitComponentRemovedSignal((node, component));
+        node.RemoveChild(component);
         component.QueueFree();
     }
 
