@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Godot;
 using IdyllicMultiplayerProject.Shared.Systems.Movement;
 using IdyllicMultiplayerProject.Temperance.NCS;
+using IdyllicMultiplayerProject.Temperance.Network;
 
 namespace IdyllicMultiplayerProject.Testament;
 
@@ -24,6 +25,11 @@ public class TemperanceTest
         {
             _nodeSystemManager.InitializeNodeSystems(_rootScene);
             _rootScene.AddChild(NodeManager.Instance);
+            
+            ENetClient.Instance.Free();
+            ENetServer.Instance.Free();
+            GRpcClient.Instance.Free();
+            GRpcServer.Instance.Free();
         };
         AddNode(_rootScene);
     }
