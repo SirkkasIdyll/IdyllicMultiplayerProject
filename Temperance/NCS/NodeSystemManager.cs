@@ -71,6 +71,9 @@ public partial class NodeSystemManager
 
                 if (field.FieldType.Name == ComponentManager.Instance.GetType().Name)
                     field.SetValue(nodeSystem, ComponentManager.Instance);
+                
+                if (field.FieldType.Name == NodeManager.Instance.GetType().Name)
+                    field.SetValue(nodeSystem, NodeManager.Instance);
 
                 if (field.FieldType.Name == GetType().Name)
                     field.SetValue(nodeSystem, this);

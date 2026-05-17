@@ -1,6 +1,8 @@
-[gd_scene format=3 uid="uid://kiwc8xqj1qwh"]
+[gd_scene format=3 uid="uid://dv154vjeex7qb"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_8moq5"]
+[ext_resource type="PackedScene" uid="uid://cy8hp3r3mtwir" path="res://Resources/Prototypes/BaseNode.tscn" id="1_ur7jy"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_cjf1y"]
 sky_top_color = Color(0.24178892, 0.47170812, 0.6425777, 1)
 sky_horizon_color = Color(0.6179619, 0.66581666, 0.69386196, 1)
 ground_bottom_color = Color(0.20651275, 0.16801262, 0.10932412, 1)
@@ -8,57 +10,57 @@ ground_horizon_color = Color(0.6179619, 0.66581666, 0.69386196, 1)
 energy_multiplier = 1.3
 
 [sub_resource type="Sky" id="Sky_cw62i"]
-sky_material = SubResource("ProceduralSkyMaterial_8moq5")
+sky_material = SubResource("ProceduralSkyMaterial_cjf1y")
 
-[sub_resource type="Environment" id="Environment_2pvs4"]
+[sub_resource type="Environment" id="Environment_dy6er"]
 background_mode = 2
 sky = SubResource("Sky_cw62i")
 tonemap_mode = 2
 glow_enabled = true
 
-[node name="TheWorld" type="Node3D" unique_id=1699927496]
+[node name="TheWorld" unique_id=242226116 instance=ExtResource("1_ur7jy")]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=46843460]
-environment = SubResource("Environment_2pvs4")
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." index="1" unique_id=1861971367]
+environment = SubResource("Environment_dy6er")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=612012980]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." index="2" unique_id=1675587220]
 transform = Transform3D(-0.8964864, 0.19561854, -0.3975494, 0, 0.8972584, 0.44150585, 0.44307125, 0.395804, -0.80437994, 0, 0, 0)
 shadow_enabled = true
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." unique_id=1556240366]
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." index="3" unique_id=1828096665]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.375, -0.25, -0.25)
 use_collision = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1336095966]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" index="0" unique_id=1460639877]
 use_collision = true
 size = Vector3(16.75, 0.5, 18.5)
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D" unique_id=1314846697]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D" index="0" unique_id=1273086111]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.58862305, -5.030286)
 operation = 2
 radius = 1.5532227
 height = 3.177246
 sides = 16
 
-[node name="CSGBox3D2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=655040920]
+[node name="CSGBox3D2" type="CSGBox3D" parent="CSGCombiner3D" index="1" unique_id=782358164]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.45263, 1.9535952, 0.16845703)
 use_collision = true
 size = Vector3(1, 3.5517578, 9.092773)
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D2" unique_id=1977937528]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D2" index="0" unique_id=929511034]
 transform = Transform3D(0.07011598, 0.98969585, 0.12484357, -0.56659573, -0.06349157, 0.82154614, 0.82100725, -0.12833935, 0.55630565, -0.06185603, -0.49603176, 0.008021206)
 operation = 2
 radius = 2.0
 height = 2.625
 sides = 16
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2" unique_id=2137764348]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2" index="1" unique_id=1153758360]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7807617, -0.19999993, 4.0549307)
 size = Vector3(8.561523, 3.95, 1)
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" unique_id=1324519126]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" index="0" unique_id=1863191704]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.0307617, 0.025000095, -4.4450693)
 size = Vector3(8.561523, 3.95, 0.5)
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=148671146]
+[node name="Camera3D" type="Camera3D" parent="." index="4" unique_id=1937447315]
 transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 0, 1, 0)
