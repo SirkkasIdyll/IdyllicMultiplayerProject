@@ -17,12 +17,19 @@ public partial class MetadataSystem : NodeSystem
         base._Ready();
         
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        _signalBus.NodeDespawningSignal += OnNodeDespawning;
         _signalBus.ComponentAddedSignal += OnComponentAdded;
         _signalBus.ComponentRemovedSignal += OnComponentRemoved;
     }
 
     private void OnComponentAdded(Node<Component> node)
     {
+        // Add node to list of nodes with specific component type
+        if (_componentManager.NodeDictionary.TryGetValue(node.Comp.GetType().Name, out var list))
+            list.Add(node);
+        else
+            _componentManager.NodeDictionary[node.Comp.GetType().Name] = [node];
+        
         if (!_componentManager.TryGetComponent<MetadataComponent>(node, out var metadataComponent))
             return;
 
@@ -31,6 +38,9 @@ public partial class MetadataSystem : NodeSystem
 
     private void OnComponentRemoved(Node<Component> node)
     {
+        if (_componentManager.NodeDictionary.TryGetValue(node.Comp.GetType().Name, out var list))
+            list.Remove(node.Owner);
+        
         if (!_componentManager.TryGetComponent<MetadataComponent>(node, out var metadataComponent))
             return;
 
@@ -42,13 +52,33 @@ public partial class MetadataSystem : NodeSystem
         if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
             return;
 
-        if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
-            return;
+        var node = nodeUpdateInfo.Node;
 
-        foreach (var child in nodeUpdateInfo.Node.GetChildren())
+        _componentManager.TryGetComponent<MetadataComponent>(node, out var metadataComponent);
+        foreach (var child in node.GetChildren())
         {
-            if (child is Component component)
-                metadataComponent.ComponentDictionary.TryAdd(child.GetType().Name, component);
+            if (child is not Component component)
+                continue;
+            
+            metadataComponent?.ComponentDictionary.TryAdd(component.GetType().Name, component);
+                
+            // Add node to list of nodes with specific component type
+            if (_componentManager.NodeDictionary.TryGetValue(component.GetType().Name, out var list))
+                list.Add(node);
+            else
+                _componentManager.NodeDictionary[component.GetType().Name] = [node];
+        }
+    }
+
+    private void OnNodeDespawning(Node3D node)
+    {
+        foreach (var child in node.GetChildren())
+        {
+            if (child is not Component component)
+                continue;
+            
+            if (_componentManager.NodeDictionary.TryGetValue(component.GetType().Name, out var list))
+                list.Remove(node);
         }
     }
 }

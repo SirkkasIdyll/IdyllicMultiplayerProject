@@ -19,9 +19,11 @@ namespace IdyllicMultiplayerProject.Temperance.NCS;
 public partial class NodeManager : Node
 {
     public static NodeManager Instance { get; } = new();
+    private readonly ComponentManager _componentManager = ComponentManager.Instance;
+    private readonly SignalBus _signalBus = SignalBus.Instance;
+
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
     public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
-    private readonly SignalBus _signalBus = SignalBus.Instance;
     private readonly Queue<Tuple<Guid, string, RepeatedField<string>>> _deferredQueue = new();
 
     private NodeManager()
@@ -47,7 +49,7 @@ public partial class NodeManager : Node
             if (!TrySpawnNode(nodeName, netGuid, out var node3D))
                 continue;
             
-            ComponentManager.Instance.SyncComponentsOnSpawn(node3D, components);
+            _componentManager.SyncComponentsOnSpawn(node3D, components);
         }
     }
 
@@ -56,7 +58,8 @@ public partial class NodeManager : Node
     /// </summary>
     private void OnPeerDisconnected(Event netEvent)
     {
-        ClearNetGuidDictionary();
+        foreach (var (guid, _) in NetGuidDictionary)
+            DespawnNode(guid);
     }
 
     /// <summary>
@@ -70,20 +73,6 @@ public partial class NodeManager : Node
             return;
         
         _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName, components));
-    }
-
-    /// <summary>
-    /// Despawn everything and clear out the network-tracked dictionary
-    /// </summary>
-    private void ClearNetGuidDictionary()
-    {
-        foreach (var (guid, nodeUpdateInfo) in NetGuidDictionary)
-        {
-            var node3D = nodeUpdateInfo.Node;
-            node3D.QueueFree();
-        }
-        
-        NetGuidDictionary.Clear();
     }
 
     /// <summary>
@@ -188,11 +177,27 @@ public partial class NodeManager : Node
         node3D.SetGlobalRotation(globalRotation);
         node3D.GlobalScale(globalScale);
         
-        ComponentManager.Instance.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
+        _componentManager.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
         NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
-        SignalBus.Instance.EmitNodeSpawnedSignal(netGuid.Value);
+        _signalBus.EmitNodeSpawnedSignal(netGuid.Value);
         
         return true;
+    }
+
+    /// <summary>
+    /// Removes node from tracked guids and frees the node
+    /// </summary>
+    /// <param name="netGuid"></param>
+    public void DespawnNode(Guid netGuid)
+    {
+        if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+            return;
+
+        var node =  nodeUpdateInfo.Node;
+        
+        _signalBus.EmitNodeDespawningSignal(node);
+        NetGuidDictionary.Remove(netGuid);
+        node.QueueFree();
     }
 }
 

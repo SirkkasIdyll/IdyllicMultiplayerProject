@@ -232,17 +232,6 @@ public class ComponentManager
 //     public VisibilityUpdateModeEnum VisibilityUpdateMode = VisibilityUpdateModeEnum.Idle;
 // }
 
-[AttributeUsage(AttributeTargets.Class)]
-public class Synchronized : Attribute
-{
-    
-}
-
-[AttributeUsage(AttributeTargets.Field)]
-public class SynchronizedField : Attribute
-{
-    public bool OnChange = false;
-}
 
 /// <summary>
 /// A struct for dealing with a Node and Component tuple so that you can reference a node and it's component
