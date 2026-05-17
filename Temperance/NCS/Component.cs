@@ -28,26 +28,6 @@ public abstract partial class Component : Node
             list.Add(Owner);
         else
             ComponentManager.Instance.NodeDictionary[GetType().Name] = [Owner];
-        
-        // If the component is intended to be multiplayer synchronized,
-        // add a MultiplayerSynchronizer child and give it all the properties intended to be replicated
-        var synchronizedAttribute = GetType().GetCustomAttribute<Synchronized>();
-        if (synchronizedAttribute == null)
-            return;
-
-        var sceneReplicationConfig = new SceneReplicationConfig();
-        var fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        foreach (var field in fields)
-        {
-            var attribute = field.GetCustomAttribute<SynchronizedField>();
-            if (attribute == null)
-                continue;
-
-            var nodePath = GetType().Name + ":" + field.Name;
-            sceneReplicationConfig.AddProperty(nodePath);
-            sceneReplicationConfig.PropertySetSpawn(nodePath, attribute.SynchronizeOnSpawn);
-            sceneReplicationConfig.PropertySetReplicationMode(nodePath, attribute.ReplicationMode);
-        }
     }
 
     public override void _ExitTree()

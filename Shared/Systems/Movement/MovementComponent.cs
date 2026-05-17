@@ -10,7 +10,7 @@ namespace IdyllicMultiplayerProject.Shared.Systems.Movement;
 [GlobalClass, Synchronized]
 public partial class MovementComponent : Component
 {
-    [SynchronizedField(ReplicationMode = ReplicationMode.OnChange)]
+    [SynchronizedField]
     public float MovementSpeed = 2f;
     
     public Vector2 InputDirection = Vector2.Zero;

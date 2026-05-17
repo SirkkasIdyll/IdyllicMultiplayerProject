@@ -241,9 +241,7 @@ public class Synchronized : Attribute
 [AttributeUsage(AttributeTargets.Field)]
 public class SynchronizedField : Attribute
 {
-    public ReplicationMode ReplicationMode = ReplicationMode.Always;
-
-    public bool SynchronizeOnSpawn = true;
+    public bool OnChange = false;
 }
 
 /// <summary>

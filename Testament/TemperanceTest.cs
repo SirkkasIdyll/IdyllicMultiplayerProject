@@ -24,7 +24,7 @@ public class TemperanceTest
         _rootScene.TreeEntered += () =>
         {
             _nodeSystemManager.InitializeNodeSystems(_rootScene);
-            _rootScene.AddChild(NodeManager.Instance);
+            _rootScene.AddChild(_nodeManager);
             
             ENetClient.Instance.Free();
             ENetServer.Instance.Free();
@@ -95,7 +95,8 @@ public class TemperanceTest
     [TestCase]
     public void NodeManagerTest()
     {
-        
+        AssertBool(_nodeManager.TrySpawnNode("TheWorld", null, out _)).AppendFailureMessage(
+            "Spawned node despite not being assigned as the server.").IsFalse();
     }
 
     /// <summary>
