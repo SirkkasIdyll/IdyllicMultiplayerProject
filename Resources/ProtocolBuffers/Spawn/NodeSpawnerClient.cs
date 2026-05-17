@@ -30,14 +30,14 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
             await foreach (var response in stream.ResponseStream.ReadAllAsync())
             {
                 if (Guid.TryParse(response.NodeNetworkGuid, out var nodeNetworkGuid))
-                    _signalBus.EmitRequestSpawnNodeSignal(nodeNetworkGuid, response.NodeName);
+                    _signalBus.EmitRequestSpawnNodeSignal(nodeNetworkGuid, response.NodeName, response.Components);
             }
         });
 
         // SEND NETWORK GUIDS THAT WE HAVE NO IDEA ABOUT TO SERVER
         while (!readTask.IsCompleted)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(Networking.PhysicsTickLength));
+            await Task.Delay(Networking.PhysicsTickSpan);
         }
     
         await readTask;

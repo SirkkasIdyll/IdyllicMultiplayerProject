@@ -27,4 +27,5 @@ message RequestNodeSpawnInfo {
 message ReplyNodeSpawnInfo {
   string node_network_guid = 1;
   string node_name = 2;
+  repeated string components = 3;
 }

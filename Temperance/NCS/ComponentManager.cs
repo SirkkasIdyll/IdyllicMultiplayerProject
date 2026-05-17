@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
+using Google.Protobuf.Collections;
+using IdyllicMultiplayerProject.Shared.Systems.Metadata;
+using IdyllicMultiplayerProject.Temperance.Network;
+using IdyllicMultiplayerProject.Temperance.Signals;
 using static GdUnit4.Assertions;
 using static Godot.SceneReplicationConfig;
 
@@ -17,6 +21,8 @@ namespace IdyllicMultiplayerProject.Temperance.NCS;
 public class ComponentManager
 {
     public static ComponentManager Instance { get; } = new();
+    private readonly SignalBus _signalBus = SignalBus.Instance;
+    
     private readonly Dictionary<string, Component> _componentDictionary = [];
     public readonly Dictionary<string, List<Node>> NodeDictionary = [];
 
@@ -52,12 +58,90 @@ public class ComponentManager
     }
 
     /// <summary>
+    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
+    /// for syncing components on spawn
+    /// </summary>
+    private bool HasComponent(Node node, string componentName)
+    {
+        var comp = node.GetNodeOrNull(componentName);
+        return comp != null;
+    }
+    
+    /// <summary>
+    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
+    /// for syncing components on spawn
+    /// </summary>
+    public void RemoveComponent(Node node, string componentName)
+    {
+        var component = node.GetNodeOrNull(componentName);
+        if (component == null)
+            return;
+        
+        node.RemoveChild(component);
+        _signalBus.EmitComponentRemovedSignal((node, (Component)component));
+        component.QueueFree();
+    }
+
+    /// <summary>
+    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
+    /// for syncing components on spawn
+    /// </summary>
+    private bool TryAddComponent(Node node, string componentName)
+    {
+        _componentDictionary.TryGetValue(componentName, out var component);
+
+        if (component == null)
+            return false;
+        
+        var dupe = component.Duplicate();
+        node.AddChild(dupe);
+        _signalBus.EmitComponentAddedSignal((node, (Component)dupe));
+        
+        return true;
+    }
+
+    /// <summary>
     /// Prevent memory leaks by purging resources, should be signaled when closing
     /// </summary>
     public void PurgeDictionary()
     {
         foreach (var node in _componentDictionary.Values)
             node.Free();
+    }
+
+    /// <summary>
+    /// This is really only something useful for clients
+    /// When a client late-joins, they need to be aware of all the correct components something has
+    /// </summary>
+    /// <param name="node3D"></param>
+    /// <param name="components"></param>
+    public void SyncComponentsOnSpawn(Node3D node3D, RepeatedField<string> components)
+    {
+        // We shouldn't need to declare this, but we're doing it to make a point
+        if (Networking.IsServer())
+            return;
+
+        // MetadataComponent contains our list of initial components
+        if (!TryGetComponent<MetadataComponent>(node3D, out var metadataComponent))
+            return;
+        
+        List<string> initialComponentsList = new List<string>(metadataComponent.ComponentDictionary.Keys);
+        
+        // Compare the list of components that the server's version has to what we spawned by default
+        // There are three scenarios to account for
+        foreach (var componentName in components)
+        {
+            // 1. We already have the component, so we don't need to add it or remove it from the node
+            if (HasComponent(node3D, componentName))
+                initialComponentsList.Remove(componentName);
+            
+            // 2. We don't have the component, so we add it to the node
+            TryAddComponent(node3D, componentName);
+        }
+        
+        // 3. The component wasn't communicated, meaning it was removed, so we remove it from the node
+        foreach (var componentName in initialComponentsList)
+            RemoveComponent(node3D, componentName);
     }
     
     /// <summary>
@@ -78,6 +162,8 @@ public class ComponentManager
         
         var dupe = component.Duplicate();
         node.AddChild(dupe);
+        _signalBus.EmitComponentAddedSignal((node, (Component)dupe));
+        
         return true;
     }
 
@@ -101,6 +187,7 @@ public class ComponentManager
             return;
         
         node.RemoveChild(component);
+        _signalBus.EmitComponentRemovedSignal((node, component));
         component.QueueFree();
     }
 

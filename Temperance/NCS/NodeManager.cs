@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
+using Google.Protobuf.Collections;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
 
@@ -20,7 +21,7 @@ public partial class NodeManager : Node
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
     public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
     private readonly SignalBus _signalBus = SignalBus.Instance;
-    private readonly Queue<Tuple<Guid, string>> _deferredQueue = new();
+    private readonly Queue<Tuple<Guid, string, RepeatedField<string>>> _deferredQueue = new();
 
     private NodeManager()
     {
@@ -41,8 +42,11 @@ public partial class NodeManager : Node
 
         while (_deferredQueue.Count > 0)
         {
-            var (netGuid, nodeName) = _deferredQueue.Dequeue();
-            TrySpawnNode(nodeName, netGuid, out _);
+            var (netGuid, nodeName, components) = _deferredQueue.Dequeue();
+            if (!TrySpawnNode(nodeName, netGuid, out var node3D))
+                continue;
+            
+            ComponentManager.Instance.SyncComponentsOnSpawn(node3D, components);
         }
     }
 
@@ -58,9 +62,13 @@ public partial class NodeManager : Node
     /// Client has received a message from the server telling it to spawn a node
     /// Defer the spawn to be handled in _process (async thread to main thraed)
     /// </summary>
-    private void OnRequestSpawnNode(Guid netGuid, string nodeName)
+    private void OnRequestSpawnNode(Guid netGuid, string nodeName, RepeatedField<string> components)
     {
-        _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName));
+        // This should never be called on the server, but sanity check it just to make a point
+        if (Networking.IsServer())
+            return;
+        
+        _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName, components));
     }
 
     /// <summary>

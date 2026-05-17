@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
 using Grpc.Core;
+using IdyllicMultiplayerProject.Shared.Systems.Metadata;
 using IdyllicMultiplayerProject.Temperance.NCS;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
@@ -16,9 +17,10 @@ namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 /// </summary>
 public partial class NodeSpawnerService : NodeSpawnerBase
 {
+    private readonly ComponentManager _componentManager = ComponentManager.Instance;
     private readonly NodeManager _nodeManager = NodeManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
-    private readonly Queue<Tuple<Guid, string>> _queue = new();
+    private readonly Queue<Tuple<Guid, NodeUpdateInfo>> _queue = new();
 
     /// <summary>
     /// When a node is spawned on the server,
@@ -29,7 +31,7 @@ public partial class NodeSpawnerService : NodeSpawnerBase
         if (!_nodeManager.NetGuidDictionary.TryGetValue(nodeNetworkGuid, out var nodeUpdateInfo))
             return;
         
-        _queue.Enqueue(Tuple.Create(nodeNetworkGuid, nodeUpdateInfo.Node.Name.ToString()));
+        _queue.Enqueue(Tuple.Create(nodeNetworkGuid, nodeUpdateInfo));
     }
     
     /// <summary>
@@ -53,12 +55,10 @@ public partial class NodeSpawnerService : NodeSpawnerBase
         // On first connection, server tells client to spawn everything available
         foreach (var (netGuid, nodeUpdateInfo) in _nodeManager.NetGuidDictionary)
         {
-            // Send client the information needed to spawn the node
-            await responseStream.WriteAsync(new ReplyNodeSpawnInfo
-            {
-                NodeNetworkGuid = netGuid.ToString(),
-                NodeName = nodeUpdateInfo.Node.Name.ToString()
-            });
+            if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+                continue;
+            
+            await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
         }
         
         // Receive network GUIDs from clients, and tell them what to spawn based on the network GUID on the server
@@ -68,19 +68,17 @@ public partial class NodeSpawnerService : NodeSpawnerBase
             await foreach (var request in requestStream.ReadAllAsync())
             {
                 // If it fails, guid was invalid
-                if (!Guid.TryParse(request.NodeNetworkGuid, out var nodeNetworkGuid))
+                if (!Guid.TryParse(request.NodeNetworkGuid, out var netGuid))
                     continue;
 
                 // If it fails, we have no node with that guid on the server
-                if (!_nodeManager.NetGuidDictionary.TryGetValue(nodeNetworkGuid, out var nodeUpdateInfo))
+                if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
                     continue;
                 
-                // Send client the information requested to spawn the node
-                await responseStream.WriteAsync(new ReplyNodeSpawnInfo
-                {
-                    NodeNetworkGuid = request.NodeNetworkGuid,
-                    NodeName = nodeUpdateInfo.Node.Name.ToString()
-                });
+                if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+                    continue;
+            
+                await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
             }
         });
         
@@ -90,18 +88,29 @@ public partial class NodeSpawnerService : NodeSpawnerBase
             // Loop through everything we need to spawn
             while (_queue.TryDequeue(out var tuple))
             {
-                var nodeNetworkGuid = tuple.Item1;
-                var nodeName = tuple.Item2;
-                await responseStream.WriteAsync(new ReplyNodeSpawnInfo
-                {
-                    NodeNetworkGuid = nodeNetworkGuid.ToString(),
-                    NodeName = nodeName
-                });
+                var netGuid = tuple.Item1;
+                var nodeUpdateInfo = tuple.Item2;
+                
+                if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+                    continue;
+                
+                await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
             }
             
-            await Task.Delay(TimeSpan.FromMilliseconds(Networking.PhysicsTickLength), context.CancellationToken);
+            await Task.Delay(Networking.PhysicsTickSpan, context.CancellationToken);
         } 
         
         _signalBus.NodeSpawnedSignal -= OnNodeSpawned;
+    }
+
+    // Send client the information needed to spawn the node
+    private static async Task ReplyWithSpawnInfo(IServerStreamWriter<ReplyNodeSpawnInfo> responseStream, Guid netGuid, MetadataComponent metadataComponent)
+    {
+        await responseStream.WriteAsync(new ReplyNodeSpawnInfo
+        {
+            NodeNetworkGuid = netGuid.ToString(),
+            NodeName = metadataComponent.PrototypeName,
+            Components = { metadataComponent.ComponentDictionary.Keys }
+        });
     }
 }
