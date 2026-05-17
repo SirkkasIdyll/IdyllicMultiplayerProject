@@ -204,7 +204,7 @@ public partial class NodeManager : Node
 public struct NodeUpdateInfo
 {
     public readonly Node3D Node;
-    // This exists here because we can't TryGetComponent<> in async threads
+    // This exists here because we can't TryGetComponent<> in async threads i.e. gRPC services
     public readonly MetadataComponent? MetadataComponent;
     public uint LastUpdated;
 
