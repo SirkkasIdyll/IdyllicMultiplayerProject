@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
 using Google.Protobuf.Collections;
+using IdyllicMultiplayerProject.Shared.Systems.Metadata;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
 
@@ -187,7 +188,8 @@ public partial class NodeManager : Node
         node3D.SetGlobalRotation(globalRotation);
         node3D.GlobalScale(globalScale);
         
-        NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D));
+        ComponentManager.Instance.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
+        NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
         SignalBus.Instance.EmitNodeSpawnedSignal(netGuid.Value);
         
         return true;
@@ -197,10 +199,13 @@ public partial class NodeManager : Node
 public struct NodeUpdateInfo
 {
     public readonly Node3D Node;
+    // This exists here because we can't TryGetComponent<> in async threads
+    public readonly MetadataComponent? MetadataComponent;
     public uint LastUpdated;
 
-    public NodeUpdateInfo(Node3D node)
+    public NodeUpdateInfo(Node3D node, MetadataComponent? metadataComponent)
     {
         Node = node;
+        MetadataComponent = metadataComponent;
     }
 }

@@ -55,10 +55,10 @@ public partial class NodeSpawnerService : NodeSpawnerBase
         // On first connection, server tells client to spawn everything available
         foreach (var (netGuid, nodeUpdateInfo) in _nodeManager.NetGuidDictionary)
         {
-            if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+            if (nodeUpdateInfo.MetadataComponent == null)
                 continue;
             
-            await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
+            await ReplyWithSpawnInfo(responseStream, netGuid, nodeUpdateInfo.MetadataComponent);
         }
         
         // Receive network GUIDs from clients, and tell them what to spawn based on the network GUID on the server
@@ -75,10 +75,10 @@ public partial class NodeSpawnerService : NodeSpawnerBase
                 if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
                     continue;
                 
-                if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+                if (nodeUpdateInfo.MetadataComponent == null)
                     continue;
             
-                await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
+                await ReplyWithSpawnInfo(responseStream, netGuid, nodeUpdateInfo.MetadataComponent);
             }
         });
         
@@ -91,10 +91,10 @@ public partial class NodeSpawnerService : NodeSpawnerBase
                 var netGuid = tuple.Item1;
                 var nodeUpdateInfo = tuple.Item2;
                 
-                if (!_componentManager.TryGetComponent<MetadataComponent>(nodeUpdateInfo.Node, out var metadataComponent))
+                if (nodeUpdateInfo.MetadataComponent == null)
                     continue;
                 
-                await ReplyWithSpawnInfo(responseStream, netGuid, metadataComponent);
+                await ReplyWithSpawnInfo(responseStream, netGuid, nodeUpdateInfo.MetadataComponent);
             }
             
             await Task.Delay(Networking.PhysicsTickSpan, context.CancellationToken);
