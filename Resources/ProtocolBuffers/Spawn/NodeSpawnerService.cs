@@ -26,7 +26,7 @@ public partial class NodeSpawnerService : NodeSpawnerBase
     /// When a node is spawned on the server,
     /// queue it up to be communicated to clients
     /// </summary>
-    private void OnNodeSpawned(Guid nodeNetworkGuid)
+    private void OnNodeSpawned(Guid nodeNetworkGuid, ref NodeSpawnedSignal args)
     {
         if (!_nodeManager.NetGuidDictionary.TryGetValue(nodeNetworkGuid, out var nodeUpdateInfo))
             return;

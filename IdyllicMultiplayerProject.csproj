@@ -30,12 +30,15 @@
         <Folder Include="Client\Scenes\" />
         <Folder Include="Resources\Assets\" />
         <Folder Include="Server\Scenes\" />
-        <Folder Include="Server\Systems\" />
+        <Folder Include="Server\Systems\"  />
     </ItemGroup>
     <ItemGroup>
         <Content Include="**\*.cs.uid" />
         <Content Include="**\*.tscn" />
         <Protobuf Include="**\*.proto" />
         <Content Include="Testament\.runsettings" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Judgement\Judgement\Judgement.csproj" OutputItemType="Analyzer"/>
     </ItemGroup>
 </Project>

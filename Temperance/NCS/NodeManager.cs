@@ -179,7 +179,8 @@ public partial class NodeManager : Node
         
         _componentManager.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
         NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
-        _signalBus.EmitNodeSpawnedSignal(netGuid.Value);
+        var signal = new NodeSpawnedSignal(netGuid.Value);
+        _signalBus.EmitNodeSpawnedSignal(netGuid.Value, ref signal);
         
         return true;
     }
@@ -194,10 +195,31 @@ public partial class NodeManager : Node
             return;
 
         var node =  nodeUpdateInfo.Node;
-        
-        _signalBus.EmitNodeDespawningSignal(node);
+
+        var signal = new NodeDespawningSignal(node);
+        _signalBus.EmitNodeDespawningSignal(node, ref signal);
         NetGuidDictionary.Remove(netGuid);
         node.QueueFree();
+    }
+}
+
+public class NodeSpawnedSignal : UserSignalArgs
+{
+    public Guid NetGuid;
+    
+    public NodeSpawnedSignal(Guid netGuid)
+    {
+        NetGuid = netGuid;
+    }
+}
+
+public class NodeDespawningSignal : UserSignalArgs
+{
+    public Node3D Node3D;
+
+    public NodeDespawningSignal(Node3D node3D)
+    {
+        Node3D = node3D;
     }
 }
 

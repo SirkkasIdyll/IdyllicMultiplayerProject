@@ -47,7 +47,7 @@ public partial class MetadataSystem : NodeSystem
         metadataComponent.ComponentDictionary.Remove(node.Comp.GetType().Name);
     }
     
-    private void OnNodeSpawned(Guid netGuid)
+    private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
     {
         if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
             return;
@@ -70,7 +70,7 @@ public partial class MetadataSystem : NodeSystem
         }
     }
 
-    private void OnNodeDespawning(Node3D node)
+    private void OnNodeDespawning(Node3D node, ref NodeDespawningSignal args)
     {
         foreach (var child in node.GetChildren())
         {

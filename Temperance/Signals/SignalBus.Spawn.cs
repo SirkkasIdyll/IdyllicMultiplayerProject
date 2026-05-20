@@ -12,18 +12,4 @@ public partial class SignalBus
     {
         RequestSpawnNodeSignal?.Invoke(netGuid, nodeName, components);
     }
-    
-    public delegate void NodeSpawnedSignalHandler(Guid netGuid);
-    public event NodeSpawnedSignalHandler? NodeSpawnedSignal;
-    public void EmitNodeSpawnedSignal(Guid netGuid)
-    {
-        NodeSpawnedSignal?.Invoke(netGuid);
-    }
-
-    public delegate void NodeDespawningSignalHandler(Node3D node);
-    public event NodeDespawningSignalHandler? NodeDespawningSignal;
-    public void EmitNodeDespawningSignal(Node3D node)
-    {
-        NodeDespawningSignal?.Invoke(node);
-    }
 }
