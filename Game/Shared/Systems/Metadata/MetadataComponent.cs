@@ -6,7 +6,7 @@ using IdyllicMultiplayerProject.Temperance.Signals;
 namespace IdyllicMultiplayerProject.Shared.Systems.Metadata;
 
 /// <summary>
-/// Serves as a dedicated 
+/// Serves as a dedicated place to get certain metadata that's useful elsewhere
 /// </summary>
 [GlobalClass]
 public partial class MetadataComponent : Component
