@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using ENet;
 using Godot;
+using IdyllicMultiplayerProject.Temperance.Signals;
 
 namespace IdyllicMultiplayerProject.Temperance.Network;
 
@@ -27,5 +29,25 @@ public static class Networking
     {
         ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
         GRpcClient.Instance.ToggleConnection(GRpcServer.Ip, GRpcServer.Port);
+    }
+}
+
+public class PeerConnectedSignal : UserSignalArgs
+{
+    private Event NetEvent;
+    
+    public PeerConnectedSignal(Event netEvent)
+    {
+        NetEvent = netEvent;
+    }
+}
+
+public class PeerDisconnectedSignal : UserSignalArgs
+{
+    private Event NetEvent;
+    
+    public PeerDisconnectedSignal(Event netEvent)
+    {
+        NetEvent = netEvent;
     }
 }

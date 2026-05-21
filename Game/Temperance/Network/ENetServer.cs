@@ -78,7 +78,8 @@ public partial class ENetServer : Node
     private void OnPeerConnected(Event netEvent)
     {
         GD.Print("ENet Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
-        _signalBus.EmitPeerConnectedSignal(netEvent);
+        var signal = new PeerConnectedSignal(netEvent);
+        _signalBus.EmitPeerConnectedSignal(netEvent, ref signal);
     }
 
     private void OnPeerDisconnected(Event netEvent)

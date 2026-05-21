@@ -56,7 +56,7 @@ public partial class NodeManager : Node
     /// <summary>
     /// When disconnecting from the server, despawn everything
     /// </summary>
-    private void OnPeerDisconnected(Event netEvent)
+    private void OnPeerDisconnected(Event netEvent, ref PeerDisconnectedSignal args)
     {
         foreach (var (guid, _) in NetGuidDictionary)
             DespawnNode(guid);

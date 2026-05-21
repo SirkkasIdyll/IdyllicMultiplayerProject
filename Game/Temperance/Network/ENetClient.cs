@@ -80,7 +80,8 @@ public partial class ENetClient : Node
     private void OnPeerDisconnected(Event netEvent)
     {
         GD.Print("ENet Client disconnected from server");
-        _signalBus.EmitPeerDisconnectedSignal(netEvent);
+        var signal = new PeerDisconnectedSignal(netEvent);
+        _signalBus.EmitPeerDisconnectedSignal(netEvent, ref signal);
     }
 
     private void OnPeerTimeout(Event netEvent)
