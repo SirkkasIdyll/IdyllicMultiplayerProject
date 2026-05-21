@@ -87,7 +87,18 @@ public partial class SignalBus
             foreach (var parameter in constructorSymbol.Parameters)
             {
                 sourceBuilder.AppendLine($"    // Construction Parameter: {parameter.Type.Name} {parameter.Name}");
-                constructionParametersWithTypes += parameter.Type.Name + " " + parameter.Name + ", ";
+                constructionParametersWithTypes += parameter.Type.Name;
+                if (parameter.Type is INamedTypeSymbol namedType && namedType.IsGenericType)
+                {
+                    constructionParametersWithTypes += "<";
+                    foreach (var argument in namedType.TypeArguments)
+                    {
+                        constructionParametersWithTypes += argument.Name + ", ";
+                    }
+                    constructionParametersWithTypes = constructionParametersWithTypes.Substring(0, constructionParametersWithTypes.Length - 2);
+                    constructionParametersWithTypes += ">";
+                }
+                constructionParametersWithTypes += " " + parameter.Name + ", ";
                 constructionParameterNames += parameter.Name + ", ";
             }
         }

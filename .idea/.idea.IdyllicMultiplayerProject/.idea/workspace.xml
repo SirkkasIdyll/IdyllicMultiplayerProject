@@ -9,8 +9,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e505d132-6dc5-4509-86b3-60234964dce7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Generator/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.IdyllicMultiplayerProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.IdyllicMultiplayerProject/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Game/Temperance/NCS/ComponentManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Game/Temperance/NCS/ComponentManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Game/Temperance/Signals/SignalBus.Component.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Game/Temperance/Signals/SignalBus.Component.cs.uid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Generator/SignalBusGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Generator/SignalBusGenerator.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,6 +48,8 @@
     <setting file="file://$USER_HOME$/.nuget/packages/microsoft.net.test.sdk/18.0.0/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/B77D67BE2514BD5D5F5B20FB/Judgement/Judgement.SourceGeneratorWithAdditionalFiles/Customer.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/B77D67BE2514BD5D5F5B20FB/Judgement/Judgement.SourceGeneratorWithAdditionalFiles/Employee.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.ComponentAddedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.ComponentRemovedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.NodeDespawningSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.NodeSpawnedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.PeerConnectedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
@@ -358,15 +363,7 @@
       <workItem from="1778861563818" duration="3551000" />
       <workItem from="1778916375398" duration="40995000" />
       <workItem from="1779230941470" duration="45000" />
-      <workItem from="1779231009488" duration="14507000" />
-    </task>
-    <task id="LOCAL-00023" summary="Fine I guess I do need it">
-      <option name="closed" value="true" />
-      <created>1775621117589</created>
-      <option name="number" value="00023" />
-      <option name="presentableId" value="LOCAL-00023" />
-      <option name="project" value="LOCAL" />
-      <updated>1775621117589</updated>
+      <workItem from="1779231009488" duration="16192000" />
     </task>
     <task id="LOCAL-00024" summary="does this fix my tests?">
       <option name="closed" value="true" />
@@ -752,7 +749,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779331855696</updated>
     </task>
-    <option name="localTasksCounter" value="72" />
+    <task id="LOCAL-00072" summary="And a bunch more uncommitted files">
+      <option name="closed" value="true" />
+      <created>1779332246777</created>
+      <option name="number" value="00072" />
+      <option name="presentableId" value="LOCAL-00072" />
+      <option name="project" value="LOCAL" />
+      <updated>1779332246777</updated>
+    </task>
+    <option name="localTasksCounter" value="73" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -762,7 +767,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Add gRPC connection to the connect button" />
     <MESSAGE value="Add gRPC disconnection to button" />
     <MESSAGE value="gRPC service sort of gets verified the same way eNET does" />
     <MESSAGE value="Rename Networking to Network" />
@@ -787,7 +791,8 @@
     <MESSAGE value="Comment" />
     <MESSAGE value="Auto-generate signal bus code based on UserSignalArgs/HandledSignalArgs/CancellableSignalArgs" />
     <MESSAGE value="Move game files to &quot;Game&quot; folder, move Generator files to &quot;Generator&quot; folder" />
-    <option name="LAST_COMMIT_MESSAGE" value="Move game files to &quot;Game&quot; folder, move Generator files to &quot;Generator&quot; folder" />
+    <MESSAGE value="And a bunch more uncommitted files" />
+    <option name="LAST_COMMIT_MESSAGE" value="And a bunch more uncommitted files" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

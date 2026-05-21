@@ -78,7 +78,8 @@ public class ComponentManager
             return;
         
         node.RemoveChild(component);
-        _signalBus.EmitComponentRemovedSignal((node, (Component)component));
+        var signal = new ComponentRemovedSignal((node, (Component)component));
+        _signalBus.EmitComponentRemovedSignal((node, (Component)component), ref signal);
         component.QueueFree();
     }
 
@@ -95,7 +96,8 @@ public class ComponentManager
         
         var dupe = component.Duplicate();
         node.AddChild(dupe);
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe));
+        var signal = new ComponentAddedSignal((node, (Component)dupe));
+        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
         
         return true;
     }
@@ -162,7 +164,8 @@ public class ComponentManager
         
         var dupe = component.Duplicate();
         node.AddChild(dupe);
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe));
+        var signal = new ComponentAddedSignal((node, (Component)dupe));
+        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
         
         return true;
     }
@@ -185,8 +188,9 @@ public class ComponentManager
         var component = node.GetNodeOrNull<T>($"{typeof(T).Name}");
         if (component == null)
             return;
-        
-        _signalBus.EmitComponentRemovedSignal((node, component));
+
+        var signal = new ComponentRemovedSignal((node, component));
+        _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
         node.RemoveChild(component);
         component.QueueFree();
     }
@@ -200,6 +204,26 @@ public class ComponentManager
         nodes = [];
         if (NodeDictionary.TryGetValue(typeof(T).Name, out var nodeList))
             nodes = nodeList;
+    }
+}
+
+public class ComponentAddedSignal : UserSignalArgs
+{
+    private Node<Component> Node;
+
+    public ComponentAddedSignal(Node<Component> node)
+    {
+        Node = node;
+    }
+}
+
+public class ComponentRemovedSignal : UserSignalArgs
+{
+    private Node<Component> Node;
+    
+    public ComponentRemovedSignal(Node<Component> node)
+    {
+        Node = node;
     }
 }
 

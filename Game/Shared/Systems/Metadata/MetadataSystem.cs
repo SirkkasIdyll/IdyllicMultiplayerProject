@@ -22,7 +22,7 @@ public partial class MetadataSystem : NodeSystem
         _signalBus.ComponentRemovedSignal += OnComponentRemoved;
     }
 
-    private void OnComponentAdded(Node<Component> node)
+    private void OnComponentAdded(Node<Component> node, ref ComponentAddedSignal args)
     {
         // Add node to list of nodes with specific component type
         if (_componentManager.NodeDictionary.TryGetValue(node.Comp.GetType().Name, out var list))
@@ -36,7 +36,7 @@ public partial class MetadataSystem : NodeSystem
         metadataComponent.ComponentDictionary.TryAdd(node.Comp.GetType().Name, node.Comp);
     }
 
-    private void OnComponentRemoved(Node<Component> node)
+    private void OnComponentRemoved(Node<Component> node, ref ComponentRemovedSignal args)
     {
         if (_componentManager.NodeDictionary.TryGetValue(node.Comp.GetType().Name, out var list))
             list.Remove(node.Owner);
