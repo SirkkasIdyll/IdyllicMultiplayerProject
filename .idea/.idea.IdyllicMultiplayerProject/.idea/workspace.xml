@@ -9,83 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e505d132-6dc5-4509-86b3-60234964dce7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/ConnectToServerScene.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/ConnectToServerScene.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/ConnectToServerScene.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/DebugDisplay.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/DebugDisplay.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Scenes/DebugDisplay.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Systems/UserInterfaceSystem.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client/Systems/UserInterfaceSystem.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/IdyllicMultiplayerProject.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/IdyllicMultiplayerProject.sln" beforeDir="false" afterPath="$PROJECT_DIR$/IdyllicMultiplayerProject.sln" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Assets/icon.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Assets/icon.svg.import" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/ENet/enet.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Godot/godot_types.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Movement/movement_component.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerClient.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerService.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/spawn.proto" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Prototypes/BaseNode.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Prototypes/Character/BaseCharacter.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Prototypes/Character/TestCharacter.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Prototypes/Maps/TheWorld.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Camera/CameraComponent.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Camera/CameraComponent.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Camera/CameraSystem.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Camera/CameraSystem.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Metadata/MetadataComponent.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Metadata/MetadataComponent.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Metadata/MetadataSystem.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Metadata/MetadataSystem.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Movement/MovementComponent.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Movement/MovementComponent.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Movement/MovementSystem.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Shared/Systems/Movement/MovementSystem.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/Component.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/Component.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/ComponentManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/ComponentManager.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeManager.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeSystem.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeSystem.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeSystemManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/NCS/NodeSystemManager.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/ENetClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/ENetClient.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/ENetServer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/ENetServer.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/GRpcClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/GRpcClient.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/GRpcServer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/GRpcServer.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/Networking.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Network/Networking.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Component.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Component.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Networking.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Networking.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Spawn.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.Spawn.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Temperance/Signals/SignalBus.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/JudgementTest.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/JudgementTest.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/TemperanceTest.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/TemperanceTest.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/Utils/TestAdditionalFile.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Testament/Utils/TestAdditionalFile.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TheWorldOverHeavenScene.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TheWorldOverHeavenScene.cs.uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TheWorldOverHeavenScene.tscn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/export_presets.cfg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/project.godot" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/Generator/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.IdyllicMultiplayerProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.IdyllicMultiplayerProject/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,8 +45,10 @@
     <setting file="file://$USER_HOME$/.nuget/packages/microsoft.net.test.sdk/18.0.0/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/B77D67BE2514BD5D5F5B20FB/Judgement/Judgement.SourceGeneratorWithAdditionalFiles/Customer.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/B77D67BE2514BD5D5F5B20FB/Judgement/Judgement.SourceGeneratorWithAdditionalFiles/Employee.g.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C72A5485B2C3E67EDF7884A8/Judgement/Judgement.SignalBusGenerator/SignalBus.NodeSpawnedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C72A5485B2C3E67EDF7884A8/Judgement/Judgement.SourceGeneratorWithAttributes/ReportAttribute.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.NodeDespawningSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.NodeSpawnedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.PeerConnectedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Temp/SourceGeneratedDocuments/C1FC9547A8574B83D0A3129D/Judgement/Judgement.SignalBusGenerator/SignalBus.PeerDisconnectedSignal.g.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/283f482c621e426584ef82158585bb934f930/ba/d8129f39/HttpContext.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/315e4f6bce524de39b374dbdf4a7ec0b79a98/3f/59eb60a5/MessageParser`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/4881db23b1834147bd6855274699690d580800/8d/dc016fc4/MultiplayerApi.cs" root0="SKIP_HIGHLIGHTING" />
@@ -160,25 +87,7 @@
     <setting file="file://$USER_HOME$/AppData/Roaming/NuGet/NuGet.Config" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../Judgement/Judgement/SignalBusGenerator.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../Judgement/Judgement/SourceGeneratorWithAttributes.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/.godot/mono/temp/obj/IdyllicMultiplayerProject.csproj.nuget.dgspec.json" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Client/Systems/UserInterfaceSystem.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerClient.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Resources/ProtocolBuffers/Spawn/NodeSpawnerService.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Shared/Systems/Camera/CameraComponent.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Shared/Systems/Camera/CameraSystem.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Shared/Systems/Metadata/MetadataComponent.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Shared/Systems/Metadata/MetadataSystem.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Shared/Systems/Movement/MovementComponent.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/NCS/Component.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/NCS/ComponentManager.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/NCS/NodeManager.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/NCS/NodeSystemManager.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/Signals/SignalBus.Component.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/Signals/SignalBus.Spawn.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Temperance/Signals/SignalBus.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Testament/JudgementTest.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Testament/TemperanceTest.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/TheWorldOverHeavenScene.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Generator/obj/Judgement.csproj.nuget.dgspec.json" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProblemsViewState">
@@ -449,15 +358,7 @@
       <workItem from="1778861563818" duration="3551000" />
       <workItem from="1778916375398" duration="40995000" />
       <workItem from="1779230941470" duration="45000" />
-      <workItem from="1779231009488" duration="13965000" />
-    </task>
-    <task id="LOCAL-00022" summary="Exclude so it doesn't show up">
-      <option name="closed" value="true" />
-      <created>1775620872906</created>
-      <option name="number" value="00022" />
-      <option name="presentableId" value="LOCAL-00022" />
-      <option name="project" value="LOCAL" />
-      <updated>1775620872906</updated>
+      <workItem from="1779231009488" duration="14507000" />
     </task>
     <task id="LOCAL-00023" summary="Fine I guess I do need it">
       <option name="closed" value="true" />
@@ -843,7 +744,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779259099596</updated>
     </task>
-    <option name="localTasksCounter" value="71" />
+    <task id="LOCAL-00071" summary="Move game files to &quot;Game&quot; folder, move Generator files to &quot;Generator&quot; folder">
+      <option name="closed" value="true" />
+      <created>1779331855696</created>
+      <option name="number" value="00071" />
+      <option name="presentableId" value="LOCAL-00071" />
+      <option name="project" value="LOCAL" />
+      <updated>1779331855696</updated>
+    </task>
+    <option name="localTasksCounter" value="72" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -853,7 +762,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Move protocol buffers into folders" />
     <MESSAGE value="Add gRPC connection to the connect button" />
     <MESSAGE value="Add gRPC disconnection to button" />
     <MESSAGE value="gRPC service sort of gets verified the same way eNET does" />
@@ -878,7 +786,8 @@
     <MESSAGE value="Removes logic from Component and moves it over to MetadataSystem and Node/ComponentManager" />
     <MESSAGE value="Comment" />
     <MESSAGE value="Auto-generate signal bus code based on UserSignalArgs/HandledSignalArgs/CancellableSignalArgs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Auto-generate signal bus code based on UserSignalArgs/HandledSignalArgs/CancellableSignalArgs" />
+    <MESSAGE value="Move game files to &quot;Game&quot; folder, move Generator files to &quot;Generator&quot; folder" />
+    <option name="LAST_COMMIT_MESSAGE" value="Move game files to &quot;Game&quot; folder, move Generator files to &quot;Generator&quot; folder" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
