@@ -1,6 +1,5 @@
 ﻿using Godot;
 using IdyllicMultiplayerProject.Temperance.NCS;
-using static Godot.SceneReplicationConfig;
 
 namespace IdyllicMultiplayerProject.Shared.Systems.Movement;
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
@@ -8,7 +7,6 @@ using IdyllicMultiplayerProject.Shared.Systems.Metadata;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
 using static GdUnit4.Assertions;
-using static Godot.SceneReplicationConfig;
 
 namespace IdyllicMultiplayerProject.Temperance.NCS;
 
@@ -71,7 +69,7 @@ public class ComponentManager
     /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
     /// for syncing components on spawn
     /// </summary>
-    public void RemoveComponent(Node node, string componentName)
+    private void RemoveComponent(Node node, string componentName)
     {
         var component = node.GetNodeOrNull(componentName);
         if (component == null)

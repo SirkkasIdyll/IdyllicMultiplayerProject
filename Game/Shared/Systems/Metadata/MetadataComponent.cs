@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Godot;
 using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Signals;
 
 namespace IdyllicMultiplayerProject.Shared.Systems.Metadata;
 

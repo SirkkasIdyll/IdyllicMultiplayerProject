@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using ENet;
 using Godot;
 using IdyllicMultiplayerProject.Temperance.Signals;
