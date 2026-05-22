@@ -1,6 +1,6 @@
 ﻿using System;
 using Godot;
-using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
+using IdyllicMultiplayerProject.Server.Services.GRpc.Spawn;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +53,6 @@ public partial class GRpcServer : Node
     private void MapServices(ref WebApplication app)
     {
         app.MapGet("/", () => "Well you're certainly in an odd place, aren't you?");
-        app.MapGrpcService<NodeSpawnerService>();
+        app.MapGrpcService<NodeSpawnerServer>();
     }
 }

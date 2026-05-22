@@ -4,7 +4,7 @@ using System.Threading;
 using Godot;
 using Grpc.Core;
 using Grpc.Net.Client;
-using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
+using IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
 
 namespace IdyllicMultiplayerProject.Temperance.Network;
 

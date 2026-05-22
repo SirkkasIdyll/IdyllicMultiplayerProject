@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
 using Google.Protobuf.Collections;
-using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
+using IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
 using IdyllicMultiplayerProject.Shared.Systems.Metadata;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;

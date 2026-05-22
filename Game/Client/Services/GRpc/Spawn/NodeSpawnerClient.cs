@@ -7,7 +7,7 @@ using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
 using Resources.ProtocolBuffers.Spawn;
 
-namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
+namespace IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
 
 public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSpawnerClient(channel)
 {
@@ -21,23 +21,23 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
     /// </summary>
     public async Task Run(Metadata headers, CancellationToken cancellationToken)
     {
-        using var stream = NodeSpawnStream(headers, null, cancellationToken);
         
         // RECEIVE NODE NAMES AND SPAWN THEM LOCALLY
         var readTask = Task.Run(async () =>
         {
-            await foreach (var response in stream.ResponseStream.ReadAllAsync())
+            using var stream = NodeSpawnStream(headers, null, cancellationToken);
+            await foreach (var response in stream.ResponseStream.ReadAllAsync(cancellationToken: cancellationToken))
             {
-                if (Guid.TryParse(response.NodeNetworkGuid, out var nodeNetworkGuid))
+                if (!Guid.TryParse(response.NodeNetworkGuid, out var nodeNetworkGuid))
+                    continue;
+                
+                var signal = new RequestSpawnSignal
                 {
-                    var signal = new RequestSpawnSignal
-                    {
-                        NetGuid = nodeNetworkGuid,
-                        ProtoName = response.NodeName,
-                        Components = response.Components
-                    };
-                    _signalBus.EmitRequestSpawnSignal(ref signal);
-                }
+                    NetGuid = nodeNetworkGuid,
+                    ProtoName = response.NodeName,
+                    Components = response.Components
+                };
+                _signalBus.EmitRequestSpawnSignal(ref signal);
             }
         });
 

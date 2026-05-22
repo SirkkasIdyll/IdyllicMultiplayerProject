@@ -9,12 +9,12 @@ using IdyllicMultiplayerProject.Temperance.Signals;
 using Resources.ProtocolBuffers.Spawn;
 using static Resources.ProtocolBuffers.Spawn.NodeSpawner;
 
-namespace IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
+namespace IdyllicMultiplayerProject.Server.Services.GRpc.Spawn;
 
 /// <summary>
 /// Server-side gRPC service that is instantiated each time a new connection with a client is made
 /// </summary>
-public partial class NodeSpawnerService : NodeSpawnerBase
+public partial class NodeSpawnerServer : NodeSpawnerBase
 {
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
     private readonly NodeManager _nodeManager = NodeManager.Instance;
