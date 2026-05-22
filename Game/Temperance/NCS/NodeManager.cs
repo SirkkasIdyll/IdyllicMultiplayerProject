@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
 using Google.Protobuf.Collections;
+using IdyllicMultiplayerProject.Resources.ProtocolBuffers.Spawn;
 using IdyllicMultiplayerProject.Shared.Systems.Metadata;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
@@ -36,7 +37,7 @@ public partial class NodeManager : Node
         base._Ready();
 
         _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
-        _signalBus.RequestSpawnNodeSignal += OnRequestSpawnNode;
+        _signalBus.RequestSpawnSignal += OnRequestSpawn;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -66,13 +67,13 @@ public partial class NodeManager : Node
     /// Client has received a message from the server telling it to spawn a node
     /// Defer the spawn to be handled in _process (async thread to main thraed)
     /// </summary>
-    private void OnRequestSpawnNode(Guid netGuid, string nodeName, RepeatedField<string> components)
+    private void OnRequestSpawn(ref RequestSpawnSignal args)
     {
         // This should never be called on the server, but sanity check it just to make a point
         if (Networking.IsServer())
             return;
         
-        _deferredQueue.Enqueue(Tuple.Create(netGuid, nodeName, components));
+        _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
     }
 
     /// <summary>

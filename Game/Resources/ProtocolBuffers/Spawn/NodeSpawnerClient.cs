@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Godot;
+using Google.Protobuf.Collections;
 using Grpc.Core;
-using IdyllicMultiplayerProject.Temperance.NCS;
 using IdyllicMultiplayerProject.Temperance.Network;
 using IdyllicMultiplayerProject.Temperance.Signals;
 using Resources.ProtocolBuffers.Spawn;
@@ -30,7 +29,15 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
             await foreach (var response in stream.ResponseStream.ReadAllAsync())
             {
                 if (Guid.TryParse(response.NodeNetworkGuid, out var nodeNetworkGuid))
-                    _signalBus.EmitRequestSpawnNodeSignal(nodeNetworkGuid, response.NodeName, response.Components);
+                {
+                    var signal = new RequestSpawnSignal
+                    {
+                        NetGuid = nodeNetworkGuid,
+                        ProtoName = response.NodeName,
+                        Components = response.Components
+                    };
+                    _signalBus.EmitRequestSpawnSignal(ref signal);
+                }
             }
         });
 
@@ -42,4 +49,11 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
     
         await readTask;
     }
+}
+
+public class RequestSpawnSignal : UserSignalArgs
+{
+    public Guid NetGuid;
+    public string ProtoName = "";
+    public RepeatedField<string> Components = new();
 }
