@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Game.Resources.ProtocolBuffers;
 using Grpc.Core;
-using IdyllicMultiplayerProject.Shared.Systems.Metadata;
-using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Network;
-using IdyllicMultiplayerProject.Temperance.Signals;
-using Resources.ProtocolBuffers.Spawn;
-using static Resources.ProtocolBuffers.Spawn.NodeSpawner;
+using Game.Shared.Systems.Metadata;
+using Game.Temperance.NCS;
+using Game.Temperance.Network;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Server.Services.GRpc.Spawn;
+namespace Game.Server.Services.GRpc.Spawn;
 
 /// <summary>
 /// Server-side gRPC service that is instantiated each time a new connection with a client is made
 /// </summary>
-public partial class NodeSpawnerServer : NodeSpawnerBase
+public partial class NodeSpawnerServer : NodeSpawner.NodeSpawnerBase
 {
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
     private readonly NodeManager _nodeManager = NodeManager.Instance;

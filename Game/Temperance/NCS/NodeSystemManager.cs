@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using Godot.Collections;
-using IdyllicMultiplayerProject.Temperance.Signals;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Temperance.NCS;
+namespace Game.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture

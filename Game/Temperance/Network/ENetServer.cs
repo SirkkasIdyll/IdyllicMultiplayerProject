@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using ENet;
 using Godot;
 using Google.Protobuf;
-using IdyllicMultiplayerProject.Temperance.Signals;
-using Resources.ProtocolBuffers.ENet;
+using Game.Resources.ProtocolBuffers;
+using Game.Temperance.Signals;
+using Games.Resources.ProtocolBuffers;
 
-namespace IdyllicMultiplayerProject.Temperance.Network;
+namespace Game.Temperance.Network;
 
 public partial class ENetServer : Node
 {
@@ -145,6 +146,10 @@ public partial class ENetServer : Node
             case ENetChannels.ConnectionVerification:
                 break;
             
+            case ENetChannels.UserInput:
+                var userInputMessage = UserInput.Parser.ParseFrom(buffer);
+                GD.Print("User input received: (" + userInputMessage.Movement.X + ", " + userInputMessage.Movement.Y + ")");
+                break;
         }
     }
 
@@ -252,4 +257,5 @@ public partial class ENetServer : Node
 public enum ENetChannels : byte
 {
     ConnectionVerification = 0, // Used for notifying ENetServer of connections
+    UserInput = 1,
 }

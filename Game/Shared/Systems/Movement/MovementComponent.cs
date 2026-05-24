@@ -1,7 +1,7 @@
 ﻿using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
+using Game.Temperance.NCS;
 
-namespace IdyllicMultiplayerProject.Shared.Systems.Movement;
+namespace Game.Shared.Systems.Movement;
 
 /// <summary>
 /// Allows movement, determines speed when moving, translates input to a movement direction

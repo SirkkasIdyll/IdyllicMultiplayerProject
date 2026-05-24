@@ -1,9 +1,9 @@
 ﻿using System;
 using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Signals;
+using Game.Temperance.NCS;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Shared.Systems.Metadata;
+namespace Game.Shared.Systems.Metadata;
 
 [GlobalClass]
 public partial class MetadataSystem : NodeSystem

@@ -1,7 +1,7 @@
 ﻿using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
+using Game.Temperance.NCS;
 
-namespace IdyllicMultiplayerProject.Client.Systems;
+namespace Game.Client.Systems;
 
 [GlobalClass]
 public partial class UserInterfaceSystem : NodeSystem

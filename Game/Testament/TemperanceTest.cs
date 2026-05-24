@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
-using IdyllicMultiplayerProject.Shared.Systems.Movement;
-using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Network;
+using Game.Shared.Systems.Movement;
+using Game.Temperance.NCS;
+using Game.Temperance.Network;
 
-namespace IdyllicMultiplayerProject.Testament;
+namespace Game.Testament;
 
 using GdUnit4;
 using static GdUnit4.Assertions;

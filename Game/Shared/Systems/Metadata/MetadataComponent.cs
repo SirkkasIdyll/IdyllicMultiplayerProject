@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
+using Game.Temperance.NCS;
 
-namespace IdyllicMultiplayerProject.Shared.Systems.Metadata;
+namespace Game.Shared.Systems.Metadata;
 
 /// <summary>
 /// Serves as a dedicated place to get certain metadata that's useful elsewhere

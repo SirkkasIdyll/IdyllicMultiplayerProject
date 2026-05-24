@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
 using Google.Protobuf.Collections;
-using IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
-using IdyllicMultiplayerProject.Shared.Systems.Metadata;
-using IdyllicMultiplayerProject.Temperance.Network;
-using IdyllicMultiplayerProject.Temperance.Signals;
+using Game.Client.Services.GRpc.Spawn;
+using Game.Shared.Systems.Metadata;
+using Game.Temperance.Network;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Temperance.NCS;
+namespace Game.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture

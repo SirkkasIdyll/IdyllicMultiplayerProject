@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Game.Resources.ProtocolBuffers;
 using Google.Protobuf.Collections;
 using Grpc.Core;
-using IdyllicMultiplayerProject.Temperance.Network;
-using IdyllicMultiplayerProject.Temperance.Signals;
-using Resources.ProtocolBuffers.Spawn;
+using Game.Temperance.Network;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
+namespace Game.Client.Services.GRpc.Spawn;
 
 public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSpawnerClient(channel)
 {

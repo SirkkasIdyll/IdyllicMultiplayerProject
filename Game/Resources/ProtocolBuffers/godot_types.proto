@@ -1,6 +1,5 @@
 ﻿syntax = "proto3";
-
-option csharp_namespace = "Resources.ProtocolBuffers.Godot";
+option csharp_namespace = "Game.Resources.ProtocolBuffers";
 
 message GdVector2 {
   float x = 1;

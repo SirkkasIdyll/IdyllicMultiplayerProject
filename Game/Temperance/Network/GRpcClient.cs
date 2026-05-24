@@ -4,9 +4,9 @@ using System.Threading;
 using Godot;
 using Grpc.Core;
 using Grpc.Net.Client;
-using IdyllicMultiplayerProject.Client.Services.GRpc.Spawn;
+using Game.Client.Services.GRpc.Spawn;
 
-namespace IdyllicMultiplayerProject.Temperance.Network;
+namespace Game.Temperance.Network;
 
 public partial class GRpcClient : Node
 {

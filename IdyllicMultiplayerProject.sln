@@ -1,6 +1,6 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdyllicMultiplayerProject", "Game\IdyllicMultiplayerProject.csproj", "{648D0F93-D5B3-4F01-B46C-B2D21F18EF0A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game", "Game\Game.csproj", "{648D0F93-D5B3-4F01-B46C-B2D21F18EF0A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Judgement", "Generator\Judgement.csproj", "{71979304-C1A3-4D40-A0B2-9C8443754F23}"
 EndProject

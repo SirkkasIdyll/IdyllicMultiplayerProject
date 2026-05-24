@@ -1,7 +1,7 @@
 using Godot;
-using IdyllicMultiplayerProject.Temperance.Network;
+using Game.Temperance.Network;
 
-namespace IdyllicMultiplayerProject.Client.Scenes;
+namespace Game.Client.Scenes;
 
 public partial class DebugDisplay : Control
 {

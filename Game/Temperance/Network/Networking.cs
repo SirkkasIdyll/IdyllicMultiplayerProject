@@ -1,9 +1,9 @@
 ﻿using System;
 using ENet;
 using Godot;
-using IdyllicMultiplayerProject.Temperance.Signals;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Temperance.Network;
+namespace Game.Temperance.Network;
 
 public static class Networking
 {

@@ -1,8 +1,8 @@
 using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
-using IdyllicMultiplayerProject.Temperance.Network;
+using Game.Temperance.NCS;
+using Game.Temperance.Network;
 
-namespace IdyllicMultiplayerProject;
+namespace Game;
 
 public partial class TheWorldOverHeavenScene : Node3D
 {

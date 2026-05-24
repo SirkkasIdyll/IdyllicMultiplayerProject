@@ -1,6 +1,6 @@
 ﻿using Godot;
 
-namespace IdyllicMultiplayerProject.Temperance.NCS;
+namespace Game.Temperance.NCS;
 
 /// <summary>
 /// NCS - Node, Component, (Node)System architecture

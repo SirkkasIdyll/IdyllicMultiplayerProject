@@ -1,21 +1,20 @@
-<Project Sdk="Godot.NET.Sdk/4.6.2">
+<Project Sdk="Godot.NET.Sdk/4.6.3">
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
         <LangVersion>14.0</LangVersion>
         <Nullable>enable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
-        <RootNamespace>IdyllicMultiplayerProject</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.34.1" />
-        <PackageReference Include="Grpc.AspNetCore" Version="2.80.0-pre1" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.80.0-pre1" />
-        <PackageReference Include="Grpc.Tools" Version="2.80.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Google.Protobuf" Version="3.35.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.81.0-pre1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
         <PackageReference Include="ENet-CSharp" Version="2.4.8" />
         <PackageReference Include="gdUnit4.api" Version="5.1.0-rc3"/>
         <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0"/>
@@ -24,21 +23,19 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
+<!--    <ItemGroup>-->
+<!--        <FrameworkReference Include="Microsoft.AspNetCore.App" />-->
+<!--    </ItemGroup>-->
     <ItemGroup>
         <Folder Include="Client\Scenes\" />
-        <Folder Include="Client\Services\ENet\" />
         <Folder Include="Resources\Assets\" />
         <Folder Include="Server\Scenes\" />
-        <Folder Include="Server\Services\ENet\" />
         <Folder Include="Server\Systems\"  />
     </ItemGroup>
     <ItemGroup>
         <Content Include="**\*.cs.uid" />
         <Content Include="**\*.tscn" />
-        <Protobuf Include="**\*.proto" />
+        <Protobuf Include="**\*.proto" ProtoRoot="Resources\ProtocolBuffers"/>
         <Content Include="Testament\.runsettings" />
     </ItemGroup>
     <ItemGroup>

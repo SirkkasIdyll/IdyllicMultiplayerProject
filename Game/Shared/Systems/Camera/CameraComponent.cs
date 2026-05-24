@@ -1,7 +1,7 @@
 ﻿using Godot;
-using IdyllicMultiplayerProject.Temperance.NCS;
+using Game.Temperance.NCS;
 
-namespace IdyllicMultiplayerProject.Shared.Systems.Camera;
+namespace Game.Shared.Systems.Camera;
 
 [GlobalClass]
 public partial class CameraComponent : Component

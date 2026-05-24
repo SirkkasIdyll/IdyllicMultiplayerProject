@@ -1,6 +1,6 @@
 ﻿using GdUnit4;
 
-namespace IdyllicMultiplayerProject.Testament;
+namespace Game.Testament;
 
 [TestSuite]
 public class JudgementTest

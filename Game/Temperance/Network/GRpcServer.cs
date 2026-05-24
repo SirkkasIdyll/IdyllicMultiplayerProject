@@ -1,11 +1,11 @@
 ﻿using System;
 using Godot;
-using IdyllicMultiplayerProject.Server.Services.GRpc.Spawn;
+using Game.Server.Services.GRpc.Spawn;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IdyllicMultiplayerProject.Temperance.Network;
+namespace Game.Temperance.Network;
 
 public partial class GRpcServer : Node
 {

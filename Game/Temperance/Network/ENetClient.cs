@@ -2,10 +2,10 @@
 using ENet;
 using Godot;
 using Google.Protobuf;
-using IdyllicMultiplayerProject.Temperance.Signals;
-using Resources.ProtocolBuffers.ENet;
+using Game.Resources.ProtocolBuffers;
+using Game.Temperance.Signals;
 
-namespace IdyllicMultiplayerProject.Temperance.Network;
+namespace Game.Temperance.Network;
 
 public partial class ENetClient : Node
 {
@@ -147,7 +147,7 @@ public partial class ENetClient : Node
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
     /// <param name="message">A protobuf message</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    private void Send(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
+    public void Send(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);

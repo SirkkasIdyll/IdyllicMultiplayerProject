@@ -2,7 +2,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace IdyllicMultiplayerProject.Testament.Utils;
+namespace Game.Testament.Utils;
 
 public class TestAdditionalFile : AdditionalText
 {
