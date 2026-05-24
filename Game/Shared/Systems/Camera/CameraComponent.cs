@@ -1,5 +1,6 @@
 ﻿using Godot;
 using Game.Temperance.NCS;
+using Game.Temperance.Network;
 
 namespace Game.Shared.Systems.Camera;
 
@@ -12,7 +13,7 @@ public partial class CameraComponent : Component
     {
         base._EnterTree();
 
-        if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless" || Multiplayer.IsServer())
+        if (Networking.IsServer())
             return;
 
         if (GetViewport().GetCamera3D() != null)

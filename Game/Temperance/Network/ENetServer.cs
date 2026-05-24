@@ -6,6 +6,8 @@ using ENet;
 using Godot;
 using Google.Protobuf;
 using Game.Resources.ProtocolBuffers;
+using Game.Shared.Systems.Movement;
+using Game.Temperance.NCS;
 using Game.Temperance.Signals;
 using Games.Resources.ProtocolBuffers;
 
@@ -32,8 +34,8 @@ public partial class ENetServer : Node
         _server.Create(address, 2);
         
         _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
-        if (MaxDuplicatePeers > 0)
-            _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
+        // if (MaxDuplicatePeers > 0)
+        //     _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
     }
 
     public override void _ExitTree()
@@ -131,6 +133,7 @@ public partial class ENetServer : Node
             }
             
             GD.Print("ENet Registered peer id: " + netEvent.Peer.ID + ", Guid: " + guid);
+            NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), guid, out _);
             return;
         }
         
@@ -148,7 +151,13 @@ public partial class ENetServer : Node
             
             case ENetChannels.UserInput:
                 var userInputMessage = UserInput.Parser.ParseFrom(buffer);
-                GD.Print("User input received: (" + userInputMessage.Movement.X + ", " + userInputMessage.Movement.Y + ")");
+                if (userInputMessage.Movement is not null)
+                {
+                    var signal = new ReceiveMovementInputSignal(_verifiedPeers[netEvent.Peer], new Vector2(userInputMessage.Movement.X, userInputMessage.Movement.Y));
+                    _signalBus.EmitReceiveMovementInputSignal(_verifiedPeers[netEvent.Peer], new Vector2(userInputMessage.Movement.X, userInputMessage.Movement.Y), ref signal);
+                    GD.Print("User input received: (" + userInputMessage.Movement.X + ", " + userInputMessage.Movement.Y + ")");
+                }
+                
                 break;
         }
     }
