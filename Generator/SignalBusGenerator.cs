@@ -41,10 +41,10 @@ public class SignalBusGenerator : IIncrementalGenerator
                 }).Where(typedSymbol => typedSymbol is not null);
 
         
-        context.RegisterSourceOutput(userSignalDeclarations, HelloWorld);
+        context.RegisterSourceOutput(userSignalDeclarations, GenerateFiles);
     }
 
-    private void HelloWorld(SourceProductionContext context, ITypeSymbol? typedSymbol)
+    private void GenerateFiles(SourceProductionContext context, ITypeSymbol? typedSymbol)
     {
         if (typedSymbol is null)
             return;
