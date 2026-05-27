@@ -61,3 +61,6 @@ size = Vector3(8.561523, 3.95, 1)
 [node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" index="0" unique_id=1863191704]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.0307617, 0.025000095, -4.4450693)
 size = Vector3(8.561523, 3.95, 0.5)
+
+[node name="Camera3D" type="Camera3D" parent="." index="4" unique_id=953826945]
+transform = Transform3D(0.76743376, 0, 0.64112824, 0.044901446, 0.9975445, -0.053747263, -0.63955396, 0.07003505, 0.76554936, 0, 0.5236056, 0)

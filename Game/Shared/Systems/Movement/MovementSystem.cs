@@ -39,7 +39,7 @@ public partial class MovementSystem : NodeSystem
             characterBody3D.Velocity = new Vector3
             {
                 X = movementComponent.MovementSpeed * movementComponent.InputDirection.X,
-                Y = movementComponent.MovementSpeed * movementComponent.InputDirection.Y
+                Z = movementComponent.MovementSpeed * movementComponent.InputDirection.Y
             };
             
             if (!characterBody3D.Velocity.IsZeroApprox())
@@ -56,9 +56,19 @@ public partial class MovementSystem : NodeSystem
 
         if (!@event.IsAction("move_left") && !@event.IsAction("move_right") && !@event.IsAction("move_up") && !@event.IsAction("move_down"))
             return;
+
+        if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+            return;
+
+        if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
+            return;
         
-        var velocity = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        var userInputMessage = new UserInput { Movement = new GdVector2 { X = velocity.X, Y = velocity.Y } };
+        // Set the movement locally for prediction
+        var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+        movementComponent.InputDirection = input;
+        
+        // Send the movement to the server so that it can simulate it on its side
+        var userInputMessage = new UserInput { Movement = new GdVector2 { X = input.X, Y = input.Y } };
         ENetClient.Instance.Send(ENetChannels.UserInput, userInputMessage);
     }
 

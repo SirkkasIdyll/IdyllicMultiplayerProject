@@ -267,4 +267,5 @@ public enum ENetChannels : byte
 {
     ConnectionVerification = 0, // Used for notifying ENetServer of connections
     UserInput = 1,
+    SynchronizeNodes = 2,
 }

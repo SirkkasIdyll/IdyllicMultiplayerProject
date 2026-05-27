@@ -22,6 +22,17 @@ public partial class MetadataSystem : NodeSystem
         _signalBus.ComponentRemovedSignal += OnComponentRemoved;
     }
 
+    public override void _PhysicsProcess(double delta)
+    {
+        base._PhysicsProcess(delta);
+
+        foreach (var (guid, nodeUpdateInfo) in _nodeManager.NetGuidDictionary)
+        {
+            var node = nodeUpdateInfo.Node;
+            
+        }
+    }
+
     private void OnComponentAdded(Node<Component> node, ref ComponentAddedSignal args)
     {
         // Add node to list of nodes with specific component type

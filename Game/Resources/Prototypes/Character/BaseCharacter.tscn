@@ -6,8 +6,11 @@
 
 [node name="BaseCharacter" type="CharacterBody3D" unique_id=377517059]
 
-[node name="CameraComponent" type="Node3D" parent="." unique_id=1442960105]
+[node name="CameraComponent" type="Node3D" parent="." unique_id=1442960105 node_paths=PackedStringArray("Camera")]
 script = ExtResource("3_4ctj6")
+Camera = NodePath("Camera3D")
+
+[node name="Camera3D" type="Camera3D" parent="CameraComponent" unique_id=1411362502]
 
 [node name="MetadataComponent" type="Node3D" parent="." unique_id=1649863980]
 script = ExtResource("2_4ctj6")
