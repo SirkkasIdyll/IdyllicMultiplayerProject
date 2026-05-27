@@ -5,9 +5,11 @@ using ENet;
 using Godot;
 using Google.Protobuf.Collections;
 using Game.Client.Services.GRpc.Spawn;
+using Game.Resources.ProtocolBuffers;
 using Game.Shared.Systems.Metadata;
 using Game.Temperance.Network;
 using Game.Temperance.Signals;
+using Games.Resources.ProtocolBuffers;
 
 namespace Game.Temperance.NCS;
 
@@ -38,6 +40,7 @@ public partial class NodeManager : Node
 
         _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
         _signalBus.RequestSpawnSignal += OnRequestSpawn;
+        _signalBus.ReceivingSynchronizeNodesSignal += OnReceivingSynchronizeNodes;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -52,6 +55,24 @@ public partial class NodeManager : Node
             
             _componentManager.SyncComponentsOnSpawn(node3D, components);
         }
+
+        if (!Networking.IsServer())
+            return;
+        
+        var signal = new SendingSynchronizeNodesSignal();
+        foreach (var (netGuid, nodeUpdateInfo) in NetGuidDictionary)
+        {
+            var node = nodeUpdateInfo.Node;
+            signal.SynchronizeNodesMessage.NodeDetails.Add(new NodeDetails
+            {
+                NodeNetworkGuid = netGuid.ToString(),
+                GlobalPosition = new GdVector3 { X = node.GlobalPosition.X, Y = node.GlobalPosition.Y, Z =  node.GlobalPosition.Z },
+                GlobalRotation = new GdVector3 {  X = node.GlobalRotation.X, Y = node.GlobalRotation.Y, Z =  node.GlobalRotation.Z },
+                GlobalScale = new GdVector3 { X = node.Scale.X, Y = node.Scale.Y, Z = node.Scale.Z }
+            });
+        }
+        _signalBus.EmitSendingSynchronizeNodesSignal(ref signal);
+        ENetServer.Instance.Broadcast(ENetChannels.SynchronizeNodes, signal.SynchronizeNodesMessage);
     }
 
     /// <summary>
@@ -61,6 +82,22 @@ public partial class NodeManager : Node
     {
         foreach (var (guid, _) in NetGuidDictionary)
             DespawnNode(guid);
+    }
+
+    private void OnReceivingSynchronizeNodes(ref ReceivingSynchronizeNodesSignal args)
+    {
+        foreach (var nodeDetail in args.SynchronizeNodesMessage.NodeDetails)
+        {
+            if (!Guid.TryParse(nodeDetail.NodeNetworkGuid, out var netGuid))
+                continue;
+            
+            if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+                continue;
+
+            nodeUpdateInfo.Node.GlobalPosition = new Vector3(nodeDetail.GlobalPosition.X, nodeDetail.GlobalPosition.Y, nodeDetail.GlobalPosition.Z);
+            nodeUpdateInfo.Node.GlobalRotation = new Vector3(nodeDetail.GlobalRotation.X, nodeDetail.GlobalRotation.Y, nodeDetail.GlobalRotation.Z);
+            nodeUpdateInfo.Node.Scale = new Vector3(nodeDetail.GlobalScale.X, nodeDetail.GlobalScale.Y, nodeDetail.GlobalScale.Z);
+        }
     }
 
     /// <summary>
@@ -236,4 +273,14 @@ public struct NodeUpdateInfo
         Node = node;
         MetadataComponent = metadataComponent;
     }
+}
+
+public class SendingSynchronizeNodesSignal : UserSignalArgs
+{
+    public SynchronizeNodes SynchronizeNodesMessage = new SynchronizeNodes();
+}
+
+public class ReceivingSynchronizeNodesSignal : UserSignalArgs
+{
+    public SynchronizeNodes SynchronizeNodesMessage = new SynchronizeNodes();
 }

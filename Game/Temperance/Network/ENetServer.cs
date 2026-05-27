@@ -168,7 +168,7 @@ public partial class ENetServer : Node
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
     /// <param name="message">A protobuf message</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    private void Broadcast(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);
@@ -186,7 +186,7 @@ public partial class ENetServer : Node
     /// <param name="message">A protobuf message</param>
     /// <param name="peers">List of peers you want the message to go to</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    private void Broadcast(ENetChannels channel, IMessage message, Peer[] peers, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, IMessage message, Peer[] peers, PacketFlags flag = PacketFlags.None)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);
@@ -204,7 +204,7 @@ public partial class ENetServer : Node
     /// <param name="message">A protobuf message</param>
     /// <param name="peer">The unlucky peer who doesn't get the message</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    private void Broadcast(ENetChannels channel, IMessage message, Peer peer, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, IMessage message, Peer peer, PacketFlags flag = PacketFlags.None)
     {
         var buffer = new byte[message.CalculateSize()];
         message.WriteTo(buffer);

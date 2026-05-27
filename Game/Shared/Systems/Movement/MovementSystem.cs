@@ -21,6 +21,8 @@ public partial class MovementSystem : NodeSystem
         base._Ready();
 
         _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
+        _signalBus.SendingSynchronizeNodesSignal += OnSendingSynchronizeNodes;
+        _signalBus.ReceivingSynchronizeNodesSignal += OnReceivingSynchronizeNodes;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -83,5 +85,47 @@ public partial class MovementSystem : NodeSystem
         movementComponent.InputDirection = input;
         GD.Print("Updated movement input");
         
+    }
+
+    private void OnSendingSynchronizeNodes(ref SendingSynchronizeNodesSignal args)
+    {
+        foreach (var nodeDetails in args.SynchronizeNodesMessage.NodeDetails)
+        {
+            if (!Guid.TryParse(nodeDetails.NodeNetworkGuid, out var netGuid))
+                continue;
+            
+            if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+                continue;
+
+            if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
+                continue;
+
+            nodeDetails.MovementComponent = new MovementComponentDetails
+            {
+                InputDirection = new GdVector2 {  X = movementComponent.InputDirection.X, Y = movementComponent.InputDirection.Y },
+                MovementSpeed = movementComponent.MovementSpeed
+            };
+        }
+    }
+
+    private void OnReceivingSynchronizeNodes(ref ReceivingSynchronizeNodesSignal args)
+    {
+        foreach (var nodeDetails in args.SynchronizeNodesMessage.NodeDetails)
+        {
+            if (nodeDetails.MovementComponent is null)
+                continue;
+            
+            if (!Guid.TryParse(nodeDetails.NodeNetworkGuid, out var netGuid))
+                continue;
+
+            if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+                continue;
+
+            if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
+                continue;
+            
+            movementComponent.InputDirection = new Vector2(nodeDetails.MovementComponent.InputDirection.X, nodeDetails.MovementComponent.InputDirection.Y);
+            movementComponent.MovementSpeed = nodeDetails.MovementComponent.MovementSpeed;
+        }
     }
 }

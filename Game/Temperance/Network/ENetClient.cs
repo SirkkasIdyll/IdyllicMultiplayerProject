@@ -3,7 +3,9 @@ using ENet;
 using Godot;
 using Google.Protobuf;
 using Game.Resources.ProtocolBuffers;
+using Game.Temperance.NCS;
 using Game.Temperance.Signals;
+using Games.Resources.ProtocolBuffers;
 
 namespace Game.Temperance.Network;
 
@@ -93,6 +95,22 @@ public partial class ENetClient : Node
     {
         GD.Print("ENet Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " +
                  netEvent.Packet.Length);
+        
+        var buffer = new byte[netEvent.Packet.Length];
+        netEvent.Packet.CopyTo(buffer);
+        switch ((ENetChannels)netEvent.ChannelID)
+        {
+            default:
+            case ENetChannels.ConnectionVerification:
+            case ENetChannels.UserInput:
+                break;
+            case ENetChannels.SynchronizeNodes:
+                var synchronizeNodesMessage = SynchronizeNodes.Parser.ParseFrom(buffer);
+
+                var signal = new ReceivingSynchronizeNodesSignal { SynchronizeNodesMessage = synchronizeNodesMessage };
+                _signalBus.EmitReceivingSynchronizeNodesSignal(ref signal);
+                break;
+        }
     }
 
     /// <summary>

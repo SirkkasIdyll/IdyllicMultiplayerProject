@@ -10,7 +10,8 @@ namespace Game.Shared.Systems.Movement;
 public partial class MovementComponent : Component
 {
     [SynchronizedField]
-    public float MovementSpeed = 2f;
-    
     public Vector2 InputDirection = Vector2.Zero;
+    
+    [SynchronizedField(OnChange = true)]
+    public float MovementSpeed = 4.5f;
 }

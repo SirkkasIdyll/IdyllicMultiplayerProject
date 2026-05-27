@@ -3,6 +3,7 @@ option csharp_namespace = "Games.Resources.ProtocolBuffers";
 
 import "godot_types.proto";
 
+// Expand this with more different types of input that we need to check for
 message UserInput {
   GdVector2 movement = 1;
 }
