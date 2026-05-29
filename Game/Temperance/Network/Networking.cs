@@ -7,8 +7,10 @@ namespace Game.Temperance.Network;
 
 public static class Networking
 {
-    public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond() * 1000;
-    public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromMilliseconds(PhysicsTickLength);
+    public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond();
+    public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromSeconds(PhysicsTickLength);
+    public static readonly double ServerTickLength = PhysicsTickLength * 2;
+    public static readonly TimeSpan ServerTickSpan = TimeSpan.FromSeconds(ServerTickLength);
     
     public static bool IsServer()
     {

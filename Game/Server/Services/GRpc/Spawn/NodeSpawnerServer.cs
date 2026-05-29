@@ -95,7 +95,7 @@ public partial class NodeSpawnerServer : NodeSpawner.NodeSpawnerBase
                 await ReplyWithSpawnInfo(responseStream, netGuid, nodeUpdateInfo.MetadataComponent);
             }
             
-            await Task.Delay(Networking.PhysicsTickSpan, context.CancellationToken);
+            await Task.Delay(Networking.ServerTickSpan, context.CancellationToken);
         } 
         
         _signalBus.NodeSpawnedSignal -= OnNodeSpawned;

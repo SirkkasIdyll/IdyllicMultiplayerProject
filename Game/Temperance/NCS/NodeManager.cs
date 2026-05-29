@@ -41,6 +41,7 @@ public partial class NodeManager : Node
         _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
         _signalBus.RequestSpawnSignal += OnRequestSpawn;
         _signalBus.ReceivingSynchronizeNodesSignal += OnReceivingSynchronizeNodes;
+        _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -55,24 +56,6 @@ public partial class NodeManager : Node
             
             _componentManager.SyncComponentsOnSpawn(node3D, components);
         }
-
-        if (!Networking.IsServer())
-            return;
-        
-        var signal = new SendingSynchronizeNodesSignal();
-        foreach (var (netGuid, nodeUpdateInfo) in NetGuidDictionary)
-        {
-            var node = nodeUpdateInfo.Node;
-            signal.SynchronizeNodesMessage.NodeDetails.Add(new NodeDetails
-            {
-                NodeNetworkGuid = netGuid.ToString(),
-                GlobalPosition = new GdVector3 { X = node.GlobalPosition.X, Y = node.GlobalPosition.Y, Z =  node.GlobalPosition.Z },
-                GlobalRotation = new GdVector3 {  X = node.GlobalRotation.X, Y = node.GlobalRotation.Y, Z =  node.GlobalRotation.Z },
-                GlobalScale = new GdVector3 { X = node.Scale.X, Y = node.Scale.Y, Z = node.Scale.Z }
-            });
-        }
-        _signalBus.EmitSendingSynchronizeNodesSignal(ref signal);
-        ENetServer.Instance.Broadcast(ENetChannels.SynchronizeNodes, signal.SynchronizeNodesMessage);
     }
 
     /// <summary>
@@ -98,6 +81,28 @@ public partial class NodeManager : Node
             nodeUpdateInfo.Node.GlobalRotation = new Vector3(nodeDetail.GlobalRotation.X, nodeDetail.GlobalRotation.Y, nodeDetail.GlobalRotation.Z);
             nodeUpdateInfo.Node.Scale = new Vector3(nodeDetail.GlobalScale.X, nodeDetail.GlobalScale.Y, nodeDetail.GlobalScale.Z);
         }
+    }
+
+    private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
+    {
+        if (!Networking.IsServer())
+            return;
+        
+        var signal = new SendingSynchronizeNodesSignal();
+        foreach (var (netGuid, nodeUpdateInfo) in NetGuidDictionary)
+        {
+            var node = nodeUpdateInfo.Node;
+            signal.SynchronizeNodesMessage.NodeDetails.Add(new NodeDetails
+            {
+                NodeNetworkGuid = netGuid.ToString(),
+                GlobalPosition = new GdVector3 { X = node.GlobalPosition.X, Y = node.GlobalPosition.Y, Z =  node.GlobalPosition.Z },
+                GlobalRotation = new GdVector3 {  X = node.GlobalRotation.X, Y = node.GlobalRotation.Y, Z =  node.GlobalRotation.Z },
+                GlobalScale = new GdVector3 { X = node.Scale.X, Y = node.Scale.Y, Z = node.Scale.Z }
+            });
+        }
+        
+        _signalBus.EmitSendingSynchronizeNodesSignal(ref signal);
+        ENetServer.Instance.Broadcast(ENetChannels.SynchronizeNodes, signal.SynchronizeNodesMessage);
     }
 
     /// <summary>

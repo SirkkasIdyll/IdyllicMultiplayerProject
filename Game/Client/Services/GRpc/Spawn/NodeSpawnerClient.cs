@@ -44,7 +44,7 @@ public partial class NodeSpawnerClient(ChannelBase channel) : NodeSpawner.NodeSp
         // SEND NETWORK GUIDS THAT WE HAVE NO IDEA ABOUT TO SERVER
         while (!readTask.IsCompleted)
         {
-            await Task.Delay(Networking.PhysicsTickSpan);
+            await Task.Delay(Networking.ServerTickSpan);
         }
     
         await readTask;

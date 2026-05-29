@@ -10,6 +10,7 @@ using Game.Shared.Systems.Movement;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
 using Games.Resources.ProtocolBuffers;
+using Timer = Godot.Timer;
 
 namespace Game.Temperance.Network;
 
@@ -23,6 +24,8 @@ public partial class ENetServer : Node
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
     private readonly Dictionary<Peer, Guid> _verifiedPeers = new();
+    private double _serverMessageTimer = 0;
+    
     
     public override void _Ready()
     {
@@ -34,6 +37,7 @@ public partial class ENetServer : Node
         _server.Create(address, 2);
         
         _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
+        GD.Print(Networking.PhysicsTickLength + " and " + Networking.ServerTickLength);
         // if (MaxDuplicatePeers > 0)
         //     _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
     }
@@ -48,6 +52,14 @@ public partial class ENetServer : Node
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
+
+        _serverMessageTimer += delta;
+        if (_serverMessageTimer >= Networking.ServerTickLength)
+        {
+            var signal = new ServerMessageTimerSignal();
+            _signalBus.EmitServerMessageTimerSignal(ref signal);
+            _serverMessageTimer = 0;
+        }
         
         if (_server.CheckEvents(out var netEvent) <= 0)
             if (_server.Service(0, out netEvent) <= 0)
@@ -269,3 +281,5 @@ public enum ENetChannels : byte
     UserInput = 1,
     SynchronizeNodes = 2,
 }
+
+public class ServerMessageTimerSignal : UserSignalArgs;
