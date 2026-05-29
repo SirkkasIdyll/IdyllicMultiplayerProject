@@ -25,6 +25,8 @@ public partial class ENetServer : Node
     private readonly Host _server = new();
     private readonly Dictionary<Peer, Guid> _verifiedPeers = new();
     private double _serverMessageTimer = 0;
+    // private double _dataSentKb = 0;
+    // private double _timeElapsed = 0;
     
     
     public override void _Ready()
@@ -60,6 +62,14 @@ public partial class ENetServer : Node
             _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
         }
+
+        // _timeElapsed += delta;
+        // GD.Print("Average bandwidth: " + _dataSentKb / _timeElapsed / 1000 + " kb/s");
+        // if (_timeElapsed > 60)
+        // {
+        //     _dataSentKb = 0;
+        //     _timeElapsed = 0;
+        // }
         
         if (_server.CheckEvents(out var netEvent) <= 0)
             if (_server.Service(0, out netEvent) <= 0)
@@ -188,6 +198,7 @@ public partial class ENetServer : Node
         var packet = new Packet();
         packet.Create(buffer, flag);
 
+        // _dataSentKb += message.CalculateSize();
         _server.Broadcast((byte)channel, ref packet);
     }
 
