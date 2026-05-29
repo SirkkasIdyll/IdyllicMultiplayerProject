@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Game.Resources.ProtocolBuffers;
 using Godot;
 using Game.Temperance.NCS;
@@ -16,13 +17,16 @@ public partial class MovementSystem : NodeSystem
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
 
+    private Dictionary<Node, Tuple<uint, MovementComponentState>> _movementHistory = new();  
+    
+
     public override void _Ready()
     {
         base._Ready();
 
         _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
-        _signalBus.SendingSynchronizeNodesSignal += OnSendingSynchronizeNodes;
-        _signalBus.ReceivingSynchronizeNodesSignal += OnReceivingSynchronizeNodes;
+        _signalBus.SendNodeStatesSignal += OnSendNodeStates;
+        _signalBus.ReceiveNodeStatesSignal += OnReceiveNodeStates;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -87,20 +91,25 @@ public partial class MovementSystem : NodeSystem
         
     }
 
-    private void OnSendingSynchronizeNodes(ref SendingSynchronizeNodesSignal args)
+    private void OnSendNodeStates(ref SendNodeStatesSignal args)
     {
-        foreach (var nodeDetails in args.SynchronizeNodesMessage.NodeDetails)
+        foreach (var nodeState in args.Message.NodeState)
         {
-            if (!Guid.TryParse(nodeDetails.NodeNetworkGuid, out var netGuid))
+            if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
                 continue;
             
             if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
                 continue;
+            
+            var node = nodeUpdateInfo.Node;
 
-            if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
+            if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
                 continue;
 
-            nodeDetails.MovementComponent = new MovementComponentDetails
+            nodeState.GlobalPosition = new GdVector3 { X = node.GlobalPosition.X, Y = node.GlobalPosition.Y, Z = node.GlobalPosition.Z };
+            nodeState.GlobalRotation = new GdVector3 { X = node.GlobalRotation.X, Y = node.GlobalRotation.Y, Z = node.GlobalRotation.Z };
+            nodeState.GlobalScale = new GdVector3 { X = node.Scale.X, Y = node.Scale.Y, Z = node.Scale.Z };
+            nodeState.MovementComponentState = new MovementComponentState
             {
                 InputDirection = new GdVector2 {  X = movementComponent.InputDirection.X, Y = movementComponent.InputDirection.Y },
                 MovementSpeed = movementComponent.MovementSpeed
@@ -108,24 +117,31 @@ public partial class MovementSystem : NodeSystem
         }
     }
 
-    private void OnReceivingSynchronizeNodes(ref ReceivingSynchronizeNodesSignal args)
+    private void OnReceiveNodeStates(ref ReceiveNodeStatesSignal args)
     {
-        foreach (var nodeDetails in args.SynchronizeNodesMessage.NodeDetails)
+        foreach (var nodeState in args.Message.NodeState)
         {
-            if (nodeDetails.MovementComponent is null)
+            if (nodeState.MovementComponentState is null)
                 continue;
             
-            if (!Guid.TryParse(nodeDetails.NodeNetworkGuid, out var netGuid))
+            var movementComponentState =  nodeState.MovementComponentState;
+            
+            if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
                 continue;
 
             if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
                 continue;
 
+            var node = nodeUpdateInfo.Node;
+
             if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
                 continue;
             
-            movementComponent.InputDirection = new Vector2(nodeDetails.MovementComponent.InputDirection.X, nodeDetails.MovementComponent.InputDirection.Y);
-            movementComponent.MovementSpeed = nodeDetails.MovementComponent.MovementSpeed;
+            node.GlobalPosition = new Vector3(nodeState.GlobalPosition.X, nodeState.GlobalPosition.Y, nodeState.GlobalPosition.Z);
+            node.GlobalRotation = new Vector3(nodeState.GlobalRotation.X, nodeState.GlobalRotation.Y, nodeState.GlobalRotation.Z);
+            node.Scale = new Vector3(nodeState.GlobalScale.X, nodeState.GlobalScale.Y, nodeState.GlobalScale.Z);
+            movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
+            movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
         }
     }
 }

@@ -36,7 +36,7 @@ public partial class ENetClient : Node
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
-
+        
         if (_peer == null)
             return;
         
@@ -44,7 +44,6 @@ public partial class ENetClient : Node
             if (_client.Service(0, out netEvent) <= 0)
                 return;
         
-
         switch (netEvent.Type) {
             case EventType.None:
                 break;
@@ -105,10 +104,9 @@ public partial class ENetClient : Node
             case ENetChannels.UserInput:
                 break;
             case ENetChannels.SynchronizeNodes:
-                var synchronizeNodesMessage = SynchronizeNodes.Parser.ParseFrom(buffer);
-
-                var signal = new ReceivingSynchronizeNodesSignal { SynchronizeNodesMessage = synchronizeNodesMessage };
-                _signalBus.EmitReceivingSynchronizeNodesSignal(ref signal);
+                var message = NodeStates.Parser.ParseFrom(buffer);
+                var signal = new ReceiveNodeStatesSignal() { Message = message };
+                _signalBus.EmitReceiveNodeStatesSignal(ref signal);
                 break;
         }
     }

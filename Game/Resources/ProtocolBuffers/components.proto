@@ -3,19 +3,20 @@ option csharp_namespace = "Games.Resources.ProtocolBuffers";
 
 import "godot_types.proto";
 
-message SynchronizeNodes {
-  repeated NodeDetails node_details = 1;
+message NodeStates {
+  repeated NodeState node_state = 1;
 }
 
-message NodeDetails {
-  string node_network_guid = 1;
-  GdVector3 global_position = 2;
-  GdVector3 global_rotation = 3;
-  GdVector3 global_scale = 4;
-  MovementComponentDetails movement_component = 5;
+message NodeState {
+  uint32 sequence = 1;
+  string node_network_guid = 2;
+  GdVector3 global_position = 3;
+  GdVector3 global_rotation = 4;
+  GdVector3 global_scale = 5;
+  MovementComponentState movement_component_state = 6;
 }
 
-message MovementComponentDetails {
+message MovementComponentState {
   GdVector2 input_direction = 1;
   optional float movement_speed = 2;
 }
