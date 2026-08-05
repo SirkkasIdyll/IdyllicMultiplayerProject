@@ -39,6 +39,7 @@ public partial class NodeManager : Node
         base._Ready();
 
         _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
+        _signalBus.ReceiveNodeStatesSignal += OnReceiveNodeStates;
         _signalBus.RequestSpawnSignal += OnRequestSpawn;
         _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
     }
@@ -66,6 +67,56 @@ public partial class NodeManager : Node
             DespawnNode(guid);
     }
 
+    private void OnReceiveNodeStates(ref ReceiveNodeStatesSignal args)
+    {
+        foreach (var nodeState in args.Message.NodeState)
+        {
+            if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
+                continue;
+
+            if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+                continue;
+
+            nodeUpdateInfo.CurrSequence = nodeState.Sequence;
+            
+            var culledPredictedStates = false;
+            while (!culledPredictedStates)
+            {
+                // Nothing to cull
+                if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
+                {
+                    culledPredictedStates = true;
+                    continue;
+                }
+                
+                // CurrSequence is ahead in time compared to the predicted sequence state
+                // Meaning that the predicted state is no longer useful to remember
+                if (nodeUpdateInfo.CurrSequence > nodeUpdateInfo.PredictedNodeStates[0].Sequence)
+                {
+                    nodeUpdateInfo.PredictedNodeStates.RemoveAt(0);
+                    continue;
+                }
+
+                // All we're left with are predicted node states beyond the current sequence
+                culledPredictedStates = true;
+            }
+
+        }
+    }
+    
+    /// <summary>
+    /// Client has received a message from the server telling it to spawn a node
+    /// Defer the spawn to be handled in _process (async thread to main thraed)
+    /// </summary>
+    private void OnRequestSpawn(ref RequestSpawnSignal args)
+    {
+        // This should never be called on the server, but sanity check it just to make a point
+        if (Networking.IsServer())
+            return;
+        
+        _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
+    }
+
     private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
     {
         if (!Networking.IsServer())
@@ -83,37 +134,37 @@ public partial class NodeManager : Node
         ENetServer.Instance.Broadcast(ENetChannels.SynchronizeNodes, signal.Message);
     }
 
-    /// <summary>
-    /// Client has received a message from the server telling it to spawn a node
-    /// Defer the spawn to be handled in _process (async thread to main thraed)
-    /// </summary>
-    private void OnRequestSpawn(ref RequestSpawnSignal args)
+    public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
     {
-        // This should never be called on the server, but sanity check it just to make a point
-        if (Networking.IsServer())
-            return;
-        
-        _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
-    }
-
-    /// <summary>
-    /// Grabs all non-base nodes and their scene_file_paths for the _nodeDictionary
-    /// so that we can spawn nodes freely by their name. Nodes are grabbed from the
-    /// Client/Server/Shared->Nodes directory
-    /// </summary>
-    private void GetAllNodePrototypes()
-    {
-        var prototypePaths = RecursiveListDirectory("res://Resources/Prototypes");
-        foreach (var prototypePath in prototypePaths)
+        if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
         {
-            var nodeNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
-            var nodeName = nodeNameWithExtension.Substring(0, nodeNameWithExtension.LastIndexOf('.'));
-
-            if (nodeName.StartsWith("Base", true, null))
-                continue;
-            
-            NodeScenePathDictionary.TryAdd(nodeName, prototypePath);
+            var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
+            nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
+            return nodeUpdateInfo.PredictedNodeStates[0];
         }
+
+        if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
+                .Transform is null)
+            return new NodeState();
+            
+        return new NodeState();
+    }
+    
+    /// <summary>
+    /// Removes node from tracked guids and frees the node
+    /// </summary>
+    /// <param name="netGuid"></param>
+    public void DespawnNode(Guid netGuid)
+    {
+        if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+            return;
+
+        var node =  nodeUpdateInfo.Node;
+
+        var signal = new NodeDespawningSignal(node);
+        _signalBus.EmitNodeDespawningSignal(node, ref signal);
+        NetGuidDictionary.Remove(netGuid);
+        node.QueueFree();
     }
 
     /// <summary>
@@ -205,22 +256,25 @@ public partial class NodeManager : Node
         
         return true;
     }
-
+    
     /// <summary>
-    /// Removes node from tracked guids and frees the node
+    /// Grabs all non-base nodes and their scene_file_paths for the _nodeDictionary
+    /// so that we can spawn nodes freely by their name. Nodes are grabbed from the
+    /// Client/Server/Shared->Nodes directory
     /// </summary>
-    /// <param name="netGuid"></param>
-    public void DespawnNode(Guid netGuid)
+    private void GetAllNodePrototypes()
     {
-        if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-            return;
+        var prototypePaths = RecursiveListDirectory("res://Resources/Prototypes");
+        foreach (var prototypePath in prototypePaths)
+        {
+            var nodeNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
+            var nodeName = nodeNameWithExtension.Substring(0, nodeNameWithExtension.LastIndexOf('.'));
 
-        var node =  nodeUpdateInfo.Node;
-
-        var signal = new NodeDespawningSignal(node);
-        _signalBus.EmitNodeDespawningSignal(node, ref signal);
-        NetGuidDictionary.Remove(netGuid);
-        node.QueueFree();
+            if (nodeName.StartsWith("Base", true, null))
+                continue;
+            
+            NodeScenePathDictionary.TryAdd(nodeName, prototypePath);
+        }
     }
 }
 
@@ -244,12 +298,13 @@ public class NodeDespawningSignal : UserSignalArgs
     }
 }
 
-public struct NodeUpdateInfo
+public class NodeUpdateInfo
 {
     public readonly Node3D Node;
     // This exists here because we can't TryGetComponent<> in async threads i.e. gRPC services
     public readonly MetadataComponent? MetadataComponent;
-    public uint LastUpdated;
+    public uint CurrSequence;
+    public OrderedDictionary<uint, NodeState> PredictedNodeStates = new();
 
     public NodeUpdateInfo(Node3D node, MetadataComponent? metadataComponent)
     {
