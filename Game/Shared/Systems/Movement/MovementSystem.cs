@@ -161,13 +161,15 @@ public partial class MovementSystem : NodeSystem
             };
             
             var distance = node.Transform.Origin.DistanceTo(targetTransform3D.Origin);
-            GD.Print("Distance is "  + distance + " and position is " + node.Transform.Origin + " and target transform is (" + nodeState.Transform.Origin.X + ", " + nodeState.Transform.Origin.Y + ", " + nodeState.Transform.Origin.Z + ")");
-            // Delta is generally around 30 ms
-            // var udelta = nodeState.Sequence - nodeUpdateInfo.CurrSequence;
-            // var speed = 90f;
-            // var interpolationSpeed = 1f - MathF.Exp(-speed * ((float)udelta / 1000));
-            // GD.Print("For delta: " + fdelta + " interpolation speed is " + interpolationSpeed);
-            node.SetTransform(node.Transform.InterpolateWith(targetTransform3D, .60f));
+            if (distance != 0f)
+            {
+                // Delta is generally around 30 ms
+                // var udelta = nodeState.Sequence - nodeUpdateInfo.CurrSequence;
+                // var speed = 90f;
+                // var interpolationSpeed = 1f - MathF.Exp(-speed * ((float)udelta / 1000));
+                // GD.Print("For delta: " + fdelta + " interpolation speed is " + interpolationSpeed);
+                node.SetTransform(node.Transform.InterpolateWith(targetTransform3D, .60f));
+            }
             
             movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
             movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
