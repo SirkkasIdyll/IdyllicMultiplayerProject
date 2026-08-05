@@ -142,7 +142,6 @@ public partial class MovementSystem : NodeSystem
             if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
                 continue;
 
-
             var targetTransform3D = new Transform3D
             {
                 Basis = new Basis(
@@ -163,6 +162,7 @@ public partial class MovementSystem : NodeSystem
             var distance = node.Transform.Origin.DistanceTo(targetTransform3D.Origin);
             if (distance != 0f)
             {
+                // This was originally a frame-rate independent interpolation example given by the Godot docs
                 // Delta is generally around 30 ms
                 // var udelta = nodeState.Sequence - nodeUpdateInfo.CurrSequence;
                 // var speed = 90f;
