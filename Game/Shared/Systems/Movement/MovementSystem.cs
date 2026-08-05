@@ -17,9 +17,6 @@ public partial class MovementSystem : NodeSystem
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
 
-    private Dictionary<Node, Tuple<uint, MovementComponentState>> _movementHistory = new();  
-    
-
     public override void _Ready()
     {
         base._Ready();
@@ -106,9 +103,17 @@ public partial class MovementSystem : NodeSystem
             if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
                 continue;
 
-            nodeState.GlobalPosition = new GdVector3 { X = node.GlobalPosition.X, Y = node.GlobalPosition.Y, Z = node.GlobalPosition.Z };
-            nodeState.GlobalRotation = new GdVector3 { X = node.GlobalRotation.X, Y = node.GlobalRotation.Y, Z = node.GlobalRotation.Z };
-            nodeState.GlobalScale = new GdVector3 { X = node.Scale.X, Y = node.Scale.Y, Z = node.Scale.Z };
+            nodeState.Transform = new GdTransform3
+            {
+                Basis = new GdBasis3
+                {
+                    X = new GdVector3(x: node.Transform.Basis.X.X, y: node.Transform.Basis.X.Y, z: node.Transform.Basis.X.Z),
+                    Y = new GdVector3(x: node.Transform.Basis.Y.X, y: node.Transform.Basis.Y.Y, z: node.Transform.Basis.Y.Z),
+                    Z = new GdVector3(x: node.Transform.Basis.Z.X, y: node.Transform.Basis.Z.Y, z: node.Transform.Basis.Z.Z)
+                },
+                Origin = new GdVector3(x: node.Transform.Origin.X, y: node.Transform.Origin.Y, z: node.Transform.Origin.Z)
+            };
+
             nodeState.MovementComponentState = new MovementComponentState
             {
                 InputDirection = new GdVector2 {  X = movementComponent.InputDirection.X, Y = movementComponent.InputDirection.Y },
@@ -136,10 +141,17 @@ public partial class MovementSystem : NodeSystem
 
             if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
                 continue;
+
+            node.Transform = new Transform3D
+            {
+                Basis = new Basis(
+                    new Vector3(nodeState.Transform.Basis.X.X, nodeState.Transform.Basis.X.Y, nodeState.Transform.Basis.X.Z),
+                    new Vector3(nodeState.Transform.Basis.Y.X, nodeState.Transform.Basis.Y.Y, nodeState.Transform.Basis.Y.Z),
+                    new Vector3(nodeState.Transform.Basis.Z.X, nodeState.Transform.Basis.Z.Y, nodeState.Transform.Basis.Z.Z)
+                    ),
+                Origin = new Vector3(nodeState.Transform.Origin.X, nodeState.Transform.Origin.Y, nodeState.Transform.Origin.Z)
+            };
             
-            node.GlobalPosition = new Vector3(nodeState.GlobalPosition.X, nodeState.GlobalPosition.Y, nodeState.GlobalPosition.Z);
-            node.GlobalRotation = new Vector3(nodeState.GlobalRotation.X, nodeState.GlobalRotation.Y, nodeState.GlobalRotation.Z);
-            node.Scale = new Vector3(nodeState.GlobalScale.X, nodeState.GlobalScale.Y, nodeState.GlobalScale.Z);
             movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
             movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
         }

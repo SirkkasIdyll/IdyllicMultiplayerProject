@@ -35,6 +35,17 @@ message GdVector3I {
   int32 z = 3;
 }
 
+message GdBasis3 {
+  GdVector3 x = 1;
+  GdVector3 y = 2;
+  GdVector3 z = 3;
+}
+
+message GdTransform3 {
+  GdBasis3 basis = 1;
+  GdVector3 origin = 2;
+}
+
 message GdVector4 {
   float w = 1;
   float x = 2;

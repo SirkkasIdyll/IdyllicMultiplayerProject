@@ -10,10 +10,8 @@ message NodeStates {
 message NodeState {
   uint32 sequence = 1;
   string node_network_guid = 2;
-  GdVector3 global_position = 3;
-  GdVector3 global_rotation = 4;
-  GdVector3 global_scale = 5;
-  MovementComponentState movement_component_state = 6;
+  GdTransform3 transform = 3;
+  MovementComponentState movement_component_state = 4;
 }
 
 message MovementComponentState {
