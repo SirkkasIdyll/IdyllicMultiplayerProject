@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://ds0l0sivaq2w8"]
+
+[ext_resource type="Script" uid="uid://j4lqgn0twrkc" path="res://Shared/Systems/Metadata/MetadataComponent.cs" id="2_4ctj6"]
+[ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_yr3uu"]
+[ext_resource type="Script" uid="uid://bmq3pauk0ua5j" path="res://Shared/Systems/Camera/CameraComponent.cs" id="3_4ctj6"]
+
+[node name="BaseCharacter" type="CharacterBody3D" unique_id=377517059]
+
+[node name="CameraComponent" type="Node3D" parent="." unique_id=1442960105 node_paths=PackedStringArray("Camera")]
+script = ExtResource("3_4ctj6")
+Camera = NodePath("Camera3D")
+
+[node name="Camera3D" type="Camera3D" parent="CameraComponent" unique_id=1411362502]
+
+[node name="MetadataComponent" type="Node3D" parent="." unique_id=1649863980]
+script = ExtResource("2_4ctj6")
+
+[node name="MovementComponent" type="Node3D" parent="." unique_id=349568662]
+script = ExtResource("2_yr3uu")

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cy8hp3r3mtwir"]
+
+[ext_resource type="Script" uid="uid://j4lqgn0twrkc" path="res://Shared/Systems/Metadata/MetadataComponent.cs" id="1_3s4w4"]
+
+[node name="BaseNode" type="Node3D" unique_id=242226116]
+
+[node name="MetadataComponent" type="Node3D" parent="." unique_id=1037482561]
+script = ExtResource("1_3s4w4")

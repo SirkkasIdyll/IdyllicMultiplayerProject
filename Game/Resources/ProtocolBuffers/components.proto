@@ -1,0 +1,20 @@
+syntax = "proto3";
+option csharp_namespace = "Games.Resources.ProtocolBuffers";
+
+import "godot_types.proto";
+
+message NodeStates {
+  repeated NodeState node_state = 1;
+}
+
+message NodeState {
+  uint32 sequence = 1;
+  string node_network_guid = 2;
+  GdTransform3 transform = 3;
+  MovementComponentState movement_component_state = 4;
+}
+
+message MovementComponentState {
+  GdVector2 input_direction = 1;
+  optional float movement_speed = 2;
+}

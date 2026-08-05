@@ -1,0 +1,6 @@
+﻿syntax = "proto3";
+option csharp_namespace = "Game.Resources.ProtocolBuffers";
+
+message ConnectionVerificationRequest {
+  string guid = 1;
+}

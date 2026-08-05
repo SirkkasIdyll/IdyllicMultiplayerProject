@@ -1,9 +1,2 @@
-# Godot 4+ specific ignores
-.godot/
-/android/
-.idea/
-.editorconfig
-.runsettings
+/.idea
 *.DotSettings.user
-/Exports
-/gdunit4_testadapter_v5

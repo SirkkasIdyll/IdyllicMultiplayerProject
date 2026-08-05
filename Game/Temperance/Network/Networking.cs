@@ -1,0 +1,54 @@
+﻿using System;
+using ENet;
+using Godot;
+using Game.Temperance.Signals;
+
+namespace Game.Temperance.Network;
+
+public static class Networking
+{
+    public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond();
+    public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromSeconds(PhysicsTickLength);
+    public static readonly double ServerTickLength = PhysicsTickLength * 2;
+    public static readonly TimeSpan ServerTickSpan = TimeSpan.FromSeconds(ServerTickLength);
+    
+    public static bool IsServer()
+    {
+        if (OS.GetCmdlineUserArgs().Contains("--server"))
+            return true;
+        
+        if (DisplayServer.GetName() == "headless")
+            return true;
+        
+        if (OS.HasFeature("dedicated_server"))
+            return true;
+
+        return false;
+    }
+
+    public static void ConnectToServer()
+    {
+        ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
+        GRpcClient.Instance.ToggleConnection(GRpcServer.Ip, GRpcServer.Port);
+    }
+}
+
+public class PeerConnectedSignal : UserSignalArgs
+{
+    private Event NetEvent;
+    
+    public PeerConnectedSignal(Event netEvent)
+    {
+        NetEvent = netEvent;
+    }
+}
+
+public class PeerDisconnectedSignal : UserSignalArgs
+{
+    private Event NetEvent;
+    
+    public PeerDisconnectedSignal(Event netEvent)
+    {
+        NetEvent = netEvent;
+    }
+}

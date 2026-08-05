@@ -1,0 +1,42 @@
+<Project Sdk="Godot.NET.Sdk/4.7.0">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
+        <LangVersion>14.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.36.0-rc2" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.83.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.83.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.83.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis" Version="5.6.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+        <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+        <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" />
+        <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" />
+        <PackageReference Include="gdUnit4.analyzers" Version="1.0.0">
+            <PrivateAssets>none</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Client\Scenes\" />
+        <Folder Include="Resources\Assets\" />
+        <Folder Include="Server\Scenes\" />
+        <Folder Include="Server\Systems\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="**\*.cs.uid" />
+        <Content Include="**\*.tscn" />
+        <Protobuf Include="**\*.proto" ProtoRoot="Resources\ProtocolBuffers" />
+        <Content Include="Testament\.runsettings" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Generator\Judgement.csproj" OutputItemType="Analyzer" />
+    </ItemGroup>
+</Project>
