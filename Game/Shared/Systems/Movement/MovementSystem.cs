@@ -167,7 +167,7 @@ public partial class MovementSystem : NodeSystem
             // var speed = 90f;
             // var interpolationSpeed = 1f - MathF.Exp(-speed * ((float)udelta / 1000));
             // GD.Print("For delta: " + fdelta + " interpolation speed is " + interpolationSpeed);
-            node.SetTransform(node.Transform.InterpolateWith(targetTransform3D, .80f));
+            node.SetTransform(node.Transform.InterpolateWith(targetTransform3D, .60f));
             
             movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
             movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
