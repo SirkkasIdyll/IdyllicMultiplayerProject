@@ -107,11 +107,11 @@ public partial class MovementSystem : NodeSystem
             {
                 Basis = new GdBasis3
                 {
-                    X = new GdVector3(x: node.Transform.Basis.X.X, y: node.Transform.Basis.X.Y, z: node.Transform.Basis.X.Z),
-                    Y = new GdVector3(x: node.Transform.Basis.Y.X, y: node.Transform.Basis.Y.Y, z: node.Transform.Basis.Y.Z),
-                    Z = new GdVector3(x: node.Transform.Basis.Z.X, y: node.Transform.Basis.Z.Y, z: node.Transform.Basis.Z.Z)
+                    X = new GdVector3(node.Transform.Basis.X.X, node.Transform.Basis.X.Y, node.Transform.Basis.X.Z),
+                    Y = new GdVector3(node.Transform.Basis.Y.X, node.Transform.Basis.Y.Y, node.Transform.Basis.Y.Z),
+                    Z = new GdVector3(node.Transform.Basis.Z.X, node.Transform.Basis.Z.Y, node.Transform.Basis.Z.Z)
                 },
-                Origin = new GdVector3(x: node.Transform.Origin.X, y: node.Transform.Origin.Y, z: node.Transform.Origin.Z)
+                Origin = new GdVector3(node.Transform.Origin.X, node.Transform.Origin.Y, node.Transform.Origin.Z)
             };
 
             nodeState.MovementComponentState = new MovementComponentState
