@@ -142,15 +142,26 @@ public partial class MovementSystem : NodeSystem
             if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
                 continue;
 
-            node.Transform = new Transform3D
+            // Delta is generally around 30 ms
+            var udelta = nodeState.Sequence - nodeUpdateInfo.CurrSequence;
+            var fdelta = (float)udelta / 1000;
+            var speed = 4f;
+            var interpolationSpeed = 1f - MathF.Exp(-speed * fdelta);
+            GD.Print("For delta: " + fdelta + " interpolation speed is " + interpolationSpeed);
+            
+            node.Transform.InterpolateWith(new Transform3D
             {
                 Basis = new Basis(
                     new Vector3(nodeState.Transform.Basis.X.X, nodeState.Transform.Basis.X.Y, nodeState.Transform.Basis.X.Z),
                     new Vector3(nodeState.Transform.Basis.Y.X, nodeState.Transform.Basis.Y.Y, nodeState.Transform.Basis.Y.Z),
                     new Vector3(nodeState.Transform.Basis.Z.X, nodeState.Transform.Basis.Z.Y, nodeState.Transform.Basis.Z.Z)
-                    ),
-                Origin = new Vector3(nodeState.Transform.Origin.X, nodeState.Transform.Origin.Y, nodeState.Transform.Origin.Z)
-            };
+                ),
+                Origin = new Vector3(
+                    nodeState.Transform.Origin.X,
+                    nodeState.Transform.Origin.Y,
+                    nodeState.Transform.Origin.Z
+                )
+            }, interpolationSpeed);
             
             movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
             movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
