@@ -33,7 +33,7 @@ jobs:
       # run tests by using the gdUnit4-action with Godot version 4.2.1 and the latest GdUnit4 release 
       - uses: godot-gdunit-labs/gdUnit4-action@v1
         with:
-          godot-version: '4.7.0'       # Required: Godot version to use
+          godot-version: '4.7'       # Required: Godot version to use
           godot-net: true
           dotnet-version: net10.0
           paths: 'res://Testament'         # Required: Test directory
