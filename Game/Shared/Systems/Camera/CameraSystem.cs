@@ -13,12 +13,46 @@ public partial class CameraSystem : NodeSystem
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
+
+    private const float CameraAimSpeed = 6f;
+    private const float CameraResetSpeed = 10.0f;
+    private const double AimingThresholdTime = 0.3;
+    private double _timeHeldAiming = 0;
     
     public override void _Ready()
     {
         base._Ready();
 
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        
+        if (Networking.IsServer())
+            return;
+        
+        if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+            return;
+
+        var node = nodeUpdateInfo.Node;
+
+        if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+            return;
+
+        if (!Input.IsActionPressed("aim"))
+        {
+            _timeHeldAiming = 0;
+            ResetCamera((node, cameraComponent), delta);
+            return;
+        }
+
+        _timeHeldAiming += delta;
+        if (_timeHeldAiming < AimingThresholdTime)
+            return;
+        
+        AimCamera((node, cameraComponent), delta);
     }
 
     private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
@@ -53,5 +87,43 @@ public partial class CameraSystem : NodeSystem
         personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
         personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
         personalVisionComponent.VisionCircle?.SetVisible(true);
+    }
+
+    private void ResetCamera(Node<CameraComponent> node, double delta)
+    {
+        if (node.Owner is not Node3D node3D)
+            return;
+
+        if (node.Comp.Camera is null)
+            return;
+
+        if (node3D.GlobalPosition.DistanceTo(node.Comp.GlobalPosition) < 0.01)
+            return;
+        
+        var weight = 1f - Mathf.Exp(-CameraResetSpeed * (float)delta);
+        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(node3D.GlobalPosition, weight));
+    }
+
+    private void AimCamera(Node<CameraComponent> node, double delta)
+    {
+        if (node.Owner is not Node3D node3D)
+            return;
+
+        if (node.Comp.Camera is null)
+            return;
+        
+        // Given that the viewport size is the full width/height of the window
+        // And the mouse offset is half that
+        // We're only going as far as like 1/2 of the possibleDistance stated
+        var cameraOffset = new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X) - new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X);
+        var mouseOffset = GetViewport().GetMousePosition() - cameraOffset - new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
+        var viewportSize = GetViewport().GetVisibleRect().Size / new Vector2(node.Comp.Camera.Scale.Z, node.Comp.Camera.Scale.X);
+        var possibleDistance = 1f * 32;
+        var newCameraPosition = new Vector3(
+            node.Comp.GlobalPosition.Z + mouseOffset.X / viewportSize.X * possibleDistance,
+            node.Comp.GlobalPosition.Y,
+            node.Comp.GlobalPosition.X + mouseOffset.Y / viewportSize.Y * possibleDistance);
+        var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta); 
+        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition, weight));
     }
 }

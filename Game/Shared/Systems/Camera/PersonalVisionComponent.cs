@@ -17,7 +17,7 @@ public partial class PersonalVisionComponent : Component
     public SpotLight3D? VisionCone;
 
     [Export]
-    public float VisionConeAngle = 55.0f;
+    public float VisionConeAngle = 75.0f;
     
     [Export]
     public float VisionConeAttenuation = 2.0f;
