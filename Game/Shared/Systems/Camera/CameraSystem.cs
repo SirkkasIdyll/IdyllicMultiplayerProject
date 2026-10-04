@@ -36,5 +36,22 @@ public partial class CameraSystem : NodeSystem
             return;
         
         cameraComponent.Camera?.MakeCurrent();
+
+        if (!_componentManager.TryGetComponent<PersonalVisionComponent>(nodeUpdateInfo.Node,
+                out var personalVisionComponent))
+            return;
+
+        personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
+        personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
+        personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
+        personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
+        personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
+        personalVisionComponent.VisionCone?.SetVisible(true);
+        
+        personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
+        personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
+        personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
+        personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
+        personalVisionComponent.VisionCircle?.SetVisible(true);
     }
 }

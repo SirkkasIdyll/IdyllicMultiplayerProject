@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://ds0l0sivaq2w8" path="res://Resources/Prototypes/Character/BaseCharacter.tscn" id="1_vg6n3"]
 [ext_resource type="Texture2D" uid="uid://bm12cqlpphywj" path="res://Resources/Assets/icon.svg" id="2_tss5c"]
+[ext_resource type="Script" uid="uid://i2wcab2fiosk" path="res://Shared/Systems/Camera/PersonalVisionComponent.cs" id="3_ut7n5"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ag62g"]
 
@@ -11,5 +12,24 @@
 shape = SubResource("CapsuleShape3D_ag62g")
 
 [node name="Sprite3D" type="Sprite3D" parent="." index="4" unique_id=1873701755]
-transform = Transform3D(0.755, 0, 0, 0, 1.705, 0, 0, 0, 1, 0, 0, 0)
+transform = Transform3D(0.755, 0, 0, 0, 1.5, 0, 0, 0, 1, 0, 0, 0)
+layers = 524288
+gi_mode = 0
+billboard = 1
+shaded = true
 texture = ExtResource("2_tss5c")
+
+[node name="PersonalVisionComponent2" type="Node3D" parent="." index="5" unique_id=2071778063 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
+script = ExtResource("3_ut7n5")
+VisionCone = NodePath("SpotLight3D")
+VisionCircle = NodePath("OmniLight3D")
+metadata/_custom_type_script = "uid://i2wcab2fiosk"
+
+[node name="SpotLight3D" type="SpotLight3D" parent="PersonalVisionComponent2" index="0" unique_id=1935467648]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1)
+visible = false
+light_cull_mask = 4294443007
+
+[node name="OmniLight3D" type="OmniLight3D" parent="PersonalVisionComponent2" index="1" unique_id=1931347052]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
+visible = false
