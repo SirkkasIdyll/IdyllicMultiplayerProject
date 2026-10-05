@@ -1,4 +1,5 @@
 ﻿using System;
+using Game.Client.Scenes;
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
@@ -14,6 +15,7 @@ public partial class CameraSystem : NodeSystem
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
 
+    private const string DebugOptionName = "Camera Aiming";
     private const float CameraAimSpeed = 6f;
     private const float CameraResetSpeed = 10.0f;
     private const double AimingThresholdTime = 0.3;
@@ -23,6 +25,8 @@ public partial class CameraSystem : NodeSystem
     {
         base._Ready();
 
+        _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
+        _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
     }
 
@@ -53,6 +57,11 @@ public partial class CameraSystem : NodeSystem
             return;
         
         AimCamera((node, cameraComponent), delta);
+    }
+
+    private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
+    {
+        args.SystemsList?.AddItem(DebugOptionName);
     }
 
     private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
@@ -87,6 +96,32 @@ public partial class CameraSystem : NodeSystem
         personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
         personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
         personalVisionComponent.VisionCircle?.SetVisible(true);
+    }
+    
+    private void OnUpdateDebugLabel(string selectedSystem, ref UpdateDebugLabel args)
+    {
+        if (args.DebugLabel is null)
+            return;
+
+        if (selectedSystem != DebugOptionName)
+            return;
+        
+        if (Networking.IsServer())
+            return;
+        
+        if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+            return;
+
+        var node = nodeUpdateInfo.Node;
+
+        if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+            return;
+
+        args.DebugLabel.Clear();
+        args.DebugLabel.AppendText("Camera Offset: " + GetCameraOffset((node, cameraComponent)) + "\n");
+        args.DebugLabel.AppendText("Mouse Offset: " + GetMouseOffset((node, cameraComponent)) + "\n");
+        args.DebugLabel.AppendText("Viewport Size: " + GetViewportSize((node, cameraComponent)) + "\n");
+        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), 32f) + "\n");
     }
 
     private void ResetCamera(Node<CameraComponent> node, double delta)
@@ -125,5 +160,65 @@ public partial class CameraSystem : NodeSystem
             node.Comp.GlobalPosition.X + mouseOffset.Y / viewportSize.Y * possibleDistance);
         var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta); 
         node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition, weight));
+    }
+
+    private Vector2? GetCameraOffset(Node<CameraComponent> node)
+    {
+        if (node.Owner is not Node3D node3D)
+            return null;
+
+        if (node.Comp.Camera is null)
+            return null;
+        
+        return new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X) -
+               new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X);
+    }
+
+    private Vector2? GetMouseOffset(Node<CameraComponent> node)
+    {
+        if (node.Owner is not Node3D node3D)
+            return null;
+
+        if (node.Comp.Camera is null)
+            return null;
+
+        var cameraOffset = GetCameraOffset(node);
+
+        return GetViewport().GetMousePosition() - cameraOffset -
+               new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
+    }
+    
+    private Vector2? GetViewportSize(Node<CameraComponent> node)
+    {
+        if (node.Owner is not Node3D node3D)
+            return null;
+
+        if (node.Comp.Camera is null)
+            return null;
+        
+        return GetViewport().GetVisibleRect().Size / new Vector2(node.Comp.Camera.Scale.Z, node.Comp.Camera.Scale.X);
+    }
+
+    private Vector3? GetNewCameraPosition(Node<CameraComponent> node, float maxDistance)
+    {
+        if (node.Owner is not Node3D node3D)
+            return null;
+
+        if (node.Comp.Camera is null)
+            return null;
+        
+        var mouseOffset = GetMouseOffset(node);
+        var viewportSize = GetViewportSize(node);
+        
+        if (mouseOffset is null)
+            return null;
+
+        if (viewportSize is null)
+            return null;
+        
+        return new Vector3(
+            node.Comp.GlobalPosition.Z + mouseOffset.Value.X / viewportSize.Value.X * maxDistance,
+            node.Comp.GlobalPosition.Y,
+            node.Comp.GlobalPosition.X + mouseOffset.Value.Y / viewportSize.Value.Y * maxDistance);
     }
 }
