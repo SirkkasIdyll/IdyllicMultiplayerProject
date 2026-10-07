@@ -18,6 +18,7 @@ public partial class CameraSystem : NodeSystem
     private const string DebugOptionName = "Camera Aiming";
     private const float CameraAimSpeed = 3f;
     private const float CameraResetSpeed = 9f;
+    private const float MaxCameraDistance = 3f;
     private const double AimingThresholdTime = 0.3;
     private double _timeHeldAiming = 0;
     
@@ -122,7 +123,7 @@ public partial class CameraSystem : NodeSystem
         args.DebugLabel.AppendText("Camera Offset: " + GetCameraOffset((node, cameraComponent)) + "\n");
         args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
         args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
-        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), 15f) + "\n");
+        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
     }
 
     private void ResetCamera(Node<CameraComponent> node, double delta)
@@ -148,8 +149,7 @@ public partial class CameraSystem : NodeSystem
         if (node.Comp.Camera is null)
             return;
         
-        var possibleDistance = 3f;
-        var newCameraPosition = GetNewCameraPosition(node, possibleDistance);
+        var newCameraPosition = GetNewCameraPosition(node, MaxCameraDistance);
         var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta);
         if (newCameraPosition == null)
             return;
@@ -195,8 +195,10 @@ public partial class CameraSystem : NodeSystem
             node3D.GlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
             node3D.GlobalPosition.Y,
             node3D.GlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
-        var clampToTarget = (targetPosition - node3D.GlobalPosition).Normalized() * maxDistance;
+
+        if (node3D.GlobalPosition.DistanceTo(targetPosition) > maxDistance)
+            return node3D.GlobalPosition + (targetPosition - node3D.GlobalPosition).Normalized() * maxDistance;
         
-        return node3D.GlobalPosition + clampToTarget;
+        return targetPosition;
     }
 }
