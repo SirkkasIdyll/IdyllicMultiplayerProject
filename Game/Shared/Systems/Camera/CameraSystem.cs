@@ -120,7 +120,6 @@ public partial class CameraSystem : NodeSystem
 
         args.DebugLabel.Clear();
         args.DebugLabel.AppendText("Player Position: " + node.GlobalPosition.ToString() + "\n");
-        args.DebugLabel.AppendText("Camera Offset: " + GetCameraOffset((node, cameraComponent)) + "\n");
         args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
         args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
         args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
@@ -155,17 +154,6 @@ public partial class CameraSystem : NodeSystem
             return;
         
         node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition.Value, weight));
-    }
-
-    private Vector2? GetCameraOffset(Node<CameraComponent> node)
-    {
-        if (node.Owner is not Node3D node3D)
-            return null;
-
-        if (node.Comp.Camera is null)
-            return null;
-        
-        return new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X) - new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
     }
 
     private Vector2? GetMouseOffsetFromCenter()
