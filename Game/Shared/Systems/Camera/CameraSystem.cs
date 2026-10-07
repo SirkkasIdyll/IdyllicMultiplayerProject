@@ -16,8 +16,8 @@ public partial class CameraSystem : NodeSystem
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
 
     private const string DebugOptionName = "Camera Aiming";
-    private const float CameraAimSpeed = 6f;
-    private const float CameraResetSpeed = 10.0f;
+    private const float CameraAimSpeed = 3f;
+    private const float CameraResetSpeed = 9f;
     private const double AimingThresholdTime = 0.3;
     private double _timeHeldAiming = 0;
     
@@ -118,10 +118,11 @@ public partial class CameraSystem : NodeSystem
             return;
 
         args.DebugLabel.Clear();
+        args.DebugLabel.AppendText("Player Position: " + node.GlobalPosition.ToString() + "\n");
         args.DebugLabel.AppendText("Camera Offset: " + GetCameraOffset((node, cameraComponent)) + "\n");
-        args.DebugLabel.AppendText("Mouse Offset: " + GetMouseOffset((node, cameraComponent)) + "\n");
-        args.DebugLabel.AppendText("Viewport Size: " + GetViewportSize((node, cameraComponent)) + "\n");
-        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), 32f) + "\n");
+        args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
+        args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
+        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), 15f) + "\n");
     }
 
     private void ResetCamera(Node<CameraComponent> node, double delta)
@@ -147,19 +148,13 @@ public partial class CameraSystem : NodeSystem
         if (node.Comp.Camera is null)
             return;
         
-        // Given that the viewport size is the full width/height of the window
-        // And the mouse offset is half that
-        // We're only going as far as like 1/2 of the possibleDistance stated
-        var cameraOffset = new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X) - new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X);
-        var mouseOffset = GetViewport().GetMousePosition() - cameraOffset - new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
-        var viewportSize = GetViewport().GetVisibleRect().Size / new Vector2(node.Comp.Camera.Scale.Z, node.Comp.Camera.Scale.X);
-        var possibleDistance = 1f * 32;
-        var newCameraPosition = new Vector3(
-            node.Comp.GlobalPosition.Z + mouseOffset.X / viewportSize.X * possibleDistance,
-            node.Comp.GlobalPosition.Y,
-            node.Comp.GlobalPosition.X + mouseOffset.Y / viewportSize.Y * possibleDistance);
-        var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta); 
-        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition, weight));
+        var possibleDistance = 3f;
+        var newCameraPosition = GetNewCameraPosition(node, possibleDistance);
+        var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta);
+        if (newCameraPosition == null)
+            return;
+        
+        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition.Value, weight));
     }
 
     private Vector2? GetCameraOffset(Node<CameraComponent> node)
@@ -170,33 +165,12 @@ public partial class CameraSystem : NodeSystem
         if (node.Comp.Camera is null)
             return null;
         
-        return new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X) -
-               new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X);
+        return new Vector2(node.Comp.GlobalPosition.Z, node.Comp.GlobalPosition.X) - new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
     }
 
-    private Vector2? GetMouseOffset(Node<CameraComponent> node)
+    private Vector2? GetMouseOffsetFromCenter()
     {
-        if (node.Owner is not Node3D node3D)
-            return null;
-
-        if (node.Comp.Camera is null)
-            return null;
-
-        var cameraOffset = GetCameraOffset(node);
-
-        return GetViewport().GetMousePosition() - cameraOffset -
-               new Vector2(node3D.GlobalPosition.Z, node3D.GlobalPosition.X);
-    }
-    
-    private Vector2? GetViewportSize(Node<CameraComponent> node)
-    {
-        if (node.Owner is not Node3D node3D)
-            return null;
-
-        if (node.Comp.Camera is null)
-            return null;
-        
-        return GetViewport().GetVisibleRect().Size / new Vector2(node.Comp.Camera.Scale.Z, node.Comp.Camera.Scale.X);
+        return GetViewport().GetMousePosition() - GetViewport().GetVisibleRect().Size / 2.0f;
     }
 
     private Vector3? GetNewCameraPosition(Node<CameraComponent> node, float maxDistance)
@@ -207,18 +181,22 @@ public partial class CameraSystem : NodeSystem
         if (node.Comp.Camera is null)
             return null;
         
-        var mouseOffset = GetMouseOffset(node);
-        var viewportSize = GetViewportSize(node);
+        var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
         
-        if (mouseOffset is null)
-            return null;
-
-        if (viewportSize is null)
+        if (mouseOffsetFromCenter is null)
             return null;
         
-        return new Vector3(
-            node.Comp.GlobalPosition.Z + mouseOffset.Value.X / viewportSize.Value.X * maxDistance,
-            node.Comp.GlobalPosition.Y,
-            node.Comp.GlobalPosition.X + mouseOffset.Value.Y / viewportSize.Value.Y * maxDistance);
+        // Camera size gives us the diameter of the height, which is our overall scale
+        var viewportSize = GetViewport().GetVisibleRect().Size;
+        var scale = viewportSize.Y / node.Comp.Camera.Size;
+        
+        // Target position clamped by how far we actually want the camera to be able to go from the player
+        var targetPosition = new Vector3(
+            node3D.GlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
+            node3D.GlobalPosition.Y,
+            node3D.GlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
+        var clampToTarget = (targetPosition - node3D.GlobalPosition).Normalized() * maxDistance;
+        
+        return node3D.GlobalPosition + clampToTarget;
     }
 }

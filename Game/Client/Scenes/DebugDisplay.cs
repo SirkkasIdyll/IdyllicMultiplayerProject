@@ -33,15 +33,10 @@ public partial class DebugDisplay : Control
 	{
 		base._UnhandledKeyInput(@event);
 
-		if (@event is not InputEventAction inputEventAction || inputEventAction.Action != "show_debug")
+		if (!@event.IsActionPressed("show_debug"))
 			return;
 
-		if (_systemsList is null)
-			return;
-
-		if (!_systemsList.IsVisible())
-			_systemsList.Visible = true;
-
+		_systemsList?.Visible = !_systemsList.IsVisible();
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.

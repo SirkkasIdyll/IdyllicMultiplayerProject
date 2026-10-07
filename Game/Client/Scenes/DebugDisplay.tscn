@@ -32,6 +32,7 @@ fit_content = true
 horizontal_alignment = 2
 
 [node name="ItemList" type="ItemList" parent="." unique_id=238776460]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
