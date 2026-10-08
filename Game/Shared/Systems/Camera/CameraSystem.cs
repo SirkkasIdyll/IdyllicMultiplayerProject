@@ -14,6 +14,7 @@ public partial class CameraSystem : NodeSystem
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
+    [InjectedDependency] private readonly OrientationSystem _orientationSystem = null!;
 
     private const string DebugOptionName = "Camera Aiming";
     private const float CameraAimSpeed = 3f;
@@ -154,6 +155,16 @@ public partial class CameraSystem : NodeSystem
             return;
         
         node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition.Value, weight));
+
+        if (!_componentManager.TryGetComponent<RotationComponent>(node, out var rotationComponent))
+            return;
+        
+        var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
+
+        if (mouseOffsetFromCenter is null)
+            return;
+        
+        _orientationSystem.OrientCharacter((node, rotationComponent), mouseOffsetFromCenter.Value.Normalized());
     }
 
     private Vector2? GetMouseOffsetFromCenter()
