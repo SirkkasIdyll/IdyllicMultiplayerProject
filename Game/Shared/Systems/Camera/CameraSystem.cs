@@ -30,6 +30,7 @@ public partial class CameraSystem : NodeSystem
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        _signalBus.UpdateRotationSignal += OnUpdateRotation;
     }
 
     public override void _Process(double delta)
@@ -124,6 +125,16 @@ public partial class CameraSystem : NodeSystem
         args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
         args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
         args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
+    }
+
+    private void OnUpdateRotation(Node<RotationComponent> node, ref UpdateRotationSignal args)
+    {
+        if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
+                out var personalVisionComponent))
+            return;
+
+        // Vision cone faces -Z by default instead of X, so we need to rotate it by -90 degrees after we set it
+        personalVisionComponent.VisionCone?.Basis = node.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
     }
 
     private void ResetCamera(Node<CameraComponent> node, double delta)

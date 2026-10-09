@@ -20,26 +20,42 @@ public partial class OrientationSystem : NodeSystem
     /// <param name="normalized"></param>
     public void OrientCharacter(Node<RotationComponent> node, Vector2 normalized)
     {
-        if (node.Comp == null)
-            return;
-
-        if (node.Comp.Sprite3D == null)
+        if (node.Comp?.Sprite3D == null)
             return;
         
+        // RotationComponent's rotation (just the Y, since that's how things will rotate in our top-down camera view)
+        node.Comp.Basis = new Basis(Vector3.Up, normalized.Angle());
+        var signal = new UpdateRotationSignal(node);
+        _signalBus.EmitUpdateRotationSignal(node, ref signal);
+        
         // Sprites shows back between 30 and 150 degrees, front otherwise
-        node.Comp.Sprite3D.Frame = normalized.Angle() is <= -Mathf.Pi / 6f and >= -5f * Mathf.Pi / 6f ? 1 : 0;
+        node.Comp.Sprite3D.Frame = node.Comp.Basis.GetEuler().Y is <= -Mathf.Pi / 6f and >= -5f * Mathf.Pi / 6f ? 1 : 0;
         
         // Sprite faces right from 270 and 90 degrees
         var initialFlipH = node.Comp.Sprite3D.FlipH;
-        node.Comp.Sprite3D.FlipH = normalized.Angle() is < -Mathf.Pi / 2 or > Mathf.Pi / 2f;
+        node.Comp.Sprite3D.FlipH = node.Comp.Basis.GetEuler().Y is < -Mathf.Pi / 2 or > Mathf.Pi / 2f;
         
         if (initialFlipH == node.Comp.Sprite3D.FlipH)
             return;
         
         // Flippy animation tween when looking left-right
-        var scale = node.Comp.Sprite3D.FlipH ? 1f : -1f;
+        var scale = node.Comp.Sprite3D.FlipH ? -1f : 1f;
         var tween = CreateTween();
         tween.SetEase(Tween.EaseType.Out);
         tween.TweenProperty(node.Comp.Sprite3D, "scale", new Vector3(scale, 1, 1), 0.15f);
+        
+        // NOTE: I DON'T KNOW IF THIS ACTUALLY WORKS
+        // Turn the hitbox as well
+        node.Comp?.CollisionShape3D?.Scale = new Vector3(scale, 1, 1);
+    }
+}
+
+public class UpdateRotationSignal : UserSignalArgs
+{
+    private Node<RotationComponent> Node;
+    
+    public UpdateRotationSignal(Node<RotationComponent> node)
+    {
+        Node = node;
     }
 }

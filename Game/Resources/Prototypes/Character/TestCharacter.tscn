@@ -10,6 +10,7 @@
 [node name="TestCharacter" unique_id=377517059 instance=ExtResource("1_vg6n3")]
 
 [node name="RotationComponent" type="Node3D" parent="." index="3" unique_id=1264607679 node_paths=PackedStringArray("CollisionShape3D", "Sprite3D")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
 script = ExtResource("4_ito1u")
 CollisionShape3D = NodePath("../CollisionShape3D")
 Sprite3D = NodePath("../Sprite3D")
@@ -21,7 +22,6 @@ shape = SubResource("CapsuleShape3D_ag62g")
 [node name="Sprite3D" type="Sprite3D" parent="." index="5" unique_id=1873701755]
 layers = 524288
 gi_mode = 0
-flip_h = true
 pixel_size = 0.08
 billboard = 1
 shaded = true
@@ -36,8 +36,9 @@ metadata/_custom_type_script = "uid://i2wcab2fiosk"
 
 [node name="SpotLight3D" type="SpotLight3D" parent="PersonalVisionComponent2" index="0" unique_id=1935467648]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.5)
-visible = false
 light_cull_mask = 4294443007
+shadow_enabled = true
+shadow_caster_mask = 4294443007
 
 [node name="OmniLight3D" type="OmniLight3D" parent="PersonalVisionComponent2" index="1" unique_id=1931347052]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
