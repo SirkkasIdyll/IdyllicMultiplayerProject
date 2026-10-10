@@ -39,30 +39,33 @@ public partial class ENetClient : Node
         
         if (_peer == null)
             return;
-        
-        if (_client.CheckEvents(out var netEvent) <= 0)
+
+        while (_client.CheckEvents(out var netEvent) > 0)
+        {
             if (_client.Service(0, out netEvent) <= 0)
-                return;
-        
-        switch (netEvent.Type) {
-            case EventType.None:
                 break;
+            
+            switch (netEvent.Type) {
+                case EventType.None:
+                    break;
         
-            case EventType.Connect:
-                OnPeerConnected(netEvent);
-                break;
+                case EventType.Connect:
+                    OnPeerConnected(netEvent);
+                    break;
         
-            case EventType.Disconnect:
-                OnPeerDisconnected(netEvent);
-                break;
+                case EventType.Disconnect:
+                    OnPeerDisconnected(netEvent);
+                    break;
         
-            case EventType.Timeout:
-                OnPeerTimeout(netEvent);
-                break;
+                case EventType.Timeout:
+                    OnPeerTimeout(netEvent);
+                    break;
         
-            case EventType.Receive:
-                OnPeerReceivedPacket(netEvent);
-                break;
+                case EventType.Receive:
+                    OnPeerReceivedPacket(netEvent);
+                    netEvent.Packet.Dispose();
+                    break;
+            }
         }
         
         _client.Flush();
