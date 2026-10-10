@@ -11,7 +11,7 @@ namespace Game.Temperance.NCS;
 /// and contain the fields needed to implement that kind of behavior when accessed by a <see cref="NodeSystem"/>
 /// Only one unique instance of a component can be added to a node
 /// </summary>
-public abstract partial class Component : Node
+public abstract partial class Component : Node3D
 {
     /// <summary>
     /// When the Synchronized attribute is added,

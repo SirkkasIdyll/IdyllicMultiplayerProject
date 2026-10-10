@@ -12,6 +12,7 @@ public partial class MovementComponent : Component
     [SynchronizedField]
     public Vector2 InputDirection = Vector2.Zero;
     
+    [Export]
     [SynchronizedField(OnChange = true)]
-    public float MovementSpeed = 4.5f;
+    public float MovementSpeed = 7.5f;
 }

@@ -1,7 +1,7 @@
 ﻿using Godot;
 using Game.Temperance.NCS;
 
-namespace Game.Client.Systems;
+namespace Game.Client.Systems.UserInterface;
 
 [GlobalClass]
 public partial class UserInterfaceSystem : NodeSystem
