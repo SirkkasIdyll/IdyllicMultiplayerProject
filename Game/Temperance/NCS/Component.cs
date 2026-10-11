@@ -14,30 +14,6 @@ namespace Game.Temperance.NCS;
 public abstract partial class Component : Node3D
 {
     /// <summary>
-    /// When the Synchronized attribute is added,
-    /// the server will constantly communicate the state of SynchronizedFields to clients
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    protected sealed class Synchronized : Attribute { }
-
-    /// <summary>
-    /// Will do nothing if the component is not Synchronized
-    /// Marks the field to be looked at when sending updates to clients
-    /// 
-    /// As for how I'm going to accomplish this, I don't know
-    /// I think I should entirely use ENet for this since this is something that's going to happen extremely often
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Field)]
-    protected sealed class SynchronizedField : Attribute
-    {
-        /// <summary>
-        /// When set to false, will have updates sent frequently and unreliably
-        /// When set to true, will only have updates sent reliably whenever the value changes
-        /// </summary>
-        public bool OnChange = false;
-    }
-    
-    /// <summary>
     /// Set node name to the class name because Godot[GlobalClass] requires the node name to match the class name
     /// </summary>
     public override void _EnterTree()
@@ -48,4 +24,28 @@ public abstract partial class Component : Node3D
         SetName(GetType().Name);
         SetOwner(GetParent());
     }
+}
+
+/// <summary>
+/// When the Synchronized attribute is added,
+/// the server will constantly communicate the state of SynchronizedFields to clients
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class Synchronized : Attribute { }
+
+/// <summary>
+/// Will do nothing if the component is not Synchronized
+/// Marks the field to be looked at when sending updates to clients
+/// 
+/// As for how I'm going to accomplish this, I don't know
+/// I think I should entirely use ENet for this since this is something that's going to happen extremely often
+/// </summary>
+[AttributeUsage(AttributeTargets.Field)]
+public sealed class SynchronizedField : Attribute
+{
+    /// <summary>
+    /// When set to false, will have updates sent frequently and unreliably
+    /// When set to true, will only have updates sent reliably whenever the value changes
+    /// </summary>
+    public bool OnChange = false;
 }

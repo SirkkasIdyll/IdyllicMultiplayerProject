@@ -62,15 +62,6 @@ public partial class ENetServer : Node
             _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
         }
-
-        // _timeElapsed += delta;
-        // GD.Print("Average bandwidth: " + _dataSentKb / _timeElapsed / 1000 + " kb/s");
-        // if (_timeElapsed > 60)
-        // {
-        //     _dataSentKb = 0;
-        //     _timeElapsed = 0;
-        // }
-        
         
         while (_server.CheckEvents(out var netEvent) > 0)
         {
