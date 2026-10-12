@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using Godot;
 
 namespace Game.Temperance.Network;
 
@@ -120,11 +121,32 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// </summary>
     public int ReadInt(int min = int.MinValue, int max = int.MaxValue)
     {
+        if (max <= min)
+            throw new InvalidOperationException("Max must be greater than min");
+        
         var bits = BufferWriter.CalculateBits(min, max);
         Read(bits, out var content);
         
         // We re-add the minimum here because we subtracted the minimum when we first wrote the packet
         // as a quirk of converting from int to uint back to int
         return (int)content + min;
+    }
+
+    /// <summary>
+    /// Honestly, following the math to undo it kind of hurts my brain
+    /// </summary>
+    public float ReadFloat(float min, float max, float precision = 0.01f)
+    {
+        if (max <= min)
+            throw new InvalidOperationException("Max must be greater than min");
+        
+        // Range is always positive
+        var rangeFloat = max - min;
+        var rangeIntForPrecision = (int)Mathf.Ceil(rangeFloat / precision);
+        var bits = BufferWriter.CalculateBits(0, rangeIntForPrecision);
+        Read(bits, out var content);
+        
+        // We're just undoing all the shenanigans we did to write it in the first place
+        return min + content / (float)rangeIntForPrecision * rangeFloat;
     }
 }

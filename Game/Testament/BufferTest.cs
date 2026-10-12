@@ -135,4 +135,29 @@ public class BufferTest
         AssertInt(bufferReader.ReadInt()).IsEqual(int.MaxValue);
         AssertInt(bufferReader.ReadInt(min, max)).IsEqual(randomValue);
     }
+    
+    [TestCase]
+    public void FloatReadAndWriteTest()
+    {
+        var buffer = new byte[6];
+        var bufferWriter = new BufferWriter(buffer);
+        // It should take two bytes this time to handle this range
+        var min = -5.25f;
+        var max = 2.68f;
+        var precision = 0.01f;
+        var range = max - min;
+        var randomValue1 = Random.Shared.NextSingle() * range + min;
+        var randomValue2 = Random.Shared.NextSingle() * range + min;
+        var randomValue3 = Random.Shared.NextSingle() * range + min;
+        bufferWriter.WriteFloat(randomValue1, min, max, precision);
+        bufferWriter.WriteFloat(randomValue2, min, max, precision);
+        bufferWriter.WriteFloat(randomValue3, min, max, precision);
+        bufferWriter.FinalWrite(out _);
+        
+        var bufferReader = new BufferReader(buffer);
+        // If we're good to two decimal places, we are alright alright alright
+        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue1 * precision));
+        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue2 * precision));
+        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue3 * precision));
+    }
 }

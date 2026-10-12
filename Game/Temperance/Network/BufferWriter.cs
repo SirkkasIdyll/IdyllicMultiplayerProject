@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Numerics;
+using Godot;
 
 namespace Game.Temperance.Network;
 
@@ -166,17 +167,52 @@ public ref struct BufferWriter(Span<byte> buffer)
     }
 
     /// <summary>
-    /// Given a value, writes the bits of it to the buffer
+    /// Given an int, writes the bits of it to the buffer
     /// The min-max range is used for quantization (optimization of bits used to store the int in the buffer)
     /// so you are HIGHLY encouraged to pass one :))))))))
     /// </summary>
     public void WriteInt(int value, int min = int.MinValue, int max = int.MaxValue)
     {
+        if (max <= min)
+            throw new InvalidOperationException("Max must be greater than min");
+        
         // Yes you still have to respect the range
         if (value < min || value > max)
             throw new ArgumentOutOfRangeException(nameof(value));
         
         // We subtract the min from the value because it lets us support the negative half of numbers in uint
-        StoreOrWrite((uint)(value - min), CalculateBits(min, max));
+        // uints are more efficient than integers by one bit because we don't need to reserve one bit at all times to
+        // indicate whether it's positive or negative
+        var content = (uint)(value - min);
+        var bits = CalculateBits(min, max);
+        StoreOrWrite(content, bits);
+    }
+
+    /// <summary>
+    /// For floating points we preserve what we think will be an acceptable amount of precision
+    /// that won't impact gameplay visually or logically
+    ///
+    /// In the packet it will be written like it's an int, it just needs to be multiplied by precision to get the decimals again
+    /// Treating it like an int saves one bit on the decimal
+    /// </summary>
+    public void WriteFloat(float value, float min, float max, float precision = 0.01f)
+    {
+        if (max <= min)
+            throw new InvalidOperationException("Max must be greater than min");
+        
+        if (value < min || value > max)
+            throw new ArgumentOutOfRangeException(nameof(value));
+        
+        // Range is always positive
+        var rangeFloat = max - min;
+        var rangeIntForPrecision = (int)Mathf.Ceil(rangeFloat / precision);
+        var bits = CalculateBits(0, rangeIntForPrecision);
+        
+        // Normalized value is used to find an acceptable int value representation of the original float number
+        // and we subtract the minimum so we don't have to deal with negatives like the WriteInt method
+        // Why am I adding 0.5f though? I don't know, it was in the Gaffer article
+        var normalized = Math.Clamp((value - min) / rangeFloat, 0f, 1f);
+        var content = (uint)Math.Floor(normalized * rangeIntForPrecision + 0.5f);
+        StoreOrWrite(content, bits);
     }
 }
