@@ -33,7 +33,7 @@ public ref struct BufferWriter(Span<byte> buffer)
     private ulong _tempBuffer = 0;
 
     /// <summary>
-    /// We keep track of the actual number of bits we've written to the scratch buffer
+    /// We keep track of the actual number of bits we've written to the temp buffer
     /// So that we can add onto partially filled words for proper bitpacking
     /// Once we hit 32, we send the word over to the actual buffer in one go
     /// </summary>
@@ -62,6 +62,26 @@ public ref struct BufferWriter(Span<byte> buffer)
         // The 1u is shifted left by the amount of bits given to put it 1 ahead of all of the bits you want
         // Then when you subtract 1, all the bits flip from a 0 to a 1, giving you the proper mask
         return (1u << bits) - 1;
+    }
+
+    /// <summary>
+    /// Given a range of valid values for an integer, calculates the bits necessary to hold the information
+    /// Important for quantization!
+    /// We only need to care about the specific number of bits a value needs rather than the whole 32-bit range
+    /// </summary>
+    public static int CalculateBits(int min, int max)
+    {
+        // Bit operations needs an unsigned integer to do the log
+        var range = (uint)max - (uint)min;
+        if (range == 0)
+            return 0;
+        
+        // Gets us the binary FLOOR, then we add 1 to get bits :)
+        // log_2(1) = 0 (2⁰ = 1), can't have a bit of 0 so 0 + 1 = 1
+        // log_2(2) = 1 (2¹ = 2), takes 2 bits to write 2 so 1 + 1 = 2
+        // log_2(3) = 1.584... (2^¹.⁵⁸⁴... = 3) takes 2 bits to write 3 so 1 + 1 = 2
+        // log_2(4) = 2 (2² = 4), takes 3 bits to write 4 so 2 + 1 = 3
+        return BitOperations.Log2(range) + 1;
     }
 
     /// <summary>
@@ -143,5 +163,20 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteBool(bool value)
     {
         StoreOrWrite(value ? 1u : 0u, 1);
+    }
+
+    /// <summary>
+    /// Given a value, writes the bits of it to the buffer
+    /// The min-max range is used for quantization (optimization of bits used to store the int in the buffer)
+    /// so you are HIGHLY encouraged to pass one :))))))))
+    /// </summary>
+    public void WriteInt(int value, int min = int.MinValue, int max = int.MaxValue)
+    {
+        // Yes you still have to respect the range
+        if (value < min || value > max)
+            throw new ArgumentOutOfRangeException(nameof(value));
+        
+        // We subtract the min from the value because it lets us support the negative half of numbers in uint
+        StoreOrWrite((uint)(value - min), CalculateBits(min, max));
     }
 }

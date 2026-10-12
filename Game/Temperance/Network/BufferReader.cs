@@ -114,4 +114,17 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
         Read(1, out var content);
         return content != 0;
     }
+
+    /// <summary>
+    /// Given a range, returns the integer read from the amount of bits it would take to cover that range
+    /// </summary>
+    public int ReadInt(int min = int.MinValue, int max = int.MaxValue)
+    {
+        var bits = BufferWriter.CalculateBits(min, max);
+        Read(bits, out var content);
+        
+        // We re-add the minimum here because we subtracted the minimum when we first wrote the packet
+        // as a quirk of converting from int to uint back to int
+        return (int)content + min;
+    }
 }
