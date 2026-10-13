@@ -115,6 +115,29 @@ public class BufferTest
     }
 
     [TestCase]
+    [ThrowsException(typeof(InvalidOperationException))]
+    public void BufferOverflowTest()
+    {
+        var buffer = new byte[4];
+        var bufferWriter = new BufferWriter(buffer);
+        bufferWriter.WriteInt(int.MaxValue);
+        bufferWriter.WriteInt(int.MaxValue);
+    }
+
+    [TestCase]
+    [ThrowsException(typeof(InvalidOperationException))]
+    public void BufferUnderflowTest()
+    {
+        var buffer = new byte[4];
+        var bufferWriter = new BufferWriter(buffer);
+        bufferWriter.WriteInt(int.MaxValue);
+        
+        var bufferReader = new BufferReader(buffer);
+        AssertInt(bufferReader.ReadInt()).IsEqual(int.MaxValue);
+        bufferReader.ReadInt(0, 1);
+    }
+
+    [TestCase]
     public void IntReadAndWriteTest()
     {
         var buffer = new byte[5];
@@ -141,7 +164,7 @@ public class BufferTest
     {
         var buffer = new byte[6];
         var bufferWriter = new BufferWriter(buffer);
-        // It should take two bytes this time to handle this range
+        // It should take two bytes this time to handle this range at this precision level
         var min = -5.25f;
         var max = 2.68f;
         var precision = 0.01f;
@@ -155,9 +178,9 @@ public class BufferTest
         bufferWriter.FinalWrite(out _);
         
         var bufferReader = new BufferReader(buffer);
-        // If we're good to two decimal places, we are alright alright alright
-        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue1 * precision));
-        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue2 * precision));
-        AssertInt((int)(bufferReader.ReadFloat(min, max) * precision)).IsEqual((int)(randomValue3 * precision));
+        // If we are +- half the precision range, we are all good
+        AssertFloat(bufferReader.ReadFloat(min, max, precision)).IsEqualApprox(randomValue1, precision / 2);
+        AssertFloat(bufferReader.ReadFloat(min, max, precision)).IsEqualApprox(randomValue2, precision / 2);
+        AssertFloat(bufferReader.ReadFloat(min, max, precision)).IsEqualApprox(randomValue3, precision / 2);
     }
 }

@@ -2,6 +2,10 @@ using System;
 using System.Buffers.Binary;
 using System.Numerics;
 using Godot;
+using Plane = Godot.Plane;
+using Vector2 = Godot.Vector2;
+using Vector3 = Godot.Vector3;
+using Vector4 = Godot.Vector4;
 
 namespace Game.Temperance.Network;
 
@@ -14,13 +18,13 @@ namespace Game.Temperance.Network;
 /// rather than separating each bit of information into their own distinct segments. It's up to you to know
 /// how to decode the incoming packets by adding on headers and things like that
 /// </summary>
-public ref struct BufferWriter(Span<byte> buffer)
+public ref struct BufferWriter(byte[] buffer)
 {
     /// <summary>
     /// Using a Span requires we use a ref struct instead of a class
     /// Holds the bytes we want to eventually turn into a packet
     /// </summary>
-    private readonly Span<byte> _buffer = buffer;
+    private readonly Span<byte> _buffer = new(buffer, 0,  buffer.Length);
     
     /// <summary>
     /// Where to write the next 32-bit word in the buffer
@@ -107,7 +111,7 @@ public ref struct BufferWriter(Span<byte> buffer)
         // Multiplied by 8 is the total amount of bits it could ever hold
         // SO if we compare our word index converted to bits plus the amount of bits we want to potentially write
         // And it exceeds our max length, it leads to an overflow
-        if ((_wordIndex - 1) * 32 + _bitsInTempBuffer + bits > _buffer.Length * 8)
+        if (_wordIndex * 32 + _bitsInTempBuffer + bits > _buffer.Length * 8)
             throw new InvalidOperationException("Potential buffer overflow");
         
         // Take up to 32 bits from the content that we want to insert into our temp buffer
@@ -155,6 +159,7 @@ public ref struct BufferWriter(Span<byte> buffer)
         
         // If we use the BufferWriter again, we leave the bits at 0 for the next person :)
         _bitsInTempBuffer = 0;
+        _wordIndex = 0;
     }
 
     /// <summary>
@@ -183,7 +188,7 @@ public ref struct BufferWriter(Span<byte> buffer)
         // We subtract the min from the value because it lets us support the negative half of numbers in uint
         // uints are more efficient than integers by one bit because we don't need to reserve one bit at all times to
         // indicate whether it's positive or negative
-        var content = (uint)(value - min);
+        var content = (uint)value - (uint)min;
         var bits = CalculateBits(min, max);
         StoreOrWrite(content, bits);
     }
@@ -195,7 +200,7 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// In the packet it will be written like it's an int, it just needs to be multiplied by precision to get the decimals again
     /// Treating it like an int saves one bit on the decimal
     /// </summary>
-    public void WriteFloat(float value, float min, float max, float precision = 0.01f)
+    public void WriteFloat(float value, float min, float max, float precision)
     {
         if (max <= min)
             throw new InvalidOperationException("Max must be greater than min");
@@ -205,7 +210,7 @@ public ref struct BufferWriter(Span<byte> buffer)
         
         // Range is always positive
         var rangeFloat = max - min;
-        var rangeIntForPrecision = (int)Mathf.Ceil(rangeFloat / precision);
+        var rangeIntForPrecision = (int)MathF.Ceiling(rangeFloat / precision);
         var bits = CalculateBits(0, rangeIntForPrecision);
         
         // Normalized value is used to find an acceptable int value representation of the original float number
@@ -214,5 +219,86 @@ public ref struct BufferWriter(Span<byte> buffer)
         var normalized = Math.Clamp((value - min) / rangeFloat, 0f, 1f);
         var content = (uint)Math.Floor(normalized * rangeIntForPrecision + 0.5f);
         StoreOrWrite(content, bits);
+    }
+    
+    public void WriteVector2(Vector2 value, float min, float max, float precision)
+    {
+        WriteFloat(value.X, min, max, precision);
+        WriteFloat(value.Y, min, max, precision);
+    }
+
+    public void WriteVector2I(Vector2I value, int min = int.MinValue, int max = int.MaxValue)
+    {
+        WriteInt(value.X, min, max);
+        WriteInt(value.Y, min, max);
+    }
+
+    public void WriteRect2(Rect2 value, float min, float max, float precision)
+    {
+        WriteVector2(value.End, min, max, precision);
+        WriteVector2(value.Position, min, max, precision);
+        WriteVector2(value.Size, min, max, precision);
+    }
+
+    public void WriteRect2I(Rect2I value, int min = int.MinValue, int max = int.MaxValue)
+    {
+        WriteVector2I(value.End, min, max);
+        WriteVector2I(value.Position, min, max);
+        WriteVector2I(value.Size, min, max);
+    }
+
+    public void WriteVector3(Vector3 value, float min, float max, float precision)
+    {
+        WriteFloat(value.X, min, max, precision);
+        WriteFloat(value.Y, min, max, precision);
+        WriteFloat(value.Z, min, max, precision);
+    }
+
+    public void WriteVector3I(Vector3I value, int min = int.MinValue, int max = int.MaxValue)
+    {
+        WriteInt(value.X, min, max);
+        WriteInt(value.Y, min, max);
+        WriteInt(value.Z, min, max);
+    }
+
+    public void WriteBasis(Basis value, float min, float max, float precision)
+    {
+        WriteVector3(value.X, min, max, precision);
+        WriteVector3(value.Y, min, max, precision);
+        WriteVector3(value.Z, min, max, precision);
+    }
+
+    public void WriteTransform3D(Transform3D value, float min, float max, float precision)
+    {
+        WriteBasis(value.Basis, min, max, precision);
+        WriteVector3(value.Origin, min, max, precision);
+    }
+
+    public void WriteVector4(Vector4 value, float min, float max, float precision)
+    {
+        WriteFloat(value.W, min, max, precision);
+        WriteFloat(value.X, min, max, precision);
+        WriteFloat(value.Y, min, max, precision);
+        WriteFloat(value.Z, min, max, precision);
+    }
+
+    public void WriteVector4I(Vector4I value, int min = int.MinValue, int max = int.MaxValue)
+    {
+        WriteInt(value.W, min, max);
+        WriteInt(value.X, min, max);
+        WriteInt(value.Y, min, max);
+        WriteInt(value.Z, min, max);
+    }
+
+    public void WritePlane(Plane value, float min, float max, float precision)
+    {
+        WriteFloat(value.D, min, max, precision);
+        WriteVector3(value.Normal, min, max, precision);
+    }
+
+    public void WriteAabb(Aabb value, float min, float max, float precision)
+    {
+        WriteVector3(value.Position, min, max, precision);
+        WriteVector3(value.Size, min, max, precision);
     }
 }
