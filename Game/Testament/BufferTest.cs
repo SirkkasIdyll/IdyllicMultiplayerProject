@@ -198,75 +198,93 @@ public class BufferTest
         var precision = 0.01f;
         
         // Vector2
-        var vector2 = new Vector2(Random.Shared.NextSingle() * range, Random.Shared.NextSingle() * range);
+        var vector2 = new Vector2(
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
+        );
         bufferWriter.WriteVector2(vector2, min, max, precision);
         
         // Vector2I
-        var vector2I = new Vector2I(Random.Shared.Next((int)min, (int)max), Random.Shared.Next((int)min, (int)max));
+        var vector2I = new Vector2I(
+            Random.Shared.Next((int)min, (int)max),
+            Random.Shared.Next((int)min, (int)max)
+        );
         bufferWriter.WriteVector2I(vector2I, (int)min, (int)max);
         
         // Rect2
-        var rect2Position = new Vector2(Random.Shared.NextSingle() * range, Random.Shared.NextSingle() * range);
-        var rect2Size = new Vector2(Random.Shared.NextSingle() * range, Random.Shared.NextSingle() * range);
+        var rect2Position = new Vector2(
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
+        );
+        var rect2Size = new Vector2(
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
+        );
         var rect2 = new Rect2(rect2Position, rect2Size);
         bufferWriter.WriteRect2(rect2, min, max, precision);
 
         // Rect2I
-        var rect2IPosition = new Vector2I(Random.Shared.Next((int)min, (int)max), Random.Shared.Next((int)min, (int)max));
-        var rect2ISize = new Vector2I(Random.Shared.Next((int)min, (int)max), Random.Shared.Next((int)min, (int)max));
+        var rect2IPosition = new Vector2I(
+            Random.Shared.Next((int)min, (int)max),
+            Random.Shared.Next((int)min, (int)max)
+        );
+        var rect2ISize = new Vector2I(
+            Random.Shared.Next((int)min, (int)max),
+            Random.Shared.Next((int)min, (int)max)
+        );
         var rect2I = new Rect2I(rect2IPosition, rect2ISize);
-        bufferWriter.WriteRect2I(rect2I);
+        bufferWriter.WriteRect2I(rect2I, (int)min, (int)max);
         
         // Vector3
         var vector3 = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
             );
         bufferWriter.WriteVector3(vector3, min, max, precision);
-
+        
         // Vector3I
         var vector3I = new Vector3I(
             Random.Shared.Next((int)min, (int)max),
             Random.Shared.Next((int)min, (int)max),
             Random.Shared.Next((int)min, (int)max)
         );
-        bufferWriter.WriteVector3I(vector3I);
+        bufferWriter.WriteVector3I(vector3I, (int)min, (int)max);
         
         // Basis
         var basisX = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var basisY = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var basisZ = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var basis = new Basis(basisX, basisY, basisZ);
         bufferWriter.WriteBasis(basis, min, max, precision);
         
         // Transform3D
         var transform3DOrigin = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var transform3D = new Transform3D(basis, transform3DOrigin);
         bufferWriter.WriteTransform3D(transform3D, min, max, precision);
         
         // Vector4
         var vector4 = new Vector4(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         bufferWriter.WriteVector4(vector4, min, max, precision);
         
@@ -277,28 +295,28 @@ public class BufferTest
             Random.Shared.Next((int)min, (int)max),
             Random.Shared.Next((int)min, (int)max)
         );
-        bufferWriter.WriteVector4I(vector4I);
+        bufferWriter.WriteVector4I(vector4I, (int)min, (int)max);
         
         // Plane
-        var d = Random.Shared.NextSingle() * range;
+        var d = Random.Shared.NextSingle() * range + min;
         var normal = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var plane = new Plane(normal, d);
         bufferWriter.WritePlane(plane, min, max, precision);
         
         // Aabb
         var aabbPosition = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var aabbSize = new Vector3(
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range,
-            Random.Shared.NextSingle() * range
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min,
+            Random.Shared.NextSingle() * range + min
         );
         var aabb = new Aabb(aabbPosition, aabbSize);
         bufferWriter.WriteAabb(aabb, min, max, precision);
@@ -322,7 +340,7 @@ public class BufferTest
         var readVector2I = bufferReader.ReadVector2I((int)min, (int)max);
         AssertInt(readVector2I.X).IsEqual(vector2I.X);
         AssertInt(readVector2I.Y).IsEqual(vector2I.Y);
-
+        
         // Rect2
         var readRect2 = bufferReader.ReadRect2(min, max, precision);
         AssertFloat(readRect2.Position.X).IsEqualApprox(rect2.Position.X, precision / 2);
@@ -412,7 +430,7 @@ public class BufferTest
         AssertFloat(readQuaternion.Y).IsEqualApprox(quaternion.Y, precision / 2);
         AssertFloat(readQuaternion.Z).IsEqualApprox(quaternion.Z, precision / 2);
         AssertFloat(readQuaternion.W).IsEqualApprox(quaternion.W, precision / 2);
-
+        
         var readFreebie = bufferReader.ReadInt(0, 5);
         AssertInt(readFreebie).IsEqual(freebie);
     }
