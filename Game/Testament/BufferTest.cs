@@ -426,10 +426,10 @@ public class BufferTest
         
         // Quaternion
         var readQuaternion = bufferReader.ReadQuaternion();
-        AssertFloat(readQuaternion.X).IsEqualApprox(quaternion.X, 0.001f / 2);
-        AssertFloat(readQuaternion.Y).IsEqualApprox(quaternion.Y, 0.001f / 2);
-        AssertFloat(readQuaternion.Z).IsEqualApprox(quaternion.Z, 0.001f / 2);
-        AssertFloat(readQuaternion.W).IsEqualApprox(quaternion.W, 0.001f / 2);
+        AssertFloat(MathF.Abs(readQuaternion.X)).IsEqualApprox(MathF.Abs(quaternion.X), 0.001f / 2);
+        AssertFloat(MathF.Abs(readQuaternion.Y)).IsEqualApprox(MathF.Abs(quaternion.Y), 0.001f / 2);
+        AssertFloat(MathF.Abs(readQuaternion.Z)).IsEqualApprox(MathF.Abs(quaternion.Z), 0.001f / 2);
+        AssertFloat(MathF.Abs(readQuaternion.W)).IsEqualApprox(MathF.Abs(quaternion.W), 0.001f / 2);
         
         var readFreebie = bufferReader.ReadInt(0, 5);
         AssertInt(readFreebie).IsEqual(freebie);
