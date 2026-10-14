@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Numerics;
 using Godot;
 using Plane = Godot.Plane;
+using Quaternion = Godot.Quaternion;
 using Vector2 = Godot.Vector2;
 using Vector3 = Godot.Vector3;
 using Vector4 = Godot.Vector4;
@@ -205,8 +206,9 @@ public ref struct BufferWriter(byte[] buffer)
         if (max <= min)
             throw new InvalidOperationException("Max must be greater than min");
         
-        if (value < min || value > max)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        // floats are kinda iffy at respecting max and mins
+        // if (value < min || value > max)
+        //     throw new ArgumentOutOfRangeException(nameof(value));
         
         // Range is always positive
         var rangeFloat = max - min;
@@ -235,14 +237,12 @@ public ref struct BufferWriter(byte[] buffer)
 
     public void WriteRect2(Rect2 value, float min, float max, float precision)
     {
-        WriteVector2(value.End, min, max, precision);
         WriteVector2(value.Position, min, max, precision);
         WriteVector2(value.Size, min, max, precision);
     }
 
     public void WriteRect2I(Rect2I value, int min = int.MinValue, int max = int.MaxValue)
     {
-        WriteVector2I(value.End, min, max);
         WriteVector2I(value.Position, min, max);
         WriteVector2I(value.Size, min, max);
     }
@@ -300,5 +300,54 @@ public ref struct BufferWriter(byte[] buffer)
     {
         WriteVector3(value.Position, min, max, precision);
         WriteVector3(value.Size, min, max, precision);
+    }
+
+    /// <summary>
+    /// More Glenn Fiedler math shenanigans that covers bitpacking quaternions...
+    /// </summary>
+    public void WriteQuaternion(Quaternion value)
+    {
+        // We know the pythagorean theorem, it's a^2 + b^2 = c^2
+        // If you know two of the three, you can get the third
+        // A quaternion is x^2+y^2+z^2+w^2 = 1
+        // If we know three of the four, we can get the fourth
+        // So let's leave out the fourth, and specifically the largest of the four values
+        // and use an index to figure out which one we left out
+        
+        // also a fun quirk of the equation is that a single value can't be greater than 1/sqrt(2),
+        // so the values are bounded by that instead of -1 and 1
+        var bound = 0.707107f;
+        
+        // 0 = x, 1 = y, 2 = z, 3 = w
+        // Start the comparisons at 0
+        var largestIndex = 0;
+        var largestValue = MathF.Abs(value[0]);
+        for (var i = 1; i < 4; i++)
+        {
+            var nextValue = MathF.Abs(value[i]);
+            if (nextValue < largestValue)
+                continue;
+            
+            largestIndex = i;
+            largestValue = nextValue;
+        }
+        
+        // From the article:
+        // "You might think you need to send a sign bit for w in case it is negative,
+        // but you don’t, because you can make w always positive by negating the entire quaternion
+        // if w is negative (in quaternion space (x,y,z,w) and (-x,-y,-z,-w) represent the same rotation."
+        if (value[largestIndex] < 0)
+            value = -value;
+
+        // Write the index of what we left out so we know what we'll have to reconstruct when we read this later
+        StoreOrWrite((uint)largestIndex, 2);
+        // Write the smallest three values
+        for (var i = 0; i < 4; i++)
+        {
+            if (i == largestIndex)
+                continue;
+            
+            WriteFloat(value[i], -bound, bound, 0.001f);
+        }
     }
 }

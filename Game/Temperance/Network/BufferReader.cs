@@ -241,4 +241,32 @@ public ref struct BufferReader(byte[] buffer)
         var size = ReadVector3(min, max, precision);
         return new Aabb(position, size);
     }
+
+    /// <summary>
+    /// If you want to know the voodoo we're doing just read the Write equivalent of this
+    /// </summary>
+    /// <returns></returns>
+    public Quaternion ReadQuaternion()
+    {
+        var bound = 0.707107f;
+        
+        // We left out the largest value, and we're going to reconstruct it from the three smaller values
+        var largestIndex = ReadInt(0, 3);
+        var content = new Quaternion();
+        
+        // Reverse pythagorean energy except with three squares to add
+        var sumOfSquares = 0f;
+        for (var i = 0; i < 4; i++)
+        {
+            if (i == largestIndex)
+                continue;
+
+            content[i] = ReadFloat(-bound, bound, 0.001f);
+            sumOfSquares += content[i] * content[i];
+        }
+
+        // And here we are
+        content[largestIndex] = MathF.Sqrt(MathF.Max(0f, 1f - sumOfSquares));
+        return content;
+    }
 }
