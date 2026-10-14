@@ -244,6 +244,8 @@ public ref struct BufferReader(byte[] buffer)
 
     /// <summary>
     /// If you want to know the voodoo we're doing just read the Write equivalent of this
+    ///
+    /// This will read a NORMALIZED quaternion since that's useful for rotation!
     /// </summary>
     /// <returns></returns>
     public Quaternion ReadQuaternion()

@@ -322,7 +322,7 @@ public class BufferTest
         bufferWriter.WriteAabb(aabb, min, max, precision);
         
         // Quaternion
-        var quaternion = new Quaternion(basis);
+        var quaternion = new Quaternion(basis).Normalized();
         bufferWriter.WriteQuaternion(quaternion);
 
         var freebie = Random.Shared.Next(0, 5);
@@ -426,10 +426,10 @@ public class BufferTest
         
         // Quaternion
         var readQuaternion = bufferReader.ReadQuaternion();
-        AssertFloat(readQuaternion.X).IsEqualApprox(quaternion.X, precision / 2);
-        AssertFloat(readQuaternion.Y).IsEqualApprox(quaternion.Y, precision / 2);
-        AssertFloat(readQuaternion.Z).IsEqualApprox(quaternion.Z, precision / 2);
-        AssertFloat(readQuaternion.W).IsEqualApprox(quaternion.W, precision / 2);
+        AssertFloat(readQuaternion.X).IsEqualApprox(quaternion.X, 0.001f / 2);
+        AssertFloat(readQuaternion.Y).IsEqualApprox(quaternion.Y, 0.001f / 2);
+        AssertFloat(readQuaternion.Z).IsEqualApprox(quaternion.Z, 0.001f / 2);
+        AssertFloat(readQuaternion.W).IsEqualApprox(quaternion.W, 0.001f / 2);
         
         var readFreebie = bufferReader.ReadInt(0, 5);
         AssertInt(readFreebie).IsEqual(freebie);

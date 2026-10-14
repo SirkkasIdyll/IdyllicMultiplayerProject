@@ -304,9 +304,14 @@ public ref struct BufferWriter(byte[] buffer)
 
     /// <summary>
     /// More Glenn Fiedler math shenanigans that covers bitpacking quaternions...
+    ///
+    /// If your quaternion isn't normalized this will do nothing!
     /// </summary>
     public void WriteQuaternion(Quaternion value)
     {
+        if (!value.IsNormalized())
+            return;
+            
         // We know the pythagorean theorem, it's a^2 + b^2 = c^2
         // If you know two of the three, you can get the third
         // A quaternion is x^2+y^2+z^2+w^2 = 1
@@ -340,7 +345,7 @@ public ref struct BufferWriter(byte[] buffer)
             value = -value;
 
         // Write the index of what we left out so we know what we'll have to reconstruct when we read this later
-        StoreOrWrite((uint)largestIndex, 2);
+        WriteInt(largestIndex, 0, 3);
         // Write the smallest three values
         for (var i = 0; i < 4; i++)
         {
