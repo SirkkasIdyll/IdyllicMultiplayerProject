@@ -62,39 +62,33 @@ public partial class ENetServer : Node
             _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
         }
-
-        // _timeElapsed += delta;
-        // GD.Print("Average bandwidth: " + _dataSentKb / _timeElapsed / 1000 + " kb/s");
-        // if (_timeElapsed > 60)
-        // {
-        //     _dataSentKb = 0;
-        //     _timeElapsed = 0;
-        // }
         
-        if (_server.CheckEvents(out var netEvent) <= 0)
+        while (_server.CheckEvents(out var netEvent) > 0)
+        {
             if (_server.Service(0, out netEvent) <= 0)
-                return;
-        
-        switch (netEvent.Type) {
-            case EventType.None:
                 break;
+            
+            switch (netEvent.Type) {
+                case EventType.None:
+                    break;
 
-            case EventType.Connect:
-                OnPeerConnected(netEvent);
-                break;
+                case EventType.Connect:
+                    OnPeerConnected(netEvent);
+                    break;
 
-            case EventType.Disconnect:
-                OnPeerDisconnected(netEvent);
-                break;
+                case EventType.Disconnect:
+                    OnPeerDisconnected(netEvent);
+                    break;
 
-            case EventType.Timeout:
-                OnPeerTimeout(netEvent);
-                break;
+                case EventType.Timeout:
+                    OnPeerTimeout(netEvent);
+                    break;
 
-            case EventType.Receive:
-                OnPeerReceivedPacket(netEvent);
-                netEvent.Packet.Dispose();
-                break;
+                case EventType.Receive:
+                    OnPeerReceivedPacket(netEvent);
+                    netEvent.Packet.Dispose();
+                    break;
+            }
         }
         
         _server.Flush();
