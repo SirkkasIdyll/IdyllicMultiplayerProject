@@ -48,4 +48,24 @@ public sealed class SynchronizedField : Attribute
     /// When set to true, will only have updates sent reliably whenever the value changes
     /// </summary>
     public bool OnChange = false;
+
+    /// <summary>
+    /// The smallest the field is allowed to be if it's numeric
+    /// Important for quantization!
+    /// Set this so that we can save bits in our packets
+    /// </summary>
+    public float Min;
+    
+    /// <summary>
+    /// The largest the field is allowed to be if it's numeric
+    /// Important for quantization!
+    /// Set this so that we can save bits in our packets
+    /// </summary>
+    public float Max;
+    
+    /// <summary>
+    /// The more precision we support, the more bits we have to reserve
+    /// Set this to the largest value we can that doesn't affect gameplay visually or logically
+    /// </summary>
+    public float Precision = 0.01f;
 }

@@ -8,6 +8,7 @@ namespace Judgement;
 
 /// <summary>
 /// I feel like a caveman writing SignalBus template code so let's hope I can automate this!
+/// Edit: It worked!
 /// </summary>
 [Generator]
 public class SignalBusGenerator : IIncrementalGenerator
@@ -57,7 +58,6 @@ public class SignalBusGenerator : IIncrementalGenerator
         var sourceBuilder = new StringBuilder(@"using System;
 using ENet;
 using Godot;
-using Google.Protobuf.Collections;
 using Game.Temperance.NCS;
 ");
         if (symbolNameSpace != "Game.Temperance.NCS")
