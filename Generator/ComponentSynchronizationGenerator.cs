@@ -299,11 +299,11 @@ public partial class {className}
         
         foreach (var argument in fieldArguments)
         {
-            if (argument.Key == "Min" && argument.Value.Value is int minimum)
-                result += $", {minimum}";
+            if (argument.Key == "Min" && argument.Value.Value is float minimum)
+                result += $", (int){minimum}";
                 
-            if (argument.Key == "Max" && argument.Value.Value is int maximum)
-                result += $", {maximum}";
+            if (argument.Key == "Max" && argument.Value.Value is float maximum)
+                result += $", (int){maximum}";
         }
         
         return result;
