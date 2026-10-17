@@ -157,7 +157,7 @@ public partial class {className}
             if (writeString.Length <= 0)
                 continue;
             
-            sourceBuilder.AppendLine($"        bufferReader.{writeString};");
+            sourceBuilder.AppendLine($"        {field.Key.Name} = bufferReader.{writeString};");
         }
         sourceBuilder.AppendLine("    }");
         sourceBuilder.AppendLine();
@@ -187,7 +187,7 @@ public partial class {className}
             if (writeString.Length <= 0)
                 continue;
             
-            sourceBuilder.AppendLine($"        bufferReader.{writeString};");
+            sourceBuilder.AppendLine($"        {field.Key.Name} = bufferReader.{writeString};");
         }
         sourceBuilder.AppendLine("    }");
         
