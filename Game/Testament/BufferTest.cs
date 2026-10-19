@@ -434,4 +434,18 @@ public class BufferTest
         var readFreebie = bufferReader.ReadInt(0, 5);
         AssertInt(readFreebie).IsEqual(freebie);
     }
+
+    [TestCase]
+    public void GuidReadAndWriteTest()
+    {
+        var buffer = new byte[16];
+        var bufferWriter = new BufferWriter(buffer);
+        var guid = Guid.CreateVersion7();
+        bufferWriter.StoreOrWrite(guid.ToByteArray());
+        
+        var bufferReader = new BufferReader(buffer);
+        var bytes = new ReadOnlySpan<byte>(bufferReader.Read(16));
+        AssertBool(Guid.TryParse(bytes, out var readGuid)).IsTrue();
+        AssertBool(guid == readGuid).IsTrue();
+    }
 }
