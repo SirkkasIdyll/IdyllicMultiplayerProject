@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using Game.Resources.ProtocolBuffers;
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
 using Game.Temperance.Signals;
-using Games.Resources.ProtocolBuffers;
 
 namespace Game.Shared.Systems.Movement;
 
@@ -22,8 +19,6 @@ public partial class MovementSystem : NodeSystem
         base._Ready();
 
         _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
-        _signalBus.SendNodeStatesSignal += OnSendNodeStates;
-        _signalBus.ReceiveNodeStatesSignal += OnReceiveNodeStates;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -38,7 +33,7 @@ public partial class MovementSystem : NodeSystem
             
             if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
                 continue;
-
+            
             characterBody3D.Velocity = new Vector3
             {
                 X = movementComponent.MovementSpeed * movementComponent.InputDirection.X,
@@ -72,7 +67,7 @@ public partial class MovementSystem : NodeSystem
         
         // Send the movement to the server so that it can simulate it on its side
         var userInputMessage = new UserInput { Movement = new GdVector2 { X = input.X, Y = input.Y } };
-        ENetClient.Instance.Send(ENetChannels.UserInput, userInputMessage);
+        ENetClient.Instance.Send(ENetChannels.UserInputUnreliable, userInputMessage);
     }
 
     private void OnReceiveMovementInput(Guid netGuid, Vector2 input, ref ReceiveMovementInputSignal signal)

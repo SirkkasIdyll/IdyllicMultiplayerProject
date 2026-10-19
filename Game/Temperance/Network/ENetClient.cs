@@ -1,11 +1,8 @@
 ﻿using System;
 using ENet;
 using Godot;
-using Google.Protobuf;
-using Game.Resources.ProtocolBuffers;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
-using Games.Resources.ProtocolBuffers;
 
 namespace Game.Temperance.Network;
 
@@ -14,10 +11,22 @@ public partial class ENetClient : Node
     private readonly SignalBus _signalBus = SignalBus.Instance;
     public static ENetClient Instance { get; } = new();
 
+    /// <summary>
+    /// This is a temporary form of "authentication" that identifies a client before
+    /// I move on to the real stuff
+    /// </summary>
     public Guid EnetGuid = Guid.CreateVersion7();
+    
+    /// <summary>
+    /// Sends and receives packets
+    /// </summary>
     private readonly Host _client = new();
-    private Peer? _peer;
-
+    
+    /// <summary>
+    /// Client's only connect to the server, never with each other, so they only have one peer :(
+    /// </summary>
+    private Peer? _serverPeer;
+    
     /// <summary>
     /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
     /// is so we can tell the server when a specific input happened, then it can tell us when the last client tick
@@ -36,7 +45,7 @@ public partial class ENetClient : Node
     {
         base._ExitTree();
 
-        _peer?.DisconnectNow(0);
+        _serverPeer?.DisconnectNow(0);
         _client.Dispose();
     }
     
@@ -44,7 +53,7 @@ public partial class ENetClient : Node
     {
         base._PhysicsProcess(delta);
         
-        if (_peer == null)
+        if (_serverPeer == null)
             return;
 
         _clientTick++;
@@ -103,16 +112,28 @@ public partial class ENetClient : Node
         
         var buffer = new byte[netEvent.Packet.Length];
         netEvent.Packet.CopyTo(buffer);
-        switch ((ENetChannels)netEvent.ChannelID)
+
+        var bufferReader = new BufferReader(buffer);
+        var channel = bufferReader.ReadInt(0, Networking.ChannelMax);
+        
+        // The message was sent via the wrong channel and you should feel bad about it
+        if (netEvent.ChannelID != channel)
+            return;
+        
+        switch ((ENetChannels)channel)
         {
-            default:
             case ENetChannels.ConnectionVerificationReliable:
+                break;
             case ENetChannels.UserInputUnreliable:
                 break;
             case ENetChannels.TickUpdateUnreliable:
                 var message = NodeStates.Parser.ParseFrom(buffer);
                 var signal = new ReceiveNodeStatesSignal() { Message = message };
                 _signalBus.EmitReceiveNodeStatesSignal(ref signal);
+                break;
+            case ENetChannels.EventsAndOnChangeReliable:
+                break;
+            default:
                 break;
         }
     }
@@ -123,8 +144,8 @@ public partial class ENetClient : Node
     /// <returns>Also returns 0 if not connected</returns>
     public ulong GetPacketLoss()
     {
-        if (_peer != null && _peer.Value.PacketsSent != 0)
-            return _peer.Value.PacketsLost / _peer.Value.PacketsSent;
+        if (_serverPeer != null && _serverPeer.Value.PacketsSent != 0)
+            return _serverPeer.Value.PacketsLost / _serverPeer.Value.PacketsSent;
         
         return 0;
     }
@@ -135,7 +156,7 @@ public partial class ENetClient : Node
     /// <returns>0 if not connected</returns>
     public uint GetPing()
     {
-        return _peer?.LastRoundTripTime ?? 0;
+        return _serverPeer?.LastRoundTripTime ?? 0;
     }
 
     /// <summary>
@@ -143,7 +164,7 @@ public partial class ENetClient : Node
     /// </summary>
     public bool IsConnected()
     {
-        return _peer?.State == PeerState.Connected;
+        return _serverPeer?.State == PeerState.Connected;
     }
 
     /// <summary>
@@ -154,7 +175,7 @@ public partial class ENetClient : Node
     /// <param name="port"></param>
     public void ToggleConnection(string host, ushort port)
     {
-        if (_peer?.State == PeerState.Connected)
+        if (_serverPeer?.State == PeerState.Connected)
         {
             TryDisconnect();
             return;
@@ -174,12 +195,12 @@ public partial class ENetClient : Node
         var packet = new Packet();
         packet.Create(buffer, flag);
 
-        _peer?.Send((byte)channel, ref packet);
+        _serverPeer?.Send((byte)channel, ref packet);
     }
 
     /// <summary>
     /// Attempts to connect to a given hostname and port
-    /// Check <see cref="_peer"/> to see how the connection went
+    /// Check <see cref="_serverPeer"/> to see how the connection went
     /// </summary>
     /// <param name="host">Can be a host name or IP address</param>
     /// <param name="port"></param>
@@ -190,7 +211,7 @@ public partial class ENetClient : Node
         address.SetHost(host);
 
         // TODO: Does not gracefully handle rejections when SetMaxDuplicatePeers is 1/hit
-        _peer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
+        _serverPeer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
     }
 
     /// <summary>
@@ -198,6 +219,6 @@ public partial class ENetClient : Node
     /// </summary>
     private void TryDisconnect()
     {
-        _peer?.DisconnectLater(0);
+        _serverPeer?.DisconnectLater(0);
     }
 }

@@ -3,13 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
-using Google.Protobuf.Collections;
 using Game.Client.Services.GRpc.Spawn;
-using Game.Resources.ProtocolBuffers;
-using Game.Shared.Systems.Metadata;
 using Game.Temperance.Network;
 using Game.Temperance.Signals;
-using Games.Resources.ProtocolBuffers;
 
 namespace Game.Temperance.NCS;
 
@@ -115,39 +111,6 @@ public partial class NodeManager : Node
             return;
         
         _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
-    }
-
-    private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
-    {
-        if (!Networking.IsServer())
-            return;
-        
-        var signal = new SendNodeStatesSignal();
-        foreach (var (netGuid, _) in NetGuidDictionary)
-            signal.Message.NodeState.Add(new NodeState
-            {
-                Sequence = Library.Time,
-                NodeNetworkGuid = netGuid.ToString()
-            });
-        
-        _signalBus.EmitSendNodeStatesSignal(ref signal);
-        ENetServer.Instance.Broadcast(ENetChannels.SynchronizeNodes, signal.Message);
-    }
-
-    public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
-    {
-        if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
-        {
-            var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
-            nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
-            return nodeUpdateInfo.PredictedNodeStates[0];
-        }
-
-        if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
-                .Transform is null)
-            return new NodeState();
-            
-        return new NodeState();
     }
     
     /// <summary>
@@ -278,47 +241,47 @@ public partial class NodeManager : Node
     }
 }
 
-public class NodeSpawnedSignal : UserSignalArgs
-{
-    public Guid NetGuid;
-    
-    public NodeSpawnedSignal(Guid netGuid)
-    {
-        NetGuid = netGuid;
-    }
-}
-
-public class NodeDespawningSignal : UserSignalArgs
-{
-    public Node3D Node3D;
-
-    public NodeDespawningSignal(Node3D node3D)
-    {
-        Node3D = node3D;
-    }
-}
-
-public class NodeUpdateInfo
-{
-    public readonly Node3D Node;
-    // This exists here because we can't TryGetComponent<> in async threads i.e. gRPC services
-    public readonly MetadataComponent? MetadataComponent;
-    public uint CurrSequence;
-    public OrderedDictionary<uint, NodeState> PredictedNodeStates = new();
-
-    public NodeUpdateInfo(Node3D node, MetadataComponent? metadataComponent)
-    {
-        Node = node;
-        MetadataComponent = metadataComponent;
-    }
-}
-
-public class SendNodeStatesSignal : UserSignalArgs
-{
-    public NodeStates Message = new();
-}
-
-public class ReceiveNodeStatesSignal : UserSignalArgs
-{
-    public NodeStates Message = new();
-}
+// public class NodeSpawnedSignal : UserSignalArgs
+// {
+//     public Guid NetGuid;
+//     
+//     public NodeSpawnedSignal(Guid netGuid)
+//     {
+//         NetGuid = netGuid;
+//     }
+// }
+//
+// public class NodeDespawningSignal : UserSignalArgs
+// {
+//     public Node3D Node3D;
+//
+//     public NodeDespawningSignal(Node3D node3D)
+//     {
+//         Node3D = node3D;
+//     }
+// }
+//
+// public class NodeUpdateInfo
+// {
+//     public readonly Node3D Node;
+//     // This exists here because we can't TryGetComponent<> in async threads i.e. gRPC services
+//     public readonly MetadataComponent? MetadataComponent;
+//     public uint CurrSequence;
+//     public OrderedDictionary<uint, NodeState> PredictedNodeStates = new();
+//
+//     public NodeUpdateInfo(Node3D node, MetadataComponent? metadataComponent)
+//     {
+//         Node = node;
+//         MetadataComponent = metadataComponent;
+//     }
+// }
+//
+// public class SendNodeStatesSignal : UserSignalArgs
+// {
+//     public NodeStates Message = new();
+// }
+//
+// public class ReceiveNodeStatesSignal : UserSignalArgs
+// {
+//     public NodeStates Message = new();
+// }

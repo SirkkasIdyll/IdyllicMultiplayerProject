@@ -4,13 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using ENet;
 using Godot;
-using Google.Protobuf;
-using Game.Resources.ProtocolBuffers;
 using Game.Shared.Systems.Movement;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
-using Games.Resources.ProtocolBuffers;
-using Timer = Godot.Timer;
 
 namespace Game.Temperance.Network;
 
@@ -120,11 +116,26 @@ public partial class ENetServer : Node
     {
         GD.Print("ENet Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
         var buffer = new byte[netEvent.Packet.Length];
+        netEvent.Packet.CopyTo(buffer);
+        var bufferReader = new BufferReader(buffer);
+        var channel = bufferReader.ReadInt(0, Networking.ChannelMax);
+        
+        // The message was sent via the wrong channel and you should feel bad about it
+        if (netEvent.ChannelID != channel)
+            return;
+
+        // Clients are not allowed to send messages to our other channels while they are unverified
+        // SERVER KILL THAT PERSON
+        if (!_verifiedPeers.ContainsKey(netEvent.Peer) &&
+            (ENetChannels)channel != ENetChannels.ConnectionVerificationReliable)
+        {
+            netEvent.Peer.DisconnectNow(0);
+            return;
+        }
         
         // For connection verifications, we don't want to pre-check if the peer is verified
         if ((ENetChannels)netEvent.ChannelID == ENetChannels.ConnectionVerificationReliable)
         {
-            netEvent.Packet.CopyTo(buffer);
             var clientGuidMessage = ConnectionVerificationRequest.Parser.ParseFrom(buffer);
             
             // Check for a valid guid
@@ -161,7 +172,6 @@ public partial class ENetServer : Node
         if (!IsPeerVerified(netEvent.Peer))
             return;
         
-        netEvent.Packet.CopyTo(buffer);
         switch ((ENetChannels)netEvent.ChannelID)
         {
             default:
@@ -271,6 +281,40 @@ public partial class ENetServer : Node
         }
 
         return false;
+    }
+    
+    // TODO: REMOVE THIS
+    private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
+    {
+        if (!Networking.IsServer())
+            return;
+        
+        var signal = new SendNodeStatesSignal();
+        foreach (var (netGuid, _) in NetGuidDictionary)
+            signal.Message.NodeState.Add(new NodeState
+            {
+                Sequence = Library.Time,
+                NodeNetworkGuid = netGuid.ToString()
+            });
+        
+        _signalBus.EmitSendNodeStatesSignal(ref signal);
+        ENetServer.Instance.Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
+    }
+
+    public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
+    {
+        if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
+        {
+            var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
+            nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
+            return nodeUpdateInfo.PredictedNodeStates[0];
+        }
+
+        if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
+                .Transform is null)
+            return new NodeState();
+            
+        return new NodeState();
     }
 }
 

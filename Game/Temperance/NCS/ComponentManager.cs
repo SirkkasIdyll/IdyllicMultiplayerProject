@@ -2,8 +2,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
-using Google.Protobuf.Collections;
-using Game.Shared.Systems.Metadata;
 using Game.Temperance.Network;
 using Game.Temperance.Signals;
 using static GdUnit4.Assertions;
