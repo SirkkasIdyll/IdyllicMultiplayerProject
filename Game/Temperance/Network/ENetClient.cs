@@ -101,11 +101,16 @@ public partial class ENetClient : Node
     private void OnPeerConnected(Event netEvent)
     {
         GD.Print("ENet Client connected to server. " + EnetGuid);
-        
+
+        // A GUID takes up 16 bytes, the channel ID pushes us past that to 17 bytes
+        var buffer = new byte[17];
+        var bufferWriter = new BufferWriter(buffer);
+        bufferWriter.WriteInt((int)ReliableClientPacketType.ConnectToServer, 0, Networking.MaxPacketTypesPerChannel);
+        bufferWriter.StoreOrWrite(EnetGuid.ToByteArray());
+        bufferWriter.FinalWrite(out _);
         // Send connection verification so that other packets sent
         // do not get rejected causing an immediate disconnection
-        var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = EnetGuid.ToString() };
-        Send(ENetChannels.ConnectionVerificationReliable, connectionVerificationRequest, PacketFlags.Reliable);
+        Send(ENetChannels.ReliableClient, buffer, PacketFlags.Reliable);
     }
 
     private void OnPeerDisconnected(Event netEvent)
@@ -127,26 +132,18 @@ public partial class ENetClient : Node
         
         var buffer = new byte[netEvent.Packet.Length];
         netEvent.Packet.CopyTo(buffer);
-
-        var bufferReader = new BufferReader(buffer);
-        var channel = bufferReader.ReadInt(0, Networking.ChannelMax);
         
-        // The message was sent via the wrong channel and you should feel bad about it
-        if (netEvent.ChannelID != channel)
-            return;
-        
-        switch ((ENetChannels)channel)
+        switch ((ENetChannels)netEvent.ChannelID)
         {
-            case ENetChannels.ConnectionVerificationReliable:
-                break;
-            case ENetChannels.UserInputUnreliable:
-                break;
-            case ENetChannels.TickUpdateUnreliable:
-                _unreliableBufferQueue.Enqueue(buffer);
-                break;
-            case ENetChannels.EventsAndOnChangeReliable:
+            case ENetChannels.ReliableServer:
                 _reliableBufferQueue.Enqueue(buffer);
                 break;
+            case ENetChannels.UnreliableServer:
+                _unreliableBufferQueue.Enqueue(buffer);
+                break;
+            // We should never be getting messages from other clients so ignore them lol
+            case ENetChannels.ReliableClient:
+            case ENetChannels.UnreliableClient:
             default:
                 break;
         }

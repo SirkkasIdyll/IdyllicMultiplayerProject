@@ -11,7 +11,7 @@ public static class Networking
     public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromSeconds(PhysicsTickLength);
     public static readonly double ServerTickLength = PhysicsTickLength * 2;
     public static readonly TimeSpan ServerTickSpan = TimeSpan.FromSeconds(ServerTickLength);
-    public const int ChannelMax = 15;
+    public const int MaxPacketTypesPerChannel = 15;
     
     public static bool IsServer()
     {

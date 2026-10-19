@@ -33,6 +33,16 @@ public partial class ENetServer : Node
     /// </summary>
     private uint _serverTick = 0;
     
+    /// <summary>
+    /// We queue these up so we can process them on the next physics tick
+    /// </summary>
+    private Queue<byte[]> _unreliableBufferQueue = new();
+    
+    /// <summary>
+    /// We queue these up so we can process them on the next physics tick
+    /// </summary>
+    private Queue<byte[]> _reliableBufferQueue = new();
+    
     public override void _Ready()
     {
         base._Ready();
@@ -117,29 +127,49 @@ public partial class ENetServer : Node
         GD.Print("ENet Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
         var buffer = new byte[netEvent.Packet.Length];
         netEvent.Packet.CopyTo(buffer);
-        var bufferReader = new BufferReader(buffer);
-        var channel = bufferReader.ReadInt(0, Networking.ChannelMax);
         
-        // The message was sent via the wrong channel and you should feel bad about it
-        if (netEvent.ChannelID != channel)
-            return;
-
+        switch ((ENetChannels)netEvent.ChannelID)
+        {
+            case ENetChannels.ReliableClient:
+                _reliableBufferQueue.Enqueue(buffer);
+                break;
+            case ENetChannels.UnreliableClient:
+                _unreliableBufferQueue.Enqueue(buffer);
+                break;
+            // We should never be getting messages from another server so ignore it lol
+            case ENetChannels.ReliableServer:
+            case ENetChannels.UnreliableServer:
+            default:
+                break;
+        }
+        
+        // TODO: MOVE ALL THIS TO WHEN WE PROCESS IT IN THE PHYSICS TICK
+        var bufferReader = new BufferReader(buffer);
+        var packetType = bufferReader.ReadInt(0, Networking.MaxPacketTypesPerChannel);
+        
         // Clients are not allowed to send messages to our other channels while they are unverified
         // SERVER KILL THAT PERSON
         if (!_verifiedPeers.ContainsKey(netEvent.Peer) &&
-            (ENetChannels)channel != ENetChannels.ConnectionVerificationReliable)
+            (ENetChannels)netEvent.ChannelID != ENetChannels.ReliableClient)
         {
             netEvent.Peer.DisconnectNow(0);
             return;
         }
         
         // For connection verifications, we don't want to pre-check if the peer is verified
-        if ((ENetChannels)netEvent.ChannelID == ENetChannels.ConnectionVerificationReliable)
+        // TODO: Replace the "0"s with an BufferWritten rejection message
+        if ((ENetChannels)netEvent.ChannelID == ENetChannels.ReliableClient)
         {
-            var clientGuidMessage = ConnectionVerificationRequest.Parser.ParseFrom(buffer);
+            if (packetType != (int)ReliableClientPacketType.ConnectToServer)
+            {
+                netEvent.Peer.DisconnectNow(0);
+                return;
+            }
+            
+            var bytes = new ReadOnlySpan<byte>(bufferReader.Read(16));
             
             // Check for a valid guid
-            if (!Guid.TryParse(clientGuidMessage.Guid, out var guid))
+            if (!Guid.TryParse(bytes, out var guid))
             {
                 GD.Print("ENet Peer id: " + netEvent.Peer.ID + " attempted to verify with invalid guid: " + guid + ". Disconnecting.");
                 netEvent.Peer.DisconnectNow(0);
@@ -171,24 +201,6 @@ public partial class ENetServer : Node
         // otherwise we want to disconnect from them immediately
         if (!IsPeerVerified(netEvent.Peer))
             return;
-        
-        switch ((ENetChannels)netEvent.ChannelID)
-        {
-            default:
-            case ENetChannels.ConnectionVerificationReliable:
-                break;
-            
-            case ENetChannels.UserInputUnreliable:
-                var userInputMessage = UserInput.Parser.ParseFrom(buffer);
-                if (userInputMessage.Movement is not null)
-                {
-                    var signal = new ReceiveMovementInputSignal(_verifiedPeers[netEvent.Peer], new Vector2(userInputMessage.Movement.X, userInputMessage.Movement.Y));
-                    _signalBus.EmitReceiveMovementInputSignal(_verifiedPeers[netEvent.Peer], new Vector2(userInputMessage.Movement.X, userInputMessage.Movement.Y), ref signal);
-                    GD.Print("User input received: (" + userInputMessage.Movement.X + ", " + userInputMessage.Movement.Y + ")");
-                }
-                
-                break;
-        }
     }
 
     /// <summary>
@@ -298,7 +310,7 @@ public partial class ENetServer : Node
             });
         
         _signalBus.EmitSendNodeStatesSignal(ref signal);
-        ENetServer.Instance.Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
+        Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
     }
 
     public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
