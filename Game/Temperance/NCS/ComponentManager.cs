@@ -19,8 +19,7 @@ public class ComponentManager
     public static ComponentManager Instance { get; } = new();
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
-    private readonly Dictionary<string, Component> _componentDictionary = [];
-    public readonly Dictionary<string, List<Node>> NodeDictionary = [];
+    private readonly Dictionary<string, (Component Component, List<Node> Nodes)> _componentDictionary = [];
 
     private ComponentManager()
     {
@@ -49,7 +48,7 @@ public class ComponentManager
                 continue;
             
             var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
-            _componentDictionary.Add(component.GetType().Name, component);
+            _componentDictionary.Add(component.GetType().Name, (component, []));
         }
     }
 
@@ -85,12 +84,10 @@ public class ComponentManager
     /// </summary>
     private bool TryAddComponent(Node node, string componentName)
     {
-        _componentDictionary.TryGetValue(componentName, out var component);
-
-        if (component == null)
+        if (!_componentDictionary.TryGetValue(componentName, out var componentAndNodes))
             return false;
         
-        var dupe = component.Duplicate();
+        var dupe = componentAndNodes.Component.Duplicate();
         node.AddChild(dupe);
         var signal = new ComponentAddedSignal((node, (Component)dupe));
         _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
@@ -103,11 +100,12 @@ public class ComponentManager
     /// </summary>
     public void PurgeDictionary()
     {
-        foreach (var node in _componentDictionary.Values)
-            node.Free();
+        foreach (var componentAndNodes in _componentDictionary.Values)
+            componentAndNodes.Component.Free();
     }
-
+    
     /// <summary>
+    /// TODO: REWORK THIS
     /// This is really only something useful for clients
     /// When a client late-joins, they need to be aware of all the correct components something has
     /// </summary>
@@ -153,12 +151,10 @@ public class ComponentManager
     
     public bool TryAddComponent<T>(Node node) where T : Component
     {
-        _componentDictionary.TryGetValue(typeof(T).Name, out var component);
-
-        if (component == null)
+        if (!_componentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
             return false;
         
-        var dupe = component.Duplicate();
+        var dupe = componentAndNodes.Component.Duplicate();
         node.AddChild(dupe);
         var signal = new ComponentAddedSignal((node, (Component)dupe));
         _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
@@ -198,8 +194,8 @@ public class ComponentManager
     public void GetNodesWithComponent<T>(out List<Node> nodes) where T : Component
     {
         nodes = [];
-        if (NodeDictionary.TryGetValue(typeof(T).Name, out var nodeList))
-            nodes = nodeList;
+        if (_componentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
+            nodes = componentAndNodes.Nodes;
     }
 }
 

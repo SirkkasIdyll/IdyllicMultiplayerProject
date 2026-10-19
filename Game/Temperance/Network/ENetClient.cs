@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ENet;
 using Godot;
 using Game.Temperance.NCS;
@@ -33,6 +34,20 @@ public partial class ENetClient : Node
     /// it received was, so we can rollback to the CLIENT input tick specifically to see if what we predicted was good
     /// </summary>
     private uint _clientTick = 0;
+    
+    /// <summary>
+    /// Rather than processing messages from the server immediately, place it into a queue
+    /// Leave two to three messages in the queue to act as a jitter buffer that you slowly play out
+    /// so you don't run into a short period where you don't have any updates to play out at all
+    /// </summary>
+    private Queue<byte[]> _unreliableBufferQueue = new();
+    
+    /// <summary>
+    /// Unlike the unreliable messages, we want to apply these immediately
+    /// because it usually represents something significant
+    /// Like something spawning, despawning, health state updates, something important!
+    /// </summary>
+    private Queue<byte[]> _reliableBufferQueue = new();
 
     public override void _Ready()
     {
@@ -127,11 +142,10 @@ public partial class ENetClient : Node
             case ENetChannels.UserInputUnreliable:
                 break;
             case ENetChannels.TickUpdateUnreliable:
-                var message = NodeStates.Parser.ParseFrom(buffer);
-                var signal = new ReceiveNodeStatesSignal() { Message = message };
-                _signalBus.EmitReceiveNodeStatesSignal(ref signal);
+                _unreliableBufferQueue.Enqueue(buffer);
                 break;
             case ENetChannels.EventsAndOnChangeReliable:
+                _reliableBufferQueue.Enqueue(buffer);
                 break;
             default:
                 break;
