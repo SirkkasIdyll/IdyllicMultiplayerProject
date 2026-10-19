@@ -22,16 +22,12 @@ public partial class TheWorldOverHeavenScene : Node3D
 		if (Networking.IsServer())
 		{
 			AddChild(ENetServer.Instance);
-			AddChild(GRpcServer.Instance);
 			ENetClient.Instance.Free();
-			GRpcClient.Instance.Free();
 		}
 		else
 		{
 			AddChild(ENetClient.Instance);
-			AddChild(GRpcClient.Instance);
 			ENetServer.Instance.Free();
-			GRpcServer.Instance.Free();
 		}
 	}
 

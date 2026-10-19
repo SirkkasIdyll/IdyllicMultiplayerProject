@@ -29,7 +29,6 @@ public static class Networking
     public static void ConnectToServer()
     {
         ENetClient.Instance.ToggleConnection(ENetServer.Ip, ENetServer.Port);
-        GRpcClient.Instance.ToggleConnection(GRpcServer.Ip, GRpcServer.Port);
     }
 }
 
