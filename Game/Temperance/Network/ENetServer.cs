@@ -24,10 +24,18 @@ public partial class ENetServer : Node
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
     private readonly Dictionary<Peer, Guid> _verifiedPeers = new();
-    private double _serverMessageTimer = 0;
-    // private double _dataSentKb = 0;
-    // private double _timeElapsed = 0;
     
+    /// <summary>
+    /// When this value exceeds the <see cref="Networking"/> server tick length
+    /// We allow the server to send or receive messages in the interest of reducing used bandwidth
+    /// </summary>
+    private double _serverMessageTimer = 0;
+    /// <summary>
+    /// Tracks the server physics tick we are on since the server first started so that we can say
+    /// something was at this value on this server tick, for client prediction (and replays in the far future).
+    /// The server currently runs physics at 60 hz so this is good for 2 years without restarting the value
+    /// </summary>
+    private uint _serverTick = 0;
     
     public override void _Ready()
     {
@@ -55,6 +63,7 @@ public partial class ENetServer : Node
     {
         base._PhysicsProcess(delta);
 
+        _serverTick++;
         _serverMessageTimer += delta;
         if (_serverMessageTimer >= Networking.ServerTickLength)
         {
@@ -62,32 +71,27 @@ public partial class ENetServer : Node
             _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
         }
-        
-        while (_server.CheckEvents(out var netEvent) > 0)
+
+        while (_server.CheckEvents(out var netEvent) > 0 || _server.Service(0, out netEvent) > 0)
         {
-            if (_server.Service(0, out netEvent) <= 0)
-                break;
-            
             switch (netEvent.Type) {
                 case EventType.None:
                     break;
-
                 case EventType.Connect:
                     OnPeerConnected(netEvent);
                     break;
-
                 case EventType.Disconnect:
                     OnPeerDisconnected(netEvent);
                     break;
-
                 case EventType.Timeout:
                     OnPeerTimeout(netEvent);
                     break;
-
                 case EventType.Receive:
                     OnPeerReceivedPacket(netEvent);
                     netEvent.Packet.Dispose();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
         
@@ -110,7 +114,6 @@ public partial class ENetServer : Node
     private void OnPeerTimeout(Event netEvent)
     {
         GD.Print("ENet Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
-
     }
 
     private void OnPeerReceivedPacket(Event netEvent)
@@ -119,7 +122,7 @@ public partial class ENetServer : Node
         var buffer = new byte[netEvent.Packet.Length];
         
         // For connection verifications, we don't want to pre-check if the peer is verified
-        if ((ENetChannels)netEvent.ChannelID == ENetChannels.ConnectionVerification)
+        if ((ENetChannels)netEvent.ChannelID == ENetChannels.ConnectionVerificationReliable)
         {
             netEvent.Packet.CopyTo(buffer);
             var clientGuidMessage = ConnectionVerificationRequest.Parser.ParseFrom(buffer);
@@ -162,10 +165,10 @@ public partial class ENetServer : Node
         switch ((ENetChannels)netEvent.ChannelID)
         {
             default:
-            case ENetChannels.ConnectionVerification:
+            case ENetChannels.ConnectionVerificationReliable:
                 break;
             
-            case ENetChannels.UserInput:
+            case ENetChannels.UserInputUnreliable:
                 var userInputMessage = UserInput.Parser.ParseFrom(buffer);
                 if (userInputMessage.Movement is not null)
                 {
@@ -182,13 +185,10 @@ public partial class ENetServer : Node
     /// Broadcast a message to everyone on this channel
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
-    /// <param name="message">A protobuf message</param>
+    /// <param name="buffer">A message to be put into the packet</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Broadcast(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, byte[] buffer, PacketFlags flag = PacketFlags.None)
     {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
         var packet = new Packet();
         packet.Create(buffer, flag);
 
@@ -200,14 +200,11 @@ public partial class ENetServer : Node
     /// Broadcast a message to a set of specific peers on this channel
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
-    /// <param name="message">A protobuf message</param>
+    /// <param name="buffer">A message to be put into the packet</param>
     /// <param name="peers">List of peers you want the message to go to</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Broadcast(ENetChannels channel, IMessage message, Peer[] peers, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, byte[] buffer, Peer[] peers, PacketFlags flag = PacketFlags.None)
     {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
         var packet = new Packet();
         packet.Create(buffer, flag);
 
@@ -218,14 +215,11 @@ public partial class ENetServer : Node
     /// Broadcast a message to everyone except for this peer on this channel
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
-    /// <param name="message">A protobuf message</param>
+    /// <param name="buffer">A message to be put into the packet</param>
     /// <param name="peer">The unlucky peer who doesn't get the message</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Broadcast(ENetChannels channel, IMessage message, Peer peer, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, byte[] buffer, Peer peer, PacketFlags flag = PacketFlags.None)
     {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
         var packet = new Packet();
         packet.Create(buffer, flag);
 
@@ -278,13 +272,6 @@ public partial class ENetServer : Node
 
         return false;
     }
-}
-
-public enum ENetChannels : byte
-{
-    ConnectionVerification = 0, // Used for notifying ENetServer of connections
-    UserInput = 1,
-    SynchronizeNodes = 2,
 }
 
 public class ServerMessageTimerSignal : UserSignalArgs;

@@ -18,6 +18,13 @@ public partial class ENetClient : Node
     private readonly Host _client = new();
     private Peer? _peer;
 
+    /// <summary>
+    /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
+    /// is so we can tell the server when a specific input happened, then it can tell us when the last client tick
+    /// it received was, so we can rollback to the CLIENT input tick specifically to see if what we predicted was good
+    /// </summary>
+    private uint _clientTick = 0;
+
     public override void _Ready()
     {
         base._Ready();
@@ -40,31 +47,27 @@ public partial class ENetClient : Node
         if (_peer == null)
             return;
 
-        while (_client.CheckEvents(out var netEvent) > 0)
+        _clientTick++;
+        while (_client.CheckEvents(out var netEvent) > 0 || _client.Service(0, out netEvent) > 0)
         {
-            if (_client.Service(0, out netEvent) <= 0)
-                break;
-            
             switch (netEvent.Type) {
                 case EventType.None:
                     break;
-        
                 case EventType.Connect:
                     OnPeerConnected(netEvent);
                     break;
-        
                 case EventType.Disconnect:
                     OnPeerDisconnected(netEvent);
                     break;
-        
                 case EventType.Timeout:
                     OnPeerTimeout(netEvent);
                     break;
-        
                 case EventType.Receive:
                     OnPeerReceivedPacket(netEvent);
                     netEvent.Packet.Dispose();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
         
@@ -78,7 +81,7 @@ public partial class ENetClient : Node
         // Send connection verification so that other packets sent
         // do not get rejected causing an immediate disconnection
         var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = EnetGuid.ToString() };
-        Send(ENetChannels.ConnectionVerification, connectionVerificationRequest, PacketFlags.Reliable);
+        Send(ENetChannels.ConnectionVerificationReliable, connectionVerificationRequest, PacketFlags.Reliable);
     }
 
     private void OnPeerDisconnected(Event netEvent)
@@ -103,10 +106,10 @@ public partial class ENetClient : Node
         switch ((ENetChannels)netEvent.ChannelID)
         {
             default:
-            case ENetChannels.ConnectionVerification:
-            case ENetChannels.UserInput:
+            case ENetChannels.ConnectionVerificationReliable:
+            case ENetChannels.UserInputUnreliable:
                 break;
-            case ENetChannels.SynchronizeNodes:
+            case ENetChannels.TickUpdateUnreliable:
                 var message = NodeStates.Parser.ParseFrom(buffer);
                 var signal = new ReceiveNodeStatesSignal() { Message = message };
                 _signalBus.EmitReceiveNodeStatesSignal(ref signal);
@@ -164,13 +167,10 @@ public partial class ENetClient : Node
     /// Send a message to the server on this channel
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
-    /// <param name="message">A protobuf message</param>
+    /// <param name="buffer">A message to be put into the packet</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Send(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
+    public void Send(ENetChannels channel, byte[] buffer, PacketFlags flag = PacketFlags.None)
     {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
         var packet = new Packet();
         packet.Create(buffer, flag);
 
