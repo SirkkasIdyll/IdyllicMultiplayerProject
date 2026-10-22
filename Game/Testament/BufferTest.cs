@@ -444,8 +444,8 @@ public class BufferTest
         bufferWriter.StoreOrWrite(guid.ToByteArray());
         
         var bufferReader = new BufferReader(buffer);
-        var bytes = new ReadOnlySpan<byte>(bufferReader.Read(16));
-        AssertBool(Guid.TryParse(bytes, out var readGuid)).IsTrue();
-        AssertBool(guid == readGuid).IsTrue();
+        var readGuid = new Guid(bufferReader.Read(16));
+        AssertBool(readGuid == guid).IsTrue();
+        AssertBool(readGuid.Version == 7).IsTrue();
     }
 }

@@ -27,6 +27,11 @@ public partial class ENetClient : Node
     /// Client's only connect to the server, never with each other, so they only have one peer :(
     /// </summary>
     private Peer? _serverPeer;
+
+    /// <summary>
+    /// The node the client is currently in control of
+    /// </summary>
+    private Node? _clientControlledNode;
     
     /// <summary>
     /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
@@ -40,14 +45,14 @@ public partial class ENetClient : Node
     /// Leave two to three messages in the queue to act as a jitter buffer that you slowly play out
     /// so you don't run into a short period where you don't have any updates to play out at all
     /// </summary>
-    private Queue<byte[]> _unreliableBufferQueue = new();
+    private Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
     
     /// <summary>
     /// Unlike the unreliable messages, we want to apply these immediately
     /// because it usually represents something significant
     /// Like something spawning, despawning, health state updates, something important!
     /// </summary>
-    private Queue<byte[]> _reliableBufferQueue = new();
+    private Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
 
     public override void _Ready()
     {
@@ -72,6 +77,19 @@ public partial class ENetClient : Node
             return;
 
         _clientTick++;
+        
+        while (_reliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _reliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.ReliableServer, peer, buffer);
+        }
+
+        while (_unreliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _unreliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.UnreliableServer, peer, buffer);
+        }
+        
         while (_client.CheckEvents(out var netEvent) > 0 || _client.Service(0, out netEvent) > 0)
         {
             switch (netEvent.Type) {
@@ -105,7 +123,7 @@ public partial class ENetClient : Node
         // A GUID takes up 16 bytes, the channel ID pushes us past that to 17 bytes
         var buffer = new byte[17];
         var bufferWriter = new BufferWriter(buffer);
-        bufferWriter.WriteInt((int)ReliableClientPacketType.ConnectToServer, 0, Networking.MaxPacketTypesPerChannel);
+        bufferWriter.WriteInt((int)ReliableClientPacketType.ConnectionVerificationAttempt, 0, Networking.MaxPacketTypesPerChannel);
         bufferWriter.StoreOrWrite(EnetGuid.ToByteArray());
         bufferWriter.FinalWrite(out _);
         // Send connection verification so that other packets sent
@@ -136,10 +154,10 @@ public partial class ENetClient : Node
         switch ((ENetChannels)netEvent.ChannelID)
         {
             case ENetChannels.ReliableServer:
-                _reliableBufferQueue.Enqueue(buffer);
+                _reliableBufferQueue.Enqueue((netEvent.Peer, buffer));
                 break;
             case ENetChannels.UnreliableServer:
-                _unreliableBufferQueue.Enqueue(buffer);
+                _unreliableBufferQueue.Enqueue((netEvent.Peer, buffer));
                 break;
             // We should never be getting messages from other clients so ignore them lol
             case ENetChannels.ReliableClient:

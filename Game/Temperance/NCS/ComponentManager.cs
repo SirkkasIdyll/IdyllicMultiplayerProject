@@ -111,34 +111,34 @@ public class ComponentManager
     /// </summary>
     /// <param name="node3D"></param>
     /// <param name="components"></param>
-    public void SyncComponentsOnSpawn(Node3D node3D, RepeatedField<string> components)
-    {
-        // We shouldn't need to declare this, but we're doing it to make a point
-        if (Networking.IsServer())
-            return;
-
-        // MetadataComponent contains our list of initial components
-        if (!TryGetComponent<MetadataComponent>(node3D, out var metadataComponent))
-            return;
-        
-        List<string> initialComponentsList = new List<string>(metadataComponent.ComponentDictionary.Keys);
-        
-        // Compare the list of components that the server's version has to what we spawned by default
-        // There are three scenarios to account for
-        foreach (var componentName in components)
-        {
-            // 1. We already have the component, so we don't need to add it or remove it from the node
-            if (HasComponent(node3D, componentName))
-                initialComponentsList.Remove(componentName);
-            
-            // 2. We don't have the component, so we add it to the node
-            TryAddComponent(node3D, componentName);
-        }
-        
-        // 3. The component wasn't communicated, meaning it was removed, so we remove it from the node
-        foreach (var componentName in initialComponentsList)
-            RemoveComponent(node3D, componentName);
-    }
+    // public void SyncComponentsOnSpawn(Node3D node3D, RepeatedField<string> components)
+    // {
+    //     // We shouldn't need to declare this, but we're doing it to make a point
+    //     if (Networking.IsServer())
+    //         return;
+    //
+    //     // MetadataComponent contains our list of initial components
+    //     if (!TryGetComponent<MetadataComponent>(node3D, out var metadataComponent))
+    //         return;
+    //     
+    //     List<string> initialComponentsList = new List<string>(metadataComponent.ComponentDictionary.Keys);
+    //     
+    //     // Compare the list of components that the server's version has to what we spawned by default
+    //     // There are three scenarios to account for
+    //     foreach (var componentName in components)
+    //     {
+    //         // 1. We already have the component, so we don't need to add it or remove it from the node
+    //         if (HasComponent(node3D, componentName))
+    //             initialComponentsList.Remove(componentName);
+    //         
+    //         // 2. We don't have the component, so we add it to the node
+    //         TryAddComponent(node3D, componentName);
+    //     }
+    //     
+    //     // 3. The component wasn't communicated, meaning it was removed, so we remove it from the node
+    //     foreach (var componentName in initialComponentsList)
+    //         RemoveComponent(node3D, componentName);
+    // }
     
     /// <summary>
     /// Checks if GetNodeOrNull returns the type of T
@@ -218,36 +218,6 @@ public class ComponentRemovedSignal : UserSignalArgs
         Node = node;
     }
 }
-
-/// <summary>
-/// The PeerSynchronized attribute will add a MultiplayerSynchronizer
-/// </summary>
-// [AttributeUsage(AttributeTargets.Class)]
-// public class PeerSynchronized : Attribute
-// {
-//     /// <summary>
-//     /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ON_CHANGE
-//     /// </summary>
-//     public float DeltaInterval = 0.0f;
-//     
-//     /// <summary>
-//     /// When true, all multiplayer peers get updates sent out.
-//     /// When false, visibility should be controlled by adding a visibility filter
-//     /// </summary>
-//     public bool PublicVisibility = true;
-//     
-//     /// <summary>
-//     /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ALWAYS
-//     /// </summary>
-//     public float ReplicationInterval = 0.0f;
-//     
-//     /// <summary>
-//     /// Chooses if visibility filters are updated automatically during process frames,
-//     /// physics frames, or entirely manually
-//     /// </summary>
-//     public VisibilityUpdateModeEnum VisibilityUpdateMode = VisibilityUpdateModeEnum.Idle;
-// }
-
 
 /// <summary>
 /// A struct for dealing with a Node and Component tuple so that you can reference a node and it's component

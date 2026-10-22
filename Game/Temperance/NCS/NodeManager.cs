@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
-using Game.Client.Services.GRpc.Spawn;
 using Game.Temperance.Network;
 using Game.Temperance.Signals;
 
@@ -22,8 +21,7 @@ public partial class NodeManager : Node
     private readonly SignalBus _signalBus = SignalBus.Instance;
 
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
-    public readonly Dictionary<Guid, NodeUpdateInfo> NetGuidDictionary = [];
-    private readonly Queue<Tuple<Guid, string, RepeatedField<string>>> _deferredQueue = new();
+    public readonly Dictionary<Node, ushort> NodeNetworkIdDictionary = new();
 
     private NodeManager()
     {
@@ -35,83 +33,83 @@ public partial class NodeManager : Node
         base._Ready();
 
         _signalBus.PeerDisconnectedSignal += OnPeerDisconnected;
-        _signalBus.ReceiveNodeStatesSignal += OnReceiveNodeStates;
-        _signalBus.RequestSpawnSignal += OnRequestSpawn;
-        _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
+        // _signalBus.ReceiveNodeStatesSignal += OnReceiveNodeStates;
+        // _signalBus.RequestSpawnSignal += OnRequestSpawn;
+        // _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
     }
 
-    public override void _PhysicsProcess(double delta)
-    {
-        base._PhysicsProcess(delta);
-
-        while (_deferredQueue.Count > 0)
-        {
-            var (netGuid, nodeName, components) = _deferredQueue.Dequeue();
-            if (!TrySpawnNode(nodeName, netGuid, out var node3D))
-                continue;
-            
-            _componentManager.SyncComponentsOnSpawn(node3D, components);
-        }
-    }
+    // public override void _PhysicsProcess(double delta)
+    // {
+    //     base._PhysicsProcess(delta);
+    //
+    //     while (_deferredQueue.Count > 0)
+    //     {
+    //         var (netGuid, nodeName, components) = _deferredQueue.Dequeue();
+    //         if (!TrySpawnNode(nodeName, netGuid, out var node3D))
+    //             continue;
+    //         
+    //         _componentManager.SyncComponentsOnSpawn(node3D, components);
+    //     }
+    // }
 
     /// <summary>
     /// When disconnecting from the server, despawn everything
     /// </summary>
     private void OnPeerDisconnected(Event netEvent, ref PeerDisconnectedSignal args)
     {
-        foreach (var (guid, _) in NetGuidDictionary)
-            DespawnNode(guid);
+        // foreach (var (guid, _) in NetGuidDictionary)
+        //     DespawnNode(guid);
     }
 
-    private void OnReceiveNodeStates(ref ReceiveNodeStatesSignal args)
-    {
-        foreach (var nodeState in args.Message.NodeState)
-        {
-            if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
-                continue;
-
-            if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-                continue;
-
-            nodeUpdateInfo.CurrSequence = nodeState.Sequence;
-            
-            var culledPredictedStates = false;
-            while (!culledPredictedStates)
-            {
-                // Nothing to cull
-                if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
-                {
-                    culledPredictedStates = true;
-                    continue;
-                }
-                
-                // CurrSequence is ahead in time compared to the predicted sequence state
-                // Meaning that the predicted state is no longer useful to remember
-                if (nodeUpdateInfo.CurrSequence > nodeUpdateInfo.PredictedNodeStates[0].Sequence)
-                {
-                    nodeUpdateInfo.PredictedNodeStates.RemoveAt(0);
-                    continue;
-                }
-
-                // All we're left with are predicted node states beyond the current sequence
-                culledPredictedStates = true;
-            }
-
-        }
-    }
-    
-    /// <summary>
-    /// Client has received a message from the server telling it to spawn a node
-    /// Defer the spawn to be handled in _process (async thread to main thraed)
-    /// </summary>
-    private void OnRequestSpawn(ref RequestSpawnSignal args)
-    {
-        // This should never be called on the server, but sanity check it just to make a point
-        if (Networking.IsServer())
-            return;
-        
-        _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
-    }
+    // private void OnReceiveNodeStates(ref ReceiveNodeStatesSignal args)
+    // {
+    //     foreach (var nodeState in args.Message.NodeState)
+    //     {
+    //         if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
+    //             continue;
+    //
+    //         if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+    //             continue;
+    //
+    //         nodeUpdateInfo.CurrSequence = nodeState.Sequence;
+    //         
+    //         var culledPredictedStates = false;
+    //         while (!culledPredictedStates)
+    //         {
+    //             // Nothing to cull
+    //             if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
+    //             {
+    //                 culledPredictedStates = true;
+    //                 continue;
+    //             }
+    //             
+    //             // CurrSequence is ahead in time compared to the predicted sequence state
+    //             // Meaning that the predicted state is no longer useful to remember
+    //             if (nodeUpdateInfo.CurrSequence > nodeUpdateInfo.PredictedNodeStates[0].Sequence)
+    //             {
+    //                 nodeUpdateInfo.PredictedNodeStates.RemoveAt(0);
+    //                 continue;
+    //             }
+    //
+    //             // All we're left with are predicted node states beyond the current sequence
+    //             culledPredictedStates = true;
+    //         }
+    //
+    //     }
+    // }
+    //
+    // /// <summary>
+    // /// Client has received a message from the server telling it to spawn a node
+    // /// Defer the spawn to be handled in _process (async thread to main thraed)
+    // /// </summary>
+    // private void OnRequestSpawn(ref RequestSpawnSignal args)
+    // {
+    //     // This should never be called on the server, but sanity check it just to make a point
+    //     if (Networking.IsServer())
+    //         return;
+    //     
+    //     _deferredQueue.Enqueue(Tuple.Create(args.NetGuid, args.ProtoName, args.Components));
+    // }
     
     /// <summary>
     /// Removes node from tracked guids and frees the node
@@ -119,15 +117,15 @@ public partial class NodeManager : Node
     /// <param name="netGuid"></param>
     public void DespawnNode(Guid netGuid)
     {
-        if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-            return;
-
-        var node =  nodeUpdateInfo.Node;
-
-        var signal = new NodeDespawningSignal(node);
-        _signalBus.EmitNodeDespawningSignal(node, ref signal);
-        NetGuidDictionary.Remove(netGuid);
-        node.QueueFree();
+        // if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+        //     return;
+        //
+        // var node =  nodeUpdateInfo.Node;
+        //
+        // var signal = new NodeDespawningSignal(node);
+        // _signalBus.EmitNodeDespawningSignal(node, ref signal);
+        // NetGuidDictionary.Remove(netGuid);
+        // node.QueueFree();
     }
 
     /// <summary>
@@ -212,10 +210,10 @@ public partial class NodeManager : Node
         node3D.SetGlobalRotation(globalRotation);
         node3D.GlobalScale(globalScale);
         
-        _componentManager.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
-        NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
-        var signal = new NodeSpawnedSignal(netGuid.Value);
-        _signalBus.EmitNodeSpawnedSignal(netGuid.Value, ref signal);
+        // _componentManager.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
+        // NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
+        // var signal = new NodeSpawnedSignal(netGuid.Value);
+        // _signalBus.EmitNodeSpawnedSignal(netGuid.Value, ref signal);
         
         return true;
     }

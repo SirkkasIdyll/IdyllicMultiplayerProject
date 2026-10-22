@@ -29,7 +29,7 @@ public partial class CameraSystem : NodeSystem
 
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
-        _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        // _signalBus.NodeSpawnedSignal += OnNodeSpawned;
         _signalBus.UpdateRotationSignal += OnUpdateRotation;
     }
 
@@ -40,26 +40,26 @@ public partial class CameraSystem : NodeSystem
         if (Networking.IsServer())
             return;
         
-        if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
-            return;
-
-        var node = nodeUpdateInfo.Node;
-
-        if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
-            return;
-
-        if (!Input.IsActionPressed("aim"))
-        {
-            _timeHeldAiming = 0;
-            ResetCamera((node, cameraComponent), delta);
-            return;
-        }
-
-        _timeHeldAiming += delta;
-        if (_timeHeldAiming < AimingThresholdTime)
-            return;
-        
-        AimCamera((node, cameraComponent), delta);
+        // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+        //     return;
+        //
+        // var node = nodeUpdateInfo.Node;
+        //
+        // if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+        //     return;
+        //
+        // if (!Input.IsActionPressed("aim"))
+        // {
+        //     _timeHeldAiming = 0;
+        //     ResetCamera((node, cameraComponent), delta);
+        //     return;
+        // }
+        //
+        // _timeHeldAiming += delta;
+        // if (_timeHeldAiming < AimingThresholdTime)
+        //     return;
+        //
+        // AimCamera((node, cameraComponent), delta);
     }
 
     private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
@@ -67,39 +67,39 @@ public partial class CameraSystem : NodeSystem
         args.SystemsList?.AddItem(DebugOptionName);
     }
 
-    private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
-    {
-        if (Networking.IsServer())
-            return;
-        
-        if (ENetClient.Instance.EnetGuid != netGuid)
-            return;
-        
-        if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-            return;
-
-        if (!_componentManager.TryGetComponent<CameraComponent>(nodeUpdateInfo.Node, out var cameraComponent))
-            return;
-        
-        cameraComponent.Camera?.MakeCurrent();
-
-        if (!_componentManager.TryGetComponent<PersonalVisionComponent>(nodeUpdateInfo.Node,
-                out var personalVisionComponent))
-            return;
-
-        personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
-        personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
-        personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
-        personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
-        personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
-        personalVisionComponent.VisionCone?.SetVisible(true);
-        
-        personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
-        personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
-        personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
-        personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
-        personalVisionComponent.VisionCircle?.SetVisible(true);
-    }
+    // private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
+    // {
+    //     if (Networking.IsServer())
+    //         return;
+    //     
+    //     if (ENetClient.Instance.EnetGuid != netGuid)
+    //         return;
+    //     
+    //     if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+    //         return;
+    //
+    //     if (!_componentManager.TryGetComponent<CameraComponent>(nodeUpdateInfo.Node, out var cameraComponent))
+    //         return;
+    //     
+    //     cameraComponent.Camera?.MakeCurrent();
+    //
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(nodeUpdateInfo.Node,
+    //             out var personalVisionComponent))
+    //         return;
+    //
+    //     personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
+    //     personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
+    //     personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
+    //     personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
+    //     personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
+    //     personalVisionComponent.VisionCone?.SetVisible(true);
+    //     
+    //     personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
+    //     personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
+    //     personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
+    //     personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
+    //     personalVisionComponent.VisionCircle?.SetVisible(true);
+    // }
     
     private void OnUpdateDebugLabel(string selectedSystem, ref UpdateDebugLabel args)
     {
@@ -112,19 +112,19 @@ public partial class CameraSystem : NodeSystem
         if (Networking.IsServer())
             return;
         
-        if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
-            return;
-
-        var node = nodeUpdateInfo.Node;
-
-        if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
-            return;
-
-        args.DebugLabel.Clear();
-        args.DebugLabel.AppendText("Player Position: " + node.GlobalPosition.ToString() + "\n");
-        args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
-        args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
-        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
+        // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+        //     return;
+        //
+        // var node = nodeUpdateInfo.Node;
+        //
+        // if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+        //     return;
+        //
+        // args.DebugLabel.Clear();
+        // args.DebugLabel.AppendText("Player Position: " + node.GlobalPosition.ToString() + "\n");
+        // args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
+        // args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
+        // args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
     }
 
     private void OnUpdateRotation(Node<RotationComponent> node, ref UpdateRotationSignal args)

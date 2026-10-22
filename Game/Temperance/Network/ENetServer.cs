@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ENet;
 using Godot;
-using Game.Shared.Systems.Movement;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
 
@@ -19,7 +19,16 @@ public partial class ENetServer : Node
     public const ushort Port = 3802;
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
-    private readonly Dictionary<Peer, Guid> _verifiedPeers = new();
+    
+    // The Guid used won't change between disconnects,
+    // but the peer may change as a result of disconnects
+    // and the node they control may not even exist yet
+    private readonly Dictionary<Guid, Peer?> _verifiedPeers = new();
+    
+    // A node may be controlled by a peer,
+    // but sometimes the peer will disconnect and be reassigned to a different Peer ID
+    // So we keep it nullable in case someone else connects
+    private readonly Dictionary<Node, Peer?> _nodesControlledByPeers = new();
     
     /// <summary>
     /// When this value exceeds the <see cref="Networking"/> server tick length
@@ -36,12 +45,12 @@ public partial class ENetServer : Node
     /// <summary>
     /// We queue these up so we can process them on the next physics tick
     /// </summary>
-    private Queue<byte[]> _unreliableBufferQueue = new();
+    private Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
     
     /// <summary>
     /// We queue these up so we can process them on the next physics tick
     /// </summary>
-    private Queue<byte[]> _reliableBufferQueue = new();
+    private Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
     
     public override void _Ready()
     {
@@ -71,11 +80,23 @@ public partial class ENetServer : Node
 
         _serverTick++;
         _serverMessageTimer += delta;
-        if (_serverMessageTimer >= Networking.ServerTickLength)
+         if (_serverMessageTimer >= Networking.ServerTickLength)
         {
             var signal = new ServerMessageTimerSignal();
             _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
+        }
+         
+        while (_reliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _reliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.ReliableClient, peer, buffer);
+        }
+
+        while (_unreliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _unreliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.UnreliableClient, peer, buffer);
         }
 
         while (_server.CheckEvents(out var netEvent) > 0 || _server.Service(0, out netEvent) > 0)
@@ -113,13 +134,13 @@ public partial class ENetServer : Node
 
     private void OnPeerDisconnected(Event netEvent)
     {
-        GD.Print("ENet Disconnected from peer id: " + netEvent.Peer.ID + ", Guid: " + _verifiedPeers[netEvent.Peer]);
-        _verifiedPeers.Remove(netEvent.Peer);
+        GD.Print("ENet Disconnected from peer id: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
     }
 
     private void OnPeerTimeout(Event netEvent)
     {
         GD.Print("ENet Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+        DisconnectPeer(netEvent.Peer);
     }
 
     private void OnPeerReceivedPacket(Event netEvent)
@@ -131,10 +152,10 @@ public partial class ENetServer : Node
         switch ((ENetChannels)netEvent.ChannelID)
         {
             case ENetChannels.ReliableClient:
-                _reliableBufferQueue.Enqueue(buffer);
+                _reliableBufferQueue.Enqueue((netEvent.Peer, buffer));
                 break;
             case ENetChannels.UnreliableClient:
-                _unreliableBufferQueue.Enqueue(buffer);
+                _unreliableBufferQueue.Enqueue((netEvent.Peer, buffer));
                 break;
             // We should never be getting messages from another server so ignore it lol
             case ENetChannels.ReliableServer:
@@ -142,65 +163,57 @@ public partial class ENetServer : Node
             default:
                 break;
         }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public bool TryClientVerification(Peer peer, ref BufferReader bufferReader)
+    {
+        // // Clients are not allowed to send messages to our other channels while they are unverified
+        // // SERVER KILL THAT PERSON
+        // if (!_verifiedPeers.ContainsValue(peer) &&
+        //     (ENetChannels)netEvent.ChannelID != ENetChannels.ReliableClient)
+        // {
+        //     DisconnectPeer(netEvent.Peer);
+        //     return;
+        // }
+        //
+        // // For connection verifications, we don't want to pre-check if the peer is verified
+        // if (packetType != (int)ReliableClientPacketType.ConnectionVerificationAttempt)
+        // {
+        //     DisconnectPeer(netEvent.Peer);
+        //     return;
+        // }
         
-        // TODO: MOVE ALL THIS TO WHEN WE PROCESS IT IN THE PHYSICS TICK
-        var bufferReader = new BufferReader(buffer);
-        var packetType = bufferReader.ReadInt(0, Networking.MaxPacketTypesPerChannel);
-        
-        // Clients are not allowed to send messages to our other channels while they are unverified
-        // SERVER KILL THAT PERSON
-        if (!_verifiedPeers.ContainsKey(netEvent.Peer) &&
-            (ENetChannels)netEvent.ChannelID != ENetChannels.ReliableClient)
+        var guid = new Guid(bufferReader.Read(16));
+        // Check for a valid guid
+        if (guid.Version != 7)
         {
-            netEvent.Peer.DisconnectNow(0);
-            return;
+            GD.Print("ENet Peer id: " + peer.ID + " attempted to verify with invalid guid: " + guid + ". Disconnecting.");
+            DisconnectPeer(peer);
+            return false;
         }
-        
-        // For connection verifications, we don't want to pre-check if the peer is verified
-        // TODO: Replace the "0"s with an BufferWritten rejection message
-        if ((ENetChannels)netEvent.ChannelID == ENetChannels.ReliableClient)
+            
+        // Check if they're trying to verify themselves with a guid that belongs to another peer
+        if (_verifiedPeers.ContainsKey(guid) && _verifiedPeers[guid].HasValue)
         {
-            if (packetType != (int)ReliableClientPacketType.ConnectToServer)
-            {
-                netEvent.Peer.DisconnectNow(0);
-                return;
-            }
-            
-            var bytes = new ReadOnlySpan<byte>(bufferReader.Read(16));
-            
-            // Check for a valid guid
-            if (!Guid.TryParse(bytes, out var guid))
-            {
-                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " attempted to verify with invalid guid: " + guid + ". Disconnecting.");
-                netEvent.Peer.DisconnectNow(0);
-                return;
-            }
-            
-            // Check if they're trying to verify themselves with a guid that belongs to another peer
-            if (_verifiedPeers.ContainsValue(guid))
-            {
-                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " attempted to connect with already verified guid: " + guid + ". Disconnecting.");
-                netEvent.Peer.DisconnectNow(0);
-                return;
-            }
-            
-            // Not really sure if I want to disconnect just the weird actor, or potentially both people in this case
-            if (!_verifiedPeers.TryAdd(netEvent.Peer, guid) && _verifiedPeers[netEvent.Peer] != guid)
-            {
-                GD.Print("ENet Peer id: " + netEvent.Peer.ID + " is already verified but attempting to connect with different guid. Disconnecting.");
-                netEvent.Peer.DisconnectNow(0);
-                return;
-            }
-            
-            GD.Print("ENet Registered peer id: " + netEvent.Peer.ID + ", Guid: " + guid);
-            NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), guid, out _);
-            return;
+            GD.Print("ENet Peer id: " + peer.ID + " attempted to connect with already verified guid: " + guid + " belonging to a connected peer. Disconnecting.");
+            DisconnectPeer(peer);
+            return false;
         }
-        
-        // For every other message received, we want to know if the peer is guid verified
-        // otherwise we want to disconnect from them immediately
-        if (!IsPeerVerified(netEvent.Peer))
-            return;
+            
+        // Not really sure if I want to disconnect just the weird actor, or potentially both people in this case
+        if (_verifiedPeers.ContainsKey(guid) && _verifiedPeers[guid].HasValue && _verifiedPeers.ContainsValue(peer) && !Equals(_verifiedPeers[guid]!.Value, peer))
+        {
+            GD.Print("ENet Peer id: " + peer.ID + " is already verified but attempting to connect with different guid. Disconnecting.");
+            DisconnectPeer(peer);
+            return false;
+        }
+            
+        GD.Print("ENet Registered peer id: " + peer.ID + ", Guid: " + guid);
+        // NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), guid, out _);
+        return true;
     }
 
     /// <summary>
@@ -249,85 +262,54 @@ public partial class ENetServer : Node
     }
 
     /// <summary>
-    /// Returns true if peer is verified,
-    /// otherwise returns false and disconnects the peer
-    /// for attempting to send a packet without being verified
+    /// Disconnects the peer, and if we have a guid or node correlated with that peer, sets the peer it knows to null
     /// </summary>
-    private bool IsPeerVerified(Peer peer)
+    /// <param name="peer"></param>
+    private void DisconnectPeer(Peer peer)
     {
-        if (_verifiedPeers.ContainsKey(peer))
-            return true;
+        var verifiedPeer = _verifiedPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
+        _verifiedPeers[verifiedPeer.Key] = null;
+        
+        var nodeControlledByPeer =
+            _nodesControlledByPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
+        _nodesControlledByPeers[nodeControlledByPeer.Key] = null;
         
         peer.DisconnectNow(0);
-        return false;
-    }
-
-    public bool IsPeerVerified(Guid guid)
-    {
-        if (_verifiedPeers.ContainsValue(guid))
-            return true;
-
-        return false;
-    }
-
-    /// <summary>
-    /// Waits for an amount of time until peer is verified
-    /// </summary>
-    /// <param name="guid">ENet Peer Guid</param>
-    /// <param name="cancellationToken"></param>
-    /// <param name="timeout">Time to wait in seconds before giving up</param>
-    /// <returns></returns>
-    public async Task<bool> IsPeerVerifiedAsync(Guid guid, CancellationToken cancellationToken, long timeout = 5)
-    {
-        long i = 0;
-        var retryTimeMs = 200;
-
-        while (i < timeout * 1000 || !cancellationToken.IsCancellationRequested)
-        {
-            if (_verifiedPeers.ContainsValue(guid))
-                return true;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(retryTimeMs), cancellationToken);
-            i += retryTimeMs;
-            GD.Print("Waiting for peer verification: " + i);
-        }
-
-        return false;
     }
     
     // TODO: REMOVE THIS
-    private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
-    {
-        if (!Networking.IsServer())
-            return;
-        
-        var signal = new SendNodeStatesSignal();
-        foreach (var (netGuid, _) in NetGuidDictionary)
-            signal.Message.NodeState.Add(new NodeState
-            {
-                Sequence = Library.Time,
-                NodeNetworkGuid = netGuid.ToString()
-            });
-        
-        _signalBus.EmitSendNodeStatesSignal(ref signal);
-        Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
-    }
-
-    public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
-    {
-        if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
-        {
-            var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
-            nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
-            return nodeUpdateInfo.PredictedNodeStates[0];
-        }
-
-        if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
-                .Transform is null)
-            return new NodeState();
-            
-        return new NodeState();
-    }
+    // private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
+    // {
+    //     if (!Networking.IsServer())
+    //         return;
+    //     
+    //     var signal = new SendNodeStatesSignal();
+    //     foreach (var (netGuid, _) in NetGuidDictionary)
+    //         signal.Message.NodeState.Add(new NodeState
+    //         {
+    //             Sequence = Library.Time,
+    //             NodeNetworkGuid = netGuid.ToString()
+    //         });
+    //     
+    //     _signalBus.EmitSendNodeStatesSignal(ref signal);
+    //     Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
+    // }
+    //
+    // public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
+    // {
+    //     if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
+    //     {
+    //         var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
+    //         nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
+    //         return nodeUpdateInfo.PredictedNodeStates[0];
+    //     }
+    //
+    //     if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
+    //             .Transform is null)
+    //         return new NodeState();
+    //         
+    //     return new NodeState();
+    // }
 }
 
 public class ServerMessageTimerSignal : UserSignalArgs;

@@ -1,4 +1,5 @@
 ﻿using System;
+using Game.Temperance.Network;
 using Godot;
 
 namespace Game.Temperance.NCS;
@@ -24,6 +25,14 @@ public abstract partial class Component : Node3D
         SetName(GetType().Name);
         SetOwner(GetParent());
     }
+}
+
+public interface ISynchronizedComponent
+{
+    public void WriteUnreliableChannel(ref BufferWriter bufferWriter);
+    public void ReadUnreliableChannel(ref BufferReader bufferReader);
+    public void WriteReliableChannel(ref BufferWriter bufferWriter);
+    public void ReadReliableChannel(ref BufferReader bufferReader);
 }
 
 /// <summary>
