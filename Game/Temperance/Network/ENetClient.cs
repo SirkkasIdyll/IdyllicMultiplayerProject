@@ -45,20 +45,21 @@ public partial class ENetClient : Node
     /// Leave two to three messages in the queue to act as a jitter buffer that you slowly play out
     /// so you don't run into a short period where you don't have any updates to play out at all
     /// </summary>
-    private Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
+    private readonly Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
     
     /// <summary>
     /// Unlike the unreliable messages, we want to apply these immediately
     /// because it usually represents something significant
     /// Like something spawning, despawning, health state updates, something important!
     /// </summary>
-    private Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
+    private readonly Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
 
     public override void _Ready()
     {
         base._Ready();
 
         _client.Create();
+        _client.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
     }
 
     public override void _ExitTree()

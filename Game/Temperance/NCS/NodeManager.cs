@@ -158,49 +158,50 @@ public partial class NodeManager : Node
 
     /// <summary>
     /// Tries to spawn a node at default position, rotation, and scale then add it as a child of the root scene
-    /// Leave the netGuid null unless you know what it is
+    /// Leave the nodeNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Guid? netGuid, [NotNullWhen(true)] out Node3D? node3D)
+    public bool TrySpawnNode(string nodeName, ushort? nodeNetworkId, [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), netGuid, out node3D);
+        return TrySpawnNode(nodeName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), nodeNetworkId, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, default rotation, and scale then add it as a child of the root scene
-    /// Leave the netGuid null unless you know what it is
+    /// Leave the nodeNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Guid? netGuid, [NotNullWhen(true)] out Node3D? node3D)
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, ushort? nodeNetworkId, [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), netGuid, out node3D);
+        return TrySpawnNode(nodeName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), nodeNetworkId, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, global rotation, and default scale then add it as a child of the root scene
-    /// Leave the netGuid null unless you know what it is
+    /// Leave the nodeNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Guid? netGuid,
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, ushort? nodeNetworkId,
         [NotNullWhen(true)] out Node3D? node3D)
     {
-        return TrySpawnNode(nodeName, globalPosition, globalRotation, new Vector3(1, 1, 1), netGuid, out node3D);
+        return TrySpawnNode(nodeName, globalPosition, globalRotation, new Vector3(1, 1, 1), nodeNetworkId, out node3D);
     }
 
     /// <summary>
     /// Tries to spawn a node at global position, global rotation, and global scale then add it as a child of the root scene
-    /// Leave the netGuid null unless you know what it is
+    /// Leave the nodeNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale, Guid? netGuid,
+    public bool TrySpawnNode(string nodeName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale, ushort? nodeNetworkId,
         [NotNullWhen(true)] out Node3D? node3D)
     {
         node3D = null;
         if (!NodeScenePathDictionary.TryGetValue(nodeName, out var sceneFilePath))
             return false;
         
-        // Server can come up with its own guid, clients should have received the guid from the server
+        // TODO: This will stop working once we add in despawning
+        // Server can come up with its own network ID, clients should have received the network ID from the server
         if (Networking.IsServer())
-            netGuid ??= Guid.CreateVersion7();
+            nodeNetworkId ??= (ushort)NodeNetworkIdDictionary.Count;
 
-        // If it doesn't have a network guid then it doesn't exist on the server 
-        if (netGuid == null)
+        // If it doesn't have a network ID then it doesn't exist on the server so it shouldn't exist on the client...
+        if (nodeNetworkId == null)
             return false;
 
         node3D = GD.Load<PackedScene>(sceneFilePath).Instantiate<Node3D>();
@@ -209,12 +210,11 @@ public partial class NodeManager : Node
         node3D.SetGlobalPosition(globalPosition);
         node3D.SetGlobalRotation(globalRotation);
         node3D.GlobalScale(globalScale);
-        
-        // _componentManager.TryGetComponent<MetadataComponent>(node3D, out var metadataComponent);
-        // NetGuidDictionary.Add(netGuid.Value, new NodeUpdateInfo(node3D, metadataComponent));
-        // var signal = new NodeSpawnedSignal(netGuid.Value);
-        // _signalBus.EmitNodeSpawnedSignal(netGuid.Value, ref signal);
-        
+
+        NodeNetworkIdDictionary.Add(node3D, nodeNetworkId.Value);
+
+        var signal = new NodeSpawnedSignal(node3D);
+        _signalBus.EmitNodeSpawnedSignal(node3D, ref signal);
         return true;
     }
     
@@ -236,6 +236,16 @@ public partial class NodeManager : Node
             
             NodeScenePathDictionary.TryAdd(nodeName, prototypePath);
         }
+    }
+}
+
+public class NodeSpawnedSignal : UserSignalArgs
+{
+    private Node _node;
+
+    public NodeSpawnedSignal(Node node)
+    {
+        _node = node;
     }
 }
 

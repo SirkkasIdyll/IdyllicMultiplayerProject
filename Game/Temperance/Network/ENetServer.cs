@@ -45,12 +45,12 @@ public partial class ENetServer : Node
     /// <summary>
     /// We queue these up so we can process them on the next physics tick
     /// </summary>
-    private Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
+    private readonly Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
     
     /// <summary>
     /// We queue these up so we can process them on the next physics tick
     /// </summary>
-    private Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
+    private readonly Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
     
     public override void _Ready()
     {
@@ -61,10 +61,9 @@ public partial class ENetServer : Node
         address.Port = Port;
         _server.Create(address, 2);
         
-        _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
-        GD.Print(Networking.PhysicsTickLength + " and " + Networking.ServerTickLength);
         // if (MaxDuplicatePeers > 0)
         //     _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
+        _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
     }
 
     public override void _ExitTree()
@@ -164,10 +163,7 @@ public partial class ENetServer : Node
                 break;
         }
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
+    
     public bool TryClientVerification(Peer peer, ref BufferReader bufferReader)
     {
         // // Clients are not allowed to send messages to our other channels while they are unverified
@@ -212,7 +208,11 @@ public partial class ENetServer : Node
         }
             
         GD.Print("ENet Registered peer id: " + peer.ID + ", Guid: " + guid);
-        // NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), guid, out _);
+        _verifiedPeers.Add(guid, peer);
+        
+        // TODO: Replace this later with a proper join -> spawn flow
+        if (NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), null, out var node3D))
+            _nodesControlledByPeers.Add(node3D, peer);
         return true;
     }
 
@@ -268,11 +268,13 @@ public partial class ENetServer : Node
     private void DisconnectPeer(Peer peer)
     {
         var verifiedPeer = _verifiedPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
-        _verifiedPeers[verifiedPeer.Key] = null;
+        if (verifiedPeer.Value != null)
+            _verifiedPeers[verifiedPeer.Key] = null;
         
         var nodeControlledByPeer =
             _nodesControlledByPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
-        _nodesControlledByPeers[nodeControlledByPeer.Key] = null;
+        if (nodeControlledByPeer.Value != null)
+            _nodesControlledByPeers[nodeControlledByPeer.Key] = null;
         
         peer.DisconnectNow(0);
     }
