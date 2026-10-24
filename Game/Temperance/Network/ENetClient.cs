@@ -1,11 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using ENet;
 using Godot;
-using Google.Protobuf;
-using Game.Resources.ProtocolBuffers;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
-using Games.Resources.ProtocolBuffers;
 
 namespace Game.Temperance.Network;
 
@@ -14,22 +12,61 @@ public partial class ENetClient : Node
     private readonly SignalBus _signalBus = SignalBus.Instance;
     public static ENetClient Instance { get; } = new();
 
+    /// <summary>
+    /// This is a temporary form of "authentication" that identifies a client before
+    /// I move on to the real stuff
+    /// </summary>
     public Guid EnetGuid = Guid.CreateVersion7();
+    
+    /// <summary>
+    /// Sends and receives packets
+    /// </summary>
     private readonly Host _client = new();
-    private Peer? _peer;
+    
+    /// <summary>
+    /// Client's only connect to the server, never with each other, so they only have one peer :(
+    /// </summary>
+    private Peer? _serverPeer;
+
+    /// <summary>
+    /// The node the client is currently in control of
+    /// </summary>
+    private Node? _clientControlledNode;
+    
+    /// <summary>
+    /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
+    /// is so we can tell the server when a specific input happened, then it can tell us when the last client tick
+    /// it received was, so we can rollback to the CLIENT input tick specifically to see if what we predicted was good
+    /// </summary>
+    private uint _clientTick = 0;
+    
+    /// <summary>
+    /// Rather than processing messages from the server immediately, place it into a queue
+    /// Leave two to three messages in the queue to act as a jitter buffer that you slowly play out
+    /// so you don't run into a short period where you don't have any updates to play out at all
+    /// </summary>
+    private readonly Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
+    
+    /// <summary>
+    /// Unlike the unreliable messages, we want to apply these immediately
+    /// because it usually represents something significant
+    /// Like something spawning, despawning, health state updates, something important!
+    /// </summary>
+    private readonly Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
 
     public override void _Ready()
     {
         base._Ready();
 
         _client.Create();
+        _client.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
     }
 
     public override void _ExitTree()
     {
         base._ExitTree();
 
-        _peer?.DisconnectNow(0);
+        _serverPeer?.DisconnectNow(0);
         _client.Dispose();
     }
     
@@ -37,34 +74,43 @@ public partial class ENetClient : Node
     {
         base._PhysicsProcess(delta);
         
-        if (_peer == null)
+        if (_serverPeer == null)
             return;
 
-        while (_client.CheckEvents(out var netEvent) > 0)
+        _clientTick++;
+        
+        while (_reliableBufferQueue.Count > 0)
         {
-            if (_client.Service(0, out netEvent) <= 0)
-                break;
-            
+            var (peer, buffer) = _reliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.ReliableServer, peer, buffer);
+        }
+
+        while (_unreliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _unreliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.UnreliableServer, peer, buffer);
+        }
+        
+        while (_client.CheckEvents(out var netEvent) > 0 || _client.Service(0, out netEvent) > 0)
+        {
             switch (netEvent.Type) {
                 case EventType.None:
                     break;
-        
                 case EventType.Connect:
                     OnPeerConnected(netEvent);
                     break;
-        
                 case EventType.Disconnect:
                     OnPeerDisconnected(netEvent);
                     break;
-        
                 case EventType.Timeout:
                     OnPeerTimeout(netEvent);
                     break;
-        
                 case EventType.Receive:
                     OnPeerReceivedPacket(netEvent);
                     netEvent.Packet.Dispose();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
         
@@ -74,11 +120,16 @@ public partial class ENetClient : Node
     private void OnPeerConnected(Event netEvent)
     {
         GD.Print("ENet Client connected to server. " + EnetGuid);
-        
+
+        // A GUID takes up 16 bytes, the channel ID pushes us past that to 17 bytes
+        var buffer = new byte[17];
+        var bufferWriter = new BufferWriter(buffer);
+        bufferWriter.WriteInt((int)ReliableClientPacketType.ConnectionVerificationAttempt, 0, Networking.MaxPacketTypesPerChannel);
+        bufferWriter.StoreOrWrite(EnetGuid.ToByteArray());
+        bufferWriter.FinalWrite(out _);
         // Send connection verification so that other packets sent
         // do not get rejected causing an immediate disconnection
-        var connectionVerificationRequest = new ConnectionVerificationRequest { Guid = EnetGuid.ToString() };
-        Send(ENetChannels.ConnectionVerification, connectionVerificationRequest, PacketFlags.Reliable);
+        Send(ENetChannels.ReliableClient, buffer, PacketFlags.Reliable);
     }
 
     private void OnPeerDisconnected(Event netEvent)
@@ -100,16 +151,19 @@ public partial class ENetClient : Node
         
         var buffer = new byte[netEvent.Packet.Length];
         netEvent.Packet.CopyTo(buffer);
+        
         switch ((ENetChannels)netEvent.ChannelID)
         {
-            default:
-            case ENetChannels.ConnectionVerification:
-            case ENetChannels.UserInput:
+            case ENetChannels.ReliableServer:
+                _reliableBufferQueue.Enqueue((netEvent.Peer, buffer));
                 break;
-            case ENetChannels.SynchronizeNodes:
-                var message = NodeStates.Parser.ParseFrom(buffer);
-                var signal = new ReceiveNodeStatesSignal() { Message = message };
-                _signalBus.EmitReceiveNodeStatesSignal(ref signal);
+            case ENetChannels.UnreliableServer:
+                _unreliableBufferQueue.Enqueue((netEvent.Peer, buffer));
+                break;
+            // We should never be getting messages from other clients so ignore them lol
+            case ENetChannels.ReliableClient:
+            case ENetChannels.UnreliableClient:
+            default:
                 break;
         }
     }
@@ -120,8 +174,8 @@ public partial class ENetClient : Node
     /// <returns>Also returns 0 if not connected</returns>
     public ulong GetPacketLoss()
     {
-        if (_peer != null && _peer.Value.PacketsSent != 0)
-            return _peer.Value.PacketsLost / _peer.Value.PacketsSent;
+        if (_serverPeer != null && _serverPeer.Value.PacketsSent != 0)
+            return _serverPeer.Value.PacketsLost / _serverPeer.Value.PacketsSent;
         
         return 0;
     }
@@ -132,7 +186,7 @@ public partial class ENetClient : Node
     /// <returns>0 if not connected</returns>
     public uint GetPing()
     {
-        return _peer?.LastRoundTripTime ?? 0;
+        return _serverPeer?.LastRoundTripTime ?? 0;
     }
 
     /// <summary>
@@ -140,7 +194,7 @@ public partial class ENetClient : Node
     /// </summary>
     public bool IsConnected()
     {
-        return _peer?.State == PeerState.Connected;
+        return _serverPeer?.State == PeerState.Connected;
     }
 
     /// <summary>
@@ -151,7 +205,7 @@ public partial class ENetClient : Node
     /// <param name="port"></param>
     public void ToggleConnection(string host, ushort port)
     {
-        if (_peer?.State == PeerState.Connected)
+        if (_serverPeer?.State == PeerState.Connected)
         {
             TryDisconnect();
             return;
@@ -164,22 +218,19 @@ public partial class ENetClient : Node
     /// Send a message to the server on this channel
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
-    /// <param name="message">A protobuf message</param>
+    /// <param name="buffer">A message to be put into the packet</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Send(ENetChannels channel, IMessage message, PacketFlags flag = PacketFlags.None)
+    public void Send(ENetChannels channel, byte[] buffer, PacketFlags flag = PacketFlags.None)
     {
-        var buffer = new byte[message.CalculateSize()];
-        message.WriteTo(buffer);
-
         var packet = new Packet();
         packet.Create(buffer, flag);
 
-        _peer?.Send((byte)channel, ref packet);
+        _serverPeer?.Send((byte)channel, ref packet);
     }
 
     /// <summary>
     /// Attempts to connect to a given hostname and port
-    /// Check <see cref="_peer"/> to see how the connection went
+    /// Check <see cref="_serverPeer"/> to see how the connection went
     /// </summary>
     /// <param name="host">Can be a host name or IP address</param>
     /// <param name="port"></param>
@@ -190,7 +241,7 @@ public partial class ENetClient : Node
         address.SetHost(host);
 
         // TODO: Does not gracefully handle rejections when SetMaxDuplicatePeers is 1/hit
-        _peer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
+        _serverPeer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
     }
 
     /// <summary>
@@ -198,6 +249,6 @@ public partial class ENetClient : Node
     /// </summary>
     private void TryDisconnect()
     {
-        _peer?.DisconnectLater(0);
+        _serverPeer?.DisconnectLater(0);
     }
 }

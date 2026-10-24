@@ -28,8 +28,6 @@ public class TemperanceTest
             
             ENetClient.Instance.Free();
             ENetServer.Instance.Free();
-            GRpcClient.Instance.Free();
-            GRpcServer.Instance.Free();
         };
         AddNode(_rootScene);
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Game.Temperance.Network;
 using Godot;
 
 namespace Game.Temperance.NCS;
@@ -27,11 +28,23 @@ public abstract partial class Component : Node3D
 }
 
 /// <summary>
-/// When the Synchronized attribute is added,
-/// the server will constantly communicate the state of SynchronizedFields to clients
+/// Interface gets added to every Component through the ComponentSynchronizationGenerator
 /// </summary>
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class Synchronized : Attribute { }
+public interface ISynchronizedComponent
+{
+    public abstract ushort ComponentId { get; }
+    public void WriteUnreliableChannel(ref BufferWriter bufferWriter);
+    public void ReadUnreliableChannel(ref BufferReader bufferReader);
+    public void WriteReliableChannel(ref BufferWriter bufferWriter);
+    public void ReadReliableChannel(ref BufferReader bufferReader);
+}
+
+// /// <summary>
+// /// When the Synchronized attribute is added,
+// /// the server will constantly communicate the state of SynchronizedFields to clients
+// /// </summary>
+// [AttributeUsage(AttributeTargets.Class)]
+// public sealed class Synchronized : Attribute { }
 
 /// <summary>
 /// Will do nothing if the component is not Synchronized

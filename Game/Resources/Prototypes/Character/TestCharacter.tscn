@@ -25,6 +25,7 @@ gi_mode = 0
 pixel_size = 0.08
 billboard = 1
 shaded = true
+texture_filter = 0
 texture = ExtResource("2_ut7n5")
 hframes = 2
 

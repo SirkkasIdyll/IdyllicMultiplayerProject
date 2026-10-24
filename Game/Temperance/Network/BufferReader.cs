@@ -109,6 +109,27 @@ public ref struct BufferReader(byte[] buffer)
     }
 
     /// <summary>
+    /// If for some reason you already know you want to take a bunch of bytes...
+    /// </summary>
+    public byte[] Read(int bytes)
+    {
+        if (bytes <= 0)
+            throw new ArgumentOutOfRangeException(nameof(bytes));
+        
+        if (bytes * 8 > _buffer.Length * 8 - _bitsReadFromBuffer)
+            throw new InvalidOperationException("Potential buffer underflow");
+        
+        var result = new byte[bytes];
+        for (var index = 0; index < result.Length; index++)
+        {
+            Read(8, out var byteContent);
+            result[index] = (byte)byteContent;
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Reads a single bit from the buffer and interprets it as a boolean
     /// </summary>
     public bool ReadBool()
