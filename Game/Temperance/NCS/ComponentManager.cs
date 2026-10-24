@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
-using Game.Temperance.Network;
 using Game.Temperance.Signals;
 using static GdUnit4.Assertions;
 
@@ -14,41 +13,44 @@ namespace Game.Temperance.NCS;
 /// The ComponentManager is responsible for getting, adding, or removing components
 /// or finding nodes that have specific components
 /// </summary>
-public class ComponentManager
+public partial class ComponentManager : Node
 {
     public static ComponentManager Instance { get; } = new();
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
-    private readonly Dictionary<string, (Component Component, List<Node> Nodes)> _componentDictionary = [];
+    /// <summary>
+    /// Nodes in the world and what components they have
+    /// First populated when a node spawns
+    /// </summary>
+    private readonly Dictionary<Node, List<Component>> _componentDictionaryByNode = new();
 
-    private ComponentManager()
+    public override void _Ready()
     {
-        GetAllComponents();
+        base._Ready();
+
+        _signalBus.NodeSpawnedSignal += OnNodeSpawned;
     }
 
-    /// <summary>
-    /// Gets all <see cref="Component"/> by looking for classes with the [GlobalClass] attribute
-    /// and if their name ends in "Component"
-    ///
-    /// Populates the internal component and node dictionaries to be used in other functions
-    /// </summary>
-    private void GetAllComponents()
+    public override void _ExitTree()
     {
-        var globalClassList = ProjectSettings.GetGlobalClassList();
-        foreach (var dict in globalClassList)
+        base._ExitTree();
+		
+        // Kill the orphans
+        PurgeDictionary();
+    }
+
+    private void OnNodeSpawned(Node node, ref NodeSpawnedSignal args)
+    {
+        var children = node.GetChildren();
+        foreach (var child in children)
         {
-            var resource = ResourceLoader.Load( (StringName) dict["path"], "Script");
-            if (resource is not Script script)
-                continue;
-
-            if (script.IsAbstract())
-                continue;
-
-            if (!script.GetGlobalName().ToString().EndsWith("Component", true, null))
+            if (child is not Component component)
                 continue;
             
-            var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
-            _componentDictionary.Add(component.GetType().Name, (component, []));
+            if (!_componentDictionaryByNode.ContainsKey(node))
+                _componentDictionaryByNode.Add(node, []);
+
+            _componentDictionaryByNode[node].Add(component);
         }
     }
 
@@ -77,24 +79,7 @@ public class ComponentManager
         _signalBus.EmitComponentRemovedSignal((node, (Component)component), ref signal);
         component.QueueFree();
     }
-
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private bool TryAddComponent(Node node, string componentName)
-    {
-        if (!_componentDictionary.TryGetValue(componentName, out var componentAndNodes))
-            return false;
-        
-        var dupe = componentAndNodes.Component.Duplicate();
-        node.AddChild(dupe);
-        var signal = new ComponentAddedSignal((node, (Component)dupe));
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
-        
-        return true;
-    }
-
+    
     /// <summary>
     /// Prevent memory leaks by purging resources, should be signaled when closing
     /// </summary>
@@ -149,15 +134,15 @@ public class ComponentManager
         return comp != null;
     }
     
-    public bool TryAddComponent<T>(Node node) where T : Component
+    public bool TryAddComponent<T>(Node node) where T : Component, new()
     {
-        if (!_componentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
+        if (HasComponent<T>(node))
             return false;
-        
-        var dupe = componentAndNodes.Component.Duplicate();
-        node.AddChild(dupe);
-        var signal = new ComponentAddedSignal((node, (Component)dupe));
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
+
+        var component = new T();
+        node.AddChild(component);
+        var signal = new ComponentAddedSignal((node, component));
+        _signalBus.EmitComponentAddedSignal((node, component), ref signal);
         
         return true;
     }

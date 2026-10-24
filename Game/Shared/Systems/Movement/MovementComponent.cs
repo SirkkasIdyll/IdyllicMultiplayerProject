@@ -6,7 +6,7 @@ namespace Game.Shared.Systems.Movement;
 /// <summary>
 /// Allows movement, determines speed when moving, translates input to a movement direction
 /// </summary>
-[GlobalClass, Synchronized]
+[GlobalClass]
 public partial class MovementComponent : Component
 {
     [SynchronizedField(Min = 0f, Max = 1f, Precision = 0.1f)]

@@ -15,6 +15,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 		// whereas the NodeManager is a node so we will add it as a child
 		NodeSystemManager.Instance.InitializeNodeSystems(this);
 		AddChild(NodeManager.Instance);
+		AddChild(ComponentManager.Instance);
 
 		// Add the required server or client instances depending on which we are
 		// so that they may initialize themselves upon entry to the SceneTree
@@ -37,13 +38,5 @@ public partial class TheWorldOverHeavenScene : Node3D
 		
 		if (Networking.IsServer())
 			NodeManager.Instance.TrySpawnNode("TheWorld", null, out _);
-	}
-
-	public override void _ExitTree()
-	{
-		base._ExitTree();
-		
-		// Kill the orphans
-		ComponentManager.Instance.PurgeDictionary();
 	}
 }
