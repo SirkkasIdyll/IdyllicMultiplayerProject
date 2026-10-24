@@ -22,7 +22,7 @@ public partial class ComponentManager : Node
     /// Nodes in the world and what components they have
     /// First populated when a node spawns
     /// </summary>
-    private readonly Dictionary<Node, List<Component>> _componentDictionaryByNode = new();
+    private readonly Dictionary<Node, List<string>> _componentDictionaryByNode = new();
 
     public override void _Ready()
     {
@@ -47,37 +47,9 @@ public partial class ComponentManager : Node
             if (child is not Component component)
                 continue;
             
-            if (!_componentDictionaryByNode.ContainsKey(node))
-                _componentDictionaryByNode.Add(node, []);
-
-            _componentDictionaryByNode[node].Add(component);
+            _componentDictionaryByNode.TryAdd(node, []);
+            _componentDictionaryByNode[node].Add(component.GetType().Name);
         }
-    }
-
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private bool HasComponent(Node node, string componentName)
-    {
-        var comp = node.GetNodeOrNull(componentName);
-        return comp != null;
-    }
-    
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private void RemoveComponent(Node node, string componentName)
-    {
-        var component = node.GetNodeOrNull(componentName);
-        if (component == null)
-            return;
-        
-        node.RemoveChild(component);
-        var signal = new ComponentRemovedSignal((node, (Component)component));
-        _signalBus.EmitComponentRemovedSignal((node, (Component)component), ref signal);
-        component.QueueFree();
     }
     
     /// <summary>
@@ -130,10 +102,25 @@ public partial class ComponentManager : Node
     /// </summary>
     public bool HasComponent<T>(Node node) where T : Component
     {
+        _componentDictionaryByNode.TryAdd(node, []);
+        if (_componentDictionaryByNode[node].Contains(typeof(T).Name))
+            return true;
+        
+        // The below is the backup if we for some reason haven't recorded it in the dictionary
+        // Not sure why it wouldn't be recorded in the dictionary at this point
+        // It means the component was added by circumventing TryAddComponent and TrySpawnNode
+        // Record it anyways
         var comp = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        return comp != null;
+        if (comp == null)
+            return false;
+        
+        _componentDictionaryByNode[node].Add(typeof(T).Name);
+        return true;
     }
     
+    /// <summary>
+    /// Returns false if the node already has the Component
+    /// </summary>
     public bool TryAddComponent<T>(Node node) where T : Component, new()
     {
         if (HasComponent<T>(node))
@@ -141,9 +128,13 @@ public partial class ComponentManager : Node
 
         var component = new T();
         node.AddChild(component);
+
+        _componentDictionary[typeof(T).Name].Nodes.Add(node);
+        _componentDictionaryByNode.TryAdd(node, []);
+        _componentDictionaryByNode[node].Add(component.GetType().Name);
+        
         var signal = new ComponentAddedSignal((node, component));
         _signalBus.EmitComponentAddedSignal((node, component), ref signal);
-        
         return true;
     }
 
@@ -162,12 +153,16 @@ public partial class ComponentManager : Node
     /// </summary>
     public void RemoveComponent<T>(Node node) where T : Component
     {
-        var component = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        if (component == null)
+        if (!TryGetComponent<T>(node, out var component))
             return;
 
+        _componentDictionary[typeof(T).Name].Nodes.Remove(node);
+        _componentDictionaryByNode.TryAdd(node, []);
+        _componentDictionaryByNode[node].Remove(typeof(T).Name);
+        
         var signal = new ComponentRemovedSignal((node, component));
         _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
+        
         node.RemoveChild(component);
         component.QueueFree();
     }

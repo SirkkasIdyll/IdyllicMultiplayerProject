@@ -246,24 +246,36 @@ using Godot;");
 
 public partial class ComponentManager
 {");
-        sourceBuilder.AppendLine(@"private readonly Dictionary<string, (Component Component, List<Node> Nodes)> _componentDictionary = new Dictionary<string, (Component Component, List<Node> Nodes)>()
+        sourceBuilder.AppendLine(@"    private readonly Dictionary<string, (Component Component, List<Node> Nodes)> _componentDictionary = new Dictionary<string, (Component Component, List<Node> Nodes)>()
     {");
         foreach (var (component, componentId) in componentsAndIds)
         {
             sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", (new {component?.Name}(), new List<Node>()) }},");
         }
         sourceBuilder.AppendLine("    };");
+        
         sourceBuilder.AppendLine("");
-        sourceBuilder.AppendLine(
-            @"private readonly Dictionary<ushort, string> _componentIdToComponentDictionary = new Dictionary<ushort, string>()
+        
+        sourceBuilder.AppendLine(@"    private readonly Dictionary<ushort, string> _componentIdToComponentNameDictionary = new Dictionary<ushort, string>()
     {");
         foreach (var (component, componentId) in componentsAndIds)
         {
             sourceBuilder.AppendLine($"        {{ {componentId}, \"{component?.Name}\" }},");
         }
         sourceBuilder.AppendLine("    };");
-        sourceBuilder.AppendLine("}");
         
+        sourceBuilder.AppendLine("");
+        
+        sourceBuilder.AppendLine(@"    private readonly Dictionary<string, ushort> _componentNameToComponentIdDictionary = new Dictionary<string, ushort>()
+    {");
+        foreach (var (component, componentId) in componentsAndIds)
+        {
+            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", {componentId} }},");
+        }
+        sourceBuilder.AppendLine("    };");
+        
+        
+        sourceBuilder.AppendLine("}");
         context.AddSource("Dictionary.ComponentManager.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
 
