@@ -156,6 +156,13 @@ public partial class NodeManager : Node
         return result;
     }
 
+    public string GetNodeName(Node node)
+    {
+        var fileBaseName = node.SceneFilePath.GetBaseName();
+        var slashIndexPosition = fileBaseName.LastIndexOf('/');
+        return fileBaseName.Substring(slashIndexPosition + 1,  fileBaseName.Length - (slashIndexPosition + 1));
+    }
+
     /// <summary>
     /// Tries to spawn a node at default position, rotation, and scale then add it as a child of the root scene
     /// Leave the nodeNetworkId null unless you know what it is

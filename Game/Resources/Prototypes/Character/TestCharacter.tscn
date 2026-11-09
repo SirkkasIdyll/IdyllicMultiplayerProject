@@ -9,17 +9,17 @@
 
 [node name="TestCharacter" unique_id=377517059 instance=ExtResource("1_vg6n3")]
 
-[node name="RotationComponent" type="Node3D" parent="." index="3" unique_id=1264607679 node_paths=PackedStringArray("CollisionShape3D", "Sprite3D")]
+[node name="RotationComponent" type="Node3D" parent="." index="2" unique_id=1264607679 node_paths=PackedStringArray("CollisionShape3D", "Sprite3D")]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
 script = ExtResource("4_ito1u")
 CollisionShape3D = NodePath("../CollisionShape3D")
 Sprite3D = NodePath("../Sprite3D")
 metadata/_custom_type_script = "uid://b65cl66vf67bm"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="4" unique_id=1672793535]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="3" unique_id=1672793535]
 shape = SubResource("CapsuleShape3D_ag62g")
 
-[node name="Sprite3D" type="Sprite3D" parent="." index="5" unique_id=1873701755]
+[node name="Sprite3D" type="Sprite3D" parent="." index="4" unique_id=1873701755]
 layers = 524288
 gi_mode = 0
 pixel_size = 0.08
@@ -29,7 +29,7 @@ texture_filter = 0
 texture = ExtResource("2_ut7n5")
 hframes = 2
 
-[node name="PersonalVisionComponent2" type="Node3D" parent="." index="6" unique_id=2071778063 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
+[node name="PersonalVisionComponent2" type="Node3D" parent="." index="5" unique_id=2071778063 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
 script = ExtResource("3_ut7n5")
 VisionCone = NodePath("SpotLight3D")
 VisionCircle = NodePath("OmniLight3D")

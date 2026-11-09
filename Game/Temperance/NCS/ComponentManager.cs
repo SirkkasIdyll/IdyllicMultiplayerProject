@@ -22,7 +22,7 @@ public partial class ComponentManager : Node
     /// Nodes in the world and what components they have
     /// First populated when a node spawns
     /// </summary>
-    private readonly Dictionary<Node, List<string>> _componentDictionaryByNode = new();
+    public readonly Dictionary<Node, Dictionary<string, Component>> ComponentDictionaryByNode = new();
 
     public override void _Ready()
     {
@@ -47,8 +47,8 @@ public partial class ComponentManager : Node
             if (child is not Component component)
                 continue;
             
-            _componentDictionaryByNode.TryAdd(node, []);
-            _componentDictionaryByNode[node].Add(component.GetType().Name);
+            ComponentDictionaryByNode.TryAdd(node, []);
+            ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
         }
     }
     
@@ -57,10 +57,10 @@ public partial class ComponentManager : Node
     /// </summary>
     public void PurgeDictionary()
     {
-        foreach (var componentAndNodes in _componentDictionary.Values)
-            componentAndNodes.Component.Free();
+        foreach (var (component, _) in ComponentDictionary.Values)
+            component.Free();
     }
-    
+
     /// <summary>
     /// TODO: REWORK THIS
     /// This is really only something useful for clients
@@ -102,8 +102,10 @@ public partial class ComponentManager : Node
     /// </summary>
     public bool HasComponent<T>(Node node) where T : Component
     {
-        _componentDictionaryByNode.TryAdd(node, []);
-        if (_componentDictionaryByNode[node].Contains(typeof(T).Name))
+        if (ComponentDictionaryByNode.TryAdd(node, []))
+            return false;
+        
+        if (ComponentDictionaryByNode[node].ContainsKey(typeof(T).Name))
             return true;
         
         // The below is the backup if we for some reason haven't recorded it in the dictionary
@@ -114,7 +116,38 @@ public partial class ComponentManager : Node
         if (comp == null)
             return false;
         
-        _componentDictionaryByNode[node].Add(typeof(T).Name);
+        ComponentDictionaryByNode[node].Add(typeof(T).Name, comp);
+        return true;
+    }
+    
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public bool HasComponent(Node node, ushort componentId)
+    {
+        // Invalid component ID check
+        if (!ComponentIdToComponentNameDictionary.TryGetValue(componentId, out var componentName))
+            return false;
+    
+        if (!ComponentDictionary.TryGetValue(componentName, out var componentAndNodes))
+            return false;
+    
+        var (component, _) = componentAndNodes;
+        
+        if (ComponentDictionaryByNode.TryAdd(node, []))
+            return false;
+        
+        if (ComponentDictionaryByNode[node].ContainsKey(component.GetType().Name))
+            return true;
+        
+        // The below is the backup if we for some reason haven't recorded it in the dictionary
+        // Not sure why it wouldn't be recorded in the dictionary at this point
+        // It means the component was added by circumventing TryAddComponent and TrySpawnNode
+        // Record it anyways
+        if (node.GetNodeOrNull($"{component.GetType().Name}") is not Component comp)
+            return false;
+        
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, comp);
         return true;
     }
     
@@ -129,9 +162,28 @@ public partial class ComponentManager : Node
         var component = new T();
         node.AddChild(component);
 
-        _componentDictionary[typeof(T).Name].Nodes.Add(node);
-        _componentDictionaryByNode.TryAdd(node, []);
-        _componentDictionaryByNode[node].Add(component.GetType().Name);
+        ComponentDictionary[typeof(T).Name].Nodes.Add(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
+        
+        var signal = new ComponentAddedSignal((node, component));
+        _signalBus.EmitComponentAddedSignal((node, component), ref signal);
+        return true;
+    }
+
+    public bool TryAddComponent(Node node, ushort componentId)
+    {
+        if (HasComponent(node, componentId))
+            return false;
+
+        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        
+        var component = (Component)ComponentDictionary[componentName].Component.Duplicate();
+        node.AddChild(component);
+
+        ComponentDictionary[componentName].Nodes.Add(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
         
         var signal = new ComponentAddedSignal((node, component));
         _signalBus.EmitComponentAddedSignal((node, component), ref signal);
@@ -143,8 +195,21 @@ public partial class ComponentManager : Node
     /// </summary>
     public bool TryGetComponent<T>(Node node, [NotNullWhen(true)] out T? component) where T : Component
     {
-        component = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        return component != null;
+        component = null;
+
+        var nodeComponents = ComponentDictionaryByNode[node];
+        var componentName = $"{typeof(T).Name}";
+        if (nodeComponents.TryGetValue(componentName, out var comp))
+            component = (T)comp;
+
+        return nodeComponents.ContainsKey(componentName);
+    }
+
+    public bool TryGetComponent(Node node, ushort componentId, [NotNullWhen(true)] out Component? component)
+    {
+        var nodeComponents = ComponentDictionaryByNode[node];
+        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        return nodeComponents.TryGetValue(componentName, out component);
     }
 
     /// <summary>
@@ -156,9 +221,9 @@ public partial class ComponentManager : Node
         if (!TryGetComponent<T>(node, out var component))
             return;
 
-        _componentDictionary[typeof(T).Name].Nodes.Remove(node);
-        _componentDictionaryByNode.TryAdd(node, []);
-        _componentDictionaryByNode[node].Remove(typeof(T).Name);
+        ComponentDictionary[typeof(T).Name].Nodes.Remove(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Remove(typeof(T).Name);
         
         var signal = new ComponentRemovedSignal((node, component));
         _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
@@ -174,7 +239,7 @@ public partial class ComponentManager : Node
     public void GetNodesWithComponent<T>(out List<Node> nodes) where T : Component
     {
         nodes = [];
-        if (_componentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
+        if (ComponentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
             nodes = componentAndNodes.Nodes;
     }
 }

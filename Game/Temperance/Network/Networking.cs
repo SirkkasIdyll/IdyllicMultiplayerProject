@@ -42,30 +42,38 @@ public static class Networking
     {
         var bufferReader = new BufferReader(buffer);
         var packetType = bufferReader.ReadInt(0, MaxPacketTypesPerChannel);
-        
-        switch (channel, packetType)
+
+        if (IsServer())
         {
-            case (ENetChannels.ReliableClient, (int)ReliableClientPacketType.ConnectionVerificationAttempt):
-                ENetServer.Instance.TryClientVerification(peer, ref bufferReader);
-                break;
-            case (ENetChannels.UnreliableClient, (int)UnreliableClientPacketType.UserInput):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.LateJoinSynchronization):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeSpawns):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeDespawns):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ComponentAdded):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ComponentRemoved):
-                break;
-            case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.SynchronizeOnChange):
-                break;
-            case (ENetChannels.UnreliableServer, (int)UnreliableServerPacketType.StateUpdates):
-                break;
-            default:
-                break;
+            switch (channel, packetType)
+            {
+                case (ENetChannels.ReliableClient, (int)ReliableClientPacketType.ConnectionVerificationAttempt):
+                    ENetServer.Instance.TryClientVerification(peer, ref bufferReader);
+                    break;
+                case (ENetChannels.UnreliableClient, (int)UnreliableClientPacketType.UserInput):
+                    break;
+            }
+        }
+        else
+        {
+            switch (channel, packetType)
+            {
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.LateJoinSynchronization):
+                    break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeSpawns):
+                    ENetClient.Instance.ProcessNodeSpawnPacket(ref bufferReader);
+                    break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeDespawns):
+                    break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ComponentAdded):
+                    break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ComponentRemoved):
+                    break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.SynchronizeOnChange):
+                    break;
+                case (ENetChannels.UnreliableServer, (int)UnreliableServerPacketType.StateUpdates):
+                    break;
+            }
         }
     }
 }

@@ -25,18 +25,11 @@ public abstract partial class Component : Node3D
         SetName(GetType().Name);
         SetOwner(GetParent());
     }
-}
 
-/// <summary>
-/// Interface gets added to every Component through the ComponentSynchronizationGenerator
-/// </summary>
-public interface ISynchronizedComponent
-{
-    public abstract ushort ComponentId { get; }
-    public void WriteUnreliableChannel(ref BufferWriter bufferWriter);
-    public void ReadUnreliableChannel(ref BufferReader bufferReader);
-    public void WriteReliableChannel(ref BufferWriter bufferWriter);
-    public void ReadReliableChannel(ref BufferReader bufferReader);
+    public abstract void WriteUnreliableChannel(ref BufferWriter bufferWriter);
+    public abstract void ReadUnreliableChannel(ref BufferReader bufferReader);
+    public abstract void WriteReliableChannel(ref BufferWriter bufferWriter);
+    public abstract void ReadReliableChannel(ref BufferReader bufferReader);
 }
 
 // /// <summary>

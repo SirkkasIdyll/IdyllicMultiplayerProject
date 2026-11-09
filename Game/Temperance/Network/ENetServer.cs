@@ -64,6 +64,9 @@ public partial class ENetServer : Node
         // if (MaxDuplicatePeers > 0)
         //     _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
         _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
+
+        _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
     }
 
     public override void _ExitTree()
