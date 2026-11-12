@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Godot;
 using Game.Shared.Systems.Movement;
 using Game.Temperance.NCS;
-using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
 

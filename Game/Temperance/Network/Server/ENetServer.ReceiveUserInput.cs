@@ -7,8 +7,11 @@ public partial class ENetServer
 {
     public void ProcessUserInput(Peer peer, ref BufferReader bufferReader)
     {
-        foreach (var (node, controlledByPeer) in _nodesControlledByPeers)
+        foreach (var (networkId, controlledByPeer) in _nodesControlledByPeers)
         {
+            if (!_nodeManager.NetworkIdNodeDictionary.TryGetValue(networkId, out var node))
+                continue;
+            
             if (controlledByPeer == null)
                 continue;
             

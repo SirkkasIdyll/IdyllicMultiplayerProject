@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ENet;
 using Godot;
@@ -22,6 +21,7 @@ public partial class NodeManager : Node
 
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
     public readonly Dictionary<Node, ushort> NodeNetworkIdDictionary = new();
+    public readonly Dictionary<ushort, Node> NetworkIdNodeDictionary = new();
 
     private NodeManager()
     {
@@ -115,8 +115,8 @@ public partial class NodeManager : Node
     /// Removes node from tracked guids and frees the node
     /// </summary>
     /// <param name="netGuid"></param>
-    public void DespawnNode(Guid netGuid)
-    {
+    // public void DespawnNode(Guid netGuid)
+    // {
         // if (!NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
         //     return;
         //
@@ -126,7 +126,7 @@ public partial class NodeManager : Node
         // _signalBus.EmitNodeDespawningSignal(node, ref signal);
         // NetGuidDictionary.Remove(netGuid);
         // node.QueueFree();
-    }
+    // }
 
     /// <summary>
     /// Recursively looks through a directory and returns only the res://file_path that end with a given extension
@@ -199,9 +199,6 @@ public partial class NodeManager : Node
         [NotNullWhen(true)] out Node3D? node3D)
     {
         node3D = null;
-        if (!NodeScenePathDictionary.TryGetValue(nodeName, out var sceneFilePath))
-            return false;
-        
         // TODO: This will stop working once we add in despawning
         // Server can come up with its own network ID, clients should have received the network ID from the server
         if (Networking.IsServer())
@@ -211,6 +208,16 @@ public partial class NodeManager : Node
         if (nodeNetworkId == null)
             return false;
 
+        // Node with that network ID already exists, no need to spawn it again
+        if (NetworkIdNodeDictionary.TryGetValue(nodeNetworkId.Value, out var node))
+        {
+            node3D = (Node3D)node;
+            return true;
+        }
+        
+        if (!NodeScenePathDictionary.TryGetValue(nodeName, out var sceneFilePath))
+            return false;
+        
         node3D = GD.Load<PackedScene>(sceneFilePath).Instantiate<Node3D>();
         GetParent().AddChild(node3D);
         
@@ -219,6 +226,7 @@ public partial class NodeManager : Node
         node3D.GlobalScale(globalScale);
 
         NodeNetworkIdDictionary.Add(node3D, nodeNetworkId.Value);
+        NetworkIdNodeDictionary.Add(nodeNetworkId.Value, node3D);
 
         var signal = new NodeSpawnedSignal(node3D);
         _signalBus.EmitNodeSpawnedSignal(node3D, ref signal);

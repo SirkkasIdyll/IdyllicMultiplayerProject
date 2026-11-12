@@ -15,11 +15,11 @@ public ref struct BufferReader(byte[] buffer)
     /// Holds the bytes we want to read values from
     /// </summary>
     private readonly ReadOnlySpan<byte> _buffer = new(buffer, 0,  buffer.Length);
-    
+
     /// <summary>
-    /// Where to read the next 32-bit word in the buffer
+    /// Where to read the next 8-bit byte in the buffer
     /// </summary>
-    private int _wordIndex = 0;
+    private int _byteIndex = 0;
     
     /// <summary>
     /// Because some of the content we may want to read will be 32-bits long, we need a place to store more than 32-bits
@@ -66,15 +66,14 @@ public ref struct BufferReader(byte[] buffer)
             throw new InvalidOperationException("Potential buffer underflow");
         
         // Load the requested amount of bits into the TempBuffer
-        var byteIndex = _wordIndex * 4;
         while (_bitsInTempBuffer < bits)
         {
             // If there are enough bits to load one entire 32-bit word, just load the entire 32-bit word
-            if (byteIndex * 8 + 32 <= _buffer.Length * 8)
+            if (_byteIndex * 8 + 32 <= _buffer.Length * 8)
             {
                 // We're loading an entire 32-bit word for the sake of speed since it's equivalent to 4 loops loading one byte at a time
                 // We wrote them in Little Endian originally, so we read them as Little Endian as well
-                var bitsToInsert = (ulong)BinaryPrimitives.ReadUInt32LittleEndian(_buffer.Slice(byteIndex, 4));
+                var bitsToInsert = (ulong)BinaryPrimitives.ReadUInt32LittleEndian(_buffer.Slice(_byteIndex, 4));
                 
                 // Shift the bits so they don't collide with what we already have loaded in the temp buffer
                 bitsToInsert <<= _bitsInTempBuffer;
@@ -84,15 +83,14 @@ public ref struct BufferReader(byte[] buffer)
                 // so this is the same thing as just adding the two values together
                 _tempBuffer |= bitsToInsert;
                 _bitsInTempBuffer += 32;
-                _wordIndex += 1;
-                byteIndex += 4;
+                _byteIndex += 4;
             }
             // We don't have enough bits to load an entire 32-bit word, so we have to do it one byte at a time :(
             // This only happens up to 3 times at the very end of the buffer, so it's not that bad
             else
             {
                 // Loads 8 bits then does the whole move insert shebang as the above
-                var bitsToInsert = (ulong)_buffer[byteIndex++];
+                var bitsToInsert = (ulong)_buffer[_byteIndex++];
                 bitsToInsert <<= _bitsInTempBuffer;
                 _tempBuffer |= bitsToInsert;
                 _bitsInTempBuffer += 8;

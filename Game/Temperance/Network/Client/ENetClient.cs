@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using ENet;
 using Godot;
@@ -266,38 +265,44 @@ public partial class ENetClient : Node
         
         for (var i = 0; i < nodesToSpawn; i++)
         {
-            var nodeNameByteCount = 0;
-            var nodeName = "";
             Node3D? node3D = null;
             
-            // Read how long the name of the node is
             if (isReliable)
-                nodeNameByteCount = bufferReader.ReadInt(0, 32);
-            
-            // Read the node name
-            if (isReliable)
-                nodeName = Encoding.UTF8.GetString(bufferReader.Read(nodeNameByteCount));
-            
-            // Read the node network ID
-            bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
-            
-            // Spawn the node now that we have the name and ID if this came from a reliable channel
-            if (isReliable)
-                _nodeManager.TrySpawnNode(nodeName, (ushort)nodeNetworkId, out node3D);
+            {
+                // Read how long the name of the node is
+                var nodeNameByteCount = bufferReader.ReadInt(0, 32);
 
-            // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
-            if (!isReliable)
-                node3D = (Node3D) _nodeManager.NodeNetworkIdDictionary.FirstOrDefault(x => x.Value == nodeNetworkId).Key;
+                // Read the node name
+                var nodeName = Encoding.UTF8.GetString(bufferReader.Read(nodeNameByteCount));
+                
+                // Read the node network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                
+                // Spawn the node now that we have the name and ID if this came from a reliable channel
+                _nodeManager.TrySpawnNode(nodeName, (ushort)nodeNetworkId, out node3D);
+            }
+            else
+            {
+                // Read the node network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                
+                // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
+                node3D = (Node3D)_nodeManager.NetworkIdNodeDictionary[(ushort)nodeNetworkId];
+            }
             
+            // For whatever reason, it didn't spawn or isn't spawned, ignore it
             if (node3D is null)
                 continue;
-            
+
             if (!isReliable)
+            {
+                // Read node position
                 node3D.SetGlobalPosition(bufferReader.ReadVector3(-5000, 5000, 0.01f));
-            
-            if (!isReliable)
+                
+                // Read node rotation
                 node3D.SetGlobalRotation(new Vector3(node3D.GetGlobalRotation().X,
                     bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f), node3D.GlobalRotation.Z));
+            }
             
             // Loop through all known components, check if the packet says the node has it,
             // and then update component details as necessary
@@ -305,13 +310,21 @@ public partial class ENetClient : Node
             {
                 var componentId = (ushort)j;
                 
-                var isComponentInPacket = bufferReader.ReadBool();
-                if (!isComponentInPacket)
-                    continue;
-                
-                // We only add the component for messages coming from the reliable channels
-                if (isReliable && !_componentManager.HasComponent(node3D, componentId))
+                var hasComponent = bufferReader.ReadBool();
+                if (isReliable)
+                {
+                    // If server says it doesn't have a component, then we don't have the component
+                    // Remove it and move on
+                    if (!hasComponent)
+                    {
+                        _componentManager.RemoveComponent(node3D, componentId);
+                        continue;
+                    }
+                    
+                    // We only add the component for messages coming from the reliable channels
+                    // Ensure that the component exists on the node
                     _componentManager.TryAddComponent(node3D, componentId);
+                }
                 
                 if (!_componentManager.TryGetComponent(node3D, componentId, out var component))
                     continue;

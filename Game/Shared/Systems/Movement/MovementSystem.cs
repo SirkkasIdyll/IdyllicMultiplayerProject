@@ -1,5 +1,4 @@
-﻿using System;
-using Godot;
+﻿using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;

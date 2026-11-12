@@ -77,6 +77,9 @@ public static class Networking
                     break;
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.SynchronizeOnChange):
                     break;
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ChangeControlledNode):
+                    client.ProcessChangeControlledNode(ref bufferReader);
+                    break;
                 case (ENetChannels.UnreliableServer, (int)UnreliableServerPacketType.StateUpdates):
                     client.ProcessStateUpdates(ref bufferReader);
                     break;
@@ -119,7 +122,8 @@ public enum ReliableServerPacketType : byte
     NodeDespawns = 2,
     ComponentAdded = 3,
     ComponentRemoved = 4,
-    SynchronizeOnChange = 5
+    SynchronizeOnChange = 5,
+    ChangeControlledNode = 6,
 }
 
 public enum UnreliableServerPacketType : byte

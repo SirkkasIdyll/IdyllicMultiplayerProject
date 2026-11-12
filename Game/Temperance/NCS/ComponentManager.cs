@@ -171,6 +171,9 @@ public partial class ComponentManager : Node
         return true;
     }
 
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
     public bool TryAddComponent(Node node, ushort componentId)
     {
         if (HasComponent(node, componentId))
@@ -205,10 +208,19 @@ public partial class ComponentManager : Node
         return nodeComponents.ContainsKey(componentName);
     }
 
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
     public bool TryGetComponent(Node node, ushort componentId, [NotNullWhen(true)] out Component? component)
     {
-        var nodeComponents = ComponentDictionaryByNode[node];
-        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        component = null;
+        
+        if (!ComponentDictionaryByNode.TryGetValue(node, out var nodeComponents))
+            return false;
+
+        if (!ComponentIdToComponentNameDictionary.TryGetValue(componentId, out var componentName))
+            return false;
+        
         return nodeComponents.TryGetValue(componentName, out component);
     }
 
@@ -225,6 +237,26 @@ public partial class ComponentManager : Node
         ComponentDictionaryByNode.TryAdd(node, []);
         ComponentDictionaryByNode[node].Remove(typeof(T).Name);
         
+        var signal = new ComponentRemovedSignal((node, component));
+        _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
+        
+        node.RemoveChild(component);
+        component.QueueFree();
+    }
+
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public void RemoveComponent(Node node, ushort componentId)
+    {
+        if (!TryGetComponent(node, componentId, out var component))
+            return;
+        
+        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        ComponentDictionary[componentName].Nodes.Remove(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Remove(componentName);
+
         var signal = new ComponentRemovedSignal((node, component));
         _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
         

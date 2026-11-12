@@ -1,5 +1,4 @@
 using System;
-using ENet;
 using Game.Temperance.Network;
 using Godot;
 using Vector2 = Godot.Vector2;

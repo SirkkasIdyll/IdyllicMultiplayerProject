@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using ENet;
 using Godot;
 using Game.Temperance.NCS;
@@ -33,7 +31,7 @@ public partial class ENetServer : Node
     // A node may be controlled by a peer,
     // but sometimes the peer will disconnect and be reassigned to a different Peer ID
     // So we keep it nullable in case someone else connects
-    private readonly Dictionary<Node, Peer?> _nodesControlledByPeers = new();
+    private readonly Dictionary<ushort, Peer?> _nodesControlledByPeers = new();
     
     /// <summary>
     /// When this value exceeds the <see cref="Networking"/> server tick length
@@ -95,6 +93,7 @@ public partial class ENetServer : Node
             // Reliable stuff
             BroadcastLateJoinSynchronization();
             BroadcastNodeSpawns();
+            BroadcastChangeControlledNode();
             
             // Unreliable stuff
             BroadcastStateUpdates();
@@ -229,8 +228,12 @@ public partial class ENetServer : Node
         _verifiedPeers.Add(guid, peer);
         
         // TODO: Replace this later with a proper join -> spawn flow
-        if (NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), null, out var node3D))
-            _nodesControlledByPeers.Add(node3D, peer);
+        var temporaryNetworkId = (ushort)_nodeManager.NodeNetworkIdDictionary.Count;
+        if (NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), temporaryNetworkId, out _))
+        {
+            _nodesControlledByPeers.Add(temporaryNetworkId, peer);
+            _changedControlledNodes.TryAdd(temporaryNetworkId, peer);
+        }
         return true;
     }
 
@@ -269,14 +272,14 @@ public partial class ENetServer : Node
     /// </summary>
     /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
     /// <param name="buffer">A message to be put into the packet</param>
-    /// <param name="peer">The unlucky peer who doesn't get the message</param>
+    /// <param name="excludedPeer">The unlucky peer who doesn't get the message</param>
     /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
-    public void Broadcast(ENetChannels channel, byte[] buffer, Peer peer, PacketFlags flag = PacketFlags.None)
+    public void Broadcast(ENetChannels channel, byte[] buffer, Peer excludedPeer, PacketFlags flag = PacketFlags.None)
     {
         var packet = new Packet();
         packet.Create(buffer, flag);
 
-        _server.Broadcast((byte)channel, ref packet, peer);
+        _server.Broadcast((byte)channel, ref packet, excludedPeer);
     }
 
     /// <summary>
@@ -318,35 +321,34 @@ public partial class ENetServer : Node
             if (node is not Node3D node3D)
                 continue;
             
-            // Write length of node name
-            // (I'm just gonna assume we're not gonna need more than 32 bytes to write a simple name man)
+
             if (isReliable)
+            {
+                // Write length of node name
+                // (I'm just gonna assume we're not gonna need more than 32 bytes to write a simple name man)
                 bufferWriter.WriteInt(Encoding.UTF8.GetByteCount(_nodeManager.GetNodeName(node)), 0, 32);
-            
-            // Write node name for spawning, shorter than the full file path
-            if (isReliable)
+                
+                // Write node name for spawning, shorter than the full file path
                 bufferWriter.StoreOrWrite(Encoding.UTF8.GetBytes(_nodeManager.GetNodeName(node)));
+            }
             
             // Write node network ID
             bufferWriter.StoreOrWrite(networkId, sizeof(ushort) * 8);
             
-            // Write node position
             if (!isReliable)
-                bufferWriter.WriteVector3(node3D.GlobalPosition, -5000, 5000, 0.01f);
-            
-            // Write node rotation (the only rotation that matters in our top down game)
-            if (!isReliable)
-                bufferWriter.WriteFloat(node3D.GlobalRotation.Y, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
-            
-            // Write what components a node has in order so that the upcoming details can be read in order
-            for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
             {
-                bufferWriter.WriteBool(_componentManager.HasComponent(node, i));
+                // Write node position
+                bufferWriter.WriteVector3(node3D.GlobalPosition, -5000, 5000, 0.01f);
+
+                // Write node rotation (the only rotation that matters in our top down game)
+                bufferWriter.WriteFloat(node3D.GlobalRotation.Y, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
             }
             
+            // Write what components a node has in ascending ID order
+            for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
+                bufferWriter.WriteBool(_componentManager.HasComponent(node, i));
+            
             // Write out the details for each component in order
-            // We only need to write out the reliable channel because the unreliable-side gets communicated regularly,
-            // often enough that we don't need to care
             var components = _componentManager.ComponentDictionaryByNode[node];
             for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
             {
@@ -364,43 +366,5 @@ public partial class ENetServer : Node
         
         bufferWriter.FinalWrite(out var byteIndex);
         return byteIndex;
-        
-        // Array.Resize(ref buffer, byteIndex);
-        // Broadcast(ENetChannels.ReliableServer, buffer, PacketFlags.Reliable);
-        // _newNodeSpawnsToBroadcast.Clear();
     }
-    
-    // TODO: REMOVE THIS
-    // private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
-    // {
-    //     if (!Networking.IsServer())
-    //         return;
-    //     
-    //     var signal = new SendNodeStatesSignal();
-    //     foreach (var (netGuid, _) in NetGuidDictionary)
-    //         signal.Message.NodeState.Add(new NodeState
-    //         {
-    //             Sequence = Library.Time,
-    //             NodeNetworkGuid = netGuid.ToString()
-    //         });
-    //     
-    //     _signalBus.EmitSendNodeStatesSignal(ref signal);
-    //     Broadcast(ENetChannels.TickUpdateUnreliable, signal.Message);
-    // }
-    //
-    // public NodeState GetLatestPredictedNodeState(NodeUpdateInfo nodeUpdateInfo)
-    // {
-    //     if (nodeUpdateInfo.PredictedNodeStates.Count == 0)
-    //     {
-    //         var nodeState = new NodeState { Sequence = nodeUpdateInfo.CurrSequence + (uint)(Networking.PhysicsTickLength * 1000) };
-    //         nodeUpdateInfo.PredictedNodeStates.Add(nodeState.Sequence, nodeState);
-    //         return nodeUpdateInfo.PredictedNodeStates[0];
-    //     }
-    //
-    //     if (nodeUpdateInfo.PredictedNodeStates.GetAt(nodeUpdateInfo.PredictedNodeStates.Count - 1).Value
-    //             .Transform is null)
-    //         return new NodeState();
-    //         
-    //     return new NodeState();
-    // }
 }
