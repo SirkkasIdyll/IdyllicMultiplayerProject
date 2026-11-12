@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using ENet;
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
 
-namespace Game.Temperance.Network;
+namespace Game.Temperance.Network.Client;
 
 public partial class ENetClient : Node
 {
+    private readonly ComponentManager _componentManager = ComponentManager.Instance;
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
+    
     public static ENetClient Instance { get; } = new();
 
     /// <summary>
@@ -31,7 +37,13 @@ public partial class ENetClient : Node
     /// <summary>
     /// The node the client is currently in control of
     /// </summary>
-    private Node? _clientControlledNode;
+    public Node? ClientControlledNode;
+    
+    /// <summary>
+    /// When this value exceeds the <see cref="Networking"/> server tick length
+    /// We allow the server to send or receive messages in the interest of reducing used bandwidth
+    /// </summary>
+    private double _clientMessageTimer = 0;
     
     /// <summary>
     /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
@@ -76,21 +88,30 @@ public partial class ENetClient : Node
         
         if (_serverPeer == null)
             return;
-
-        _clientTick++;
         
+        // Periodically send messages from the server to the client
+        _clientMessageTimer += delta;
+        if (_clientMessageTimer >= Networking.NetworkTickLength)
+        {
+            _clientMessageTimer = 0;
+            BroadcastUserInput();
+        }
+        
+        // Process reliable messages received from the server since the last physics tick
         while (_reliableBufferQueue.Count > 0)
         {
             var (peer, buffer) = _reliableBufferQueue.Dequeue();
             Networking.ProcessPacketFromChannel(ENetChannels.ReliableServer, peer, buffer);
         }
 
+        // Process unreliable messages received from the server since the last physics tick
         while (_unreliableBufferQueue.Count > 0)
         {
             var (peer, buffer) = _unreliableBufferQueue.Dequeue();
             Networking.ProcessPacketFromChannel(ENetChannels.UnreliableServer, peer, buffer);
         }
         
+        // Process connection-related messages
         while (_client.CheckEvents(out var netEvent) > 0 || _client.Service(0, out netEvent) > 0)
         {
             switch (netEvent.Type) {
@@ -115,6 +136,7 @@ public partial class ENetClient : Node
         }
         
         _client.Flush();
+        _clientTick++;
     }
     
     private void OnPeerConnected(Event netEvent)
@@ -226,6 +248,83 @@ public partial class ENetClient : Node
         packet.Create(buffer, flag);
 
         _serverPeer?.Send((byte)channel, ref packet);
+    }
+
+    /// <summary>
+    /// Receives a node update packet from the server and updates the details of the node
+    /// on this client
+    /// </summary>
+    /// <param name="bufferReader"></param>
+    /// <param name="isReliable">Was the update from a reliable channel</param>
+    private void ReceiveNodeComponentUpdate(ref BufferReader bufferReader, bool isReliable)
+    {
+        // Read count of nodes to spawn
+        bufferReader.Read(10, out var nodesToSpawn);
+
+        if (nodesToSpawn == 0)
+            return;
+        
+        for (var i = 0; i < nodesToSpawn; i++)
+        {
+            var nodeNameByteCount = 0;
+            var nodeName = "";
+            Node3D? node3D = null;
+            
+            // Read how long the name of the node is
+            if (isReliable)
+                nodeNameByteCount = bufferReader.ReadInt(0, 32);
+            
+            // Read the node name
+            if (isReliable)
+                nodeName = Encoding.UTF8.GetString(bufferReader.Read(nodeNameByteCount));
+            
+            // Read the node network ID
+            bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+            
+            // Spawn the node now that we have the name and ID if this came from a reliable channel
+            if (isReliable)
+                _nodeManager.TrySpawnNode(nodeName, (ushort)nodeNetworkId, out node3D);
+
+            // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
+            if (!isReliable)
+                node3D = (Node3D) _nodeManager.NodeNetworkIdDictionary.FirstOrDefault(x => x.Value == nodeNetworkId).Key;
+            
+            if (node3D is null)
+                continue;
+            
+            if (!isReliable)
+                node3D.SetGlobalPosition(bufferReader.ReadVector3(-5000, 5000, 0.01f));
+            
+            if (!isReliable)
+                node3D.SetGlobalRotation(new Vector3(node3D.GetGlobalRotation().X,
+                    bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f), node3D.GlobalRotation.Z));
+            
+            // Loop through all known components, check if the packet says the node has it,
+            // and then update component details as necessary
+            for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
+            {
+                var componentId = (ushort)j;
+                
+                var isComponentInPacket = bufferReader.ReadBool();
+                if (!isComponentInPacket)
+                    continue;
+                
+                // We only add the component for messages coming from the reliable channels
+                if (isReliable && !_componentManager.HasComponent(node3D, componentId))
+                    _componentManager.TryAddComponent(node3D, componentId);
+                
+                if (!_componentManager.TryGetComponent(node3D, componentId, out var component))
+                    continue;
+
+                // Different fields will be communicated,
+                // depending on whether the message was intended for the reliable channel
+                // or unreliable channel
+                if (isReliable)
+                    component.ReadReliableChannel(ref bufferReader);
+                else
+                    component.ReadUnreliableChannel(ref bufferReader);
+            }
+        }
     }
 
     /// <summary>

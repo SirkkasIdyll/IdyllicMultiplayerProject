@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ENet;
@@ -8,11 +9,15 @@ using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Signals;
 
-namespace Game.Temperance.Network;
+namespace Game.Temperance.Network.Server;
 
 public partial class ENetServer : Node
 {
+    private readonly ComponentManager _componentManager = ComponentManager.Instance;
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
+    
     public static ENetServer Instance { get; } = new();
     
     public const string Ip = "127.0.0.1";
@@ -35,6 +40,7 @@ public partial class ENetServer : Node
     /// We allow the server to send or receive messages in the interest of reducing used bandwidth
     /// </summary>
     private double _serverMessageTimer = 0;
+    
     /// <summary>
     /// Tracks the server physics tick we are on since the server first started so that we can say
     /// something was at this value on this server tick, for client prediction (and replays in the far future).
@@ -65,8 +71,8 @@ public partial class ENetServer : Node
         //     _server.SetMaxDuplicatePeers(MaxDuplicatePeers);
         _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
 
+        _signalBus.PeerConnectedSignal += OnPeerConnected;
         _signalBus.NodeSpawnedSignal += OnNodeSpawned;
-        _signalBus.ServerMessageTimerSignal += OnServerMessageTimer;
     }
 
     public override void _ExitTree()
@@ -79,28 +85,36 @@ public partial class ENetServer : Node
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
-
-        _serverTick++;
+        
+        // Periodically send messages from the server to the client
         _serverMessageTimer += delta;
-         if (_serverMessageTimer >= Networking.ServerTickLength)
+        if (_serverMessageTimer >= Networking.NetworkTickLength)
         {
-            var signal = new ServerMessageTimerSignal();
-            _signalBus.EmitServerMessageTimerSignal(ref signal);
             _serverMessageTimer = 0;
+            
+            // Reliable stuff
+            BroadcastLateJoinSynchronization();
+            BroadcastNodeSpawns();
+            
+            // Unreliable stuff
+            BroadcastStateUpdates();
         }
-         
+        
+        // Process reliable messages received from clients since the last physics tick
         while (_reliableBufferQueue.Count > 0)
         {
             var (peer, buffer) = _reliableBufferQueue.Dequeue();
             Networking.ProcessPacketFromChannel(ENetChannels.ReliableClient, peer, buffer);
         }
 
+        // Process unreliable messages received from clients since the last physics tick
         while (_unreliableBufferQueue.Count > 0)
         {
             var (peer, buffer) = _unreliableBufferQueue.Dequeue();
             Networking.ProcessPacketFromChannel(ENetChannels.UnreliableClient, peer, buffer);
         }
 
+        // Process connection-related messages
         while (_server.CheckEvents(out var netEvent) > 0 || _server.Service(0, out netEvent) > 0)
         {
             switch (netEvent.Type) {
@@ -125,6 +139,7 @@ public partial class ENetServer : Node
         }
         
         _server.Flush();
+        _serverTick++;
     }
     
     private void OnPeerConnected(Event netEvent)
@@ -281,6 +296,79 @@ public partial class ENetServer : Node
         
         peer.DisconnectNow(0);
     }
+
+
+    /// <summary>
+    /// Adds node component information to the BufferWriter to be sent
+    /// </summary>
+    /// <param name="bufferWriter"></param>
+    /// <param name="isReliable">Is the message intended for the reliable channel</param>
+    /// <param name="nodes">The nodes to be communicated</param>
+    /// <returns>Returns the byte index for the buffer</returns>
+    private int SendNodeComponentUpdate(ref BufferWriter bufferWriter, bool isReliable, List<Node> nodes)
+    {
+        // Write count of nodes
+        bufferWriter.StoreOrWrite((uint)nodes.Count, 10);
+        
+        foreach (var node in nodes)
+        {
+            if (!_nodeManager.NodeNetworkIdDictionary.TryGetValue(node, out var networkId))
+                continue;
+            
+            if (node is not Node3D node3D)
+                continue;
+            
+            // Write length of node name
+            // (I'm just gonna assume we're not gonna need more than 32 bytes to write a simple name man)
+            if (isReliable)
+                bufferWriter.WriteInt(Encoding.UTF8.GetByteCount(_nodeManager.GetNodeName(node)), 0, 32);
+            
+            // Write node name for spawning, shorter than the full file path
+            if (isReliable)
+                bufferWriter.StoreOrWrite(Encoding.UTF8.GetBytes(_nodeManager.GetNodeName(node)));
+            
+            // Write node network ID
+            bufferWriter.StoreOrWrite(networkId, sizeof(ushort) * 8);
+            
+            // Write node position
+            if (!isReliable)
+                bufferWriter.WriteVector3(node3D.GlobalPosition, -5000, 5000, 0.01f);
+            
+            // Write node rotation (the only rotation that matters in our top down game)
+            if (!isReliable)
+                bufferWriter.WriteFloat(node3D.GlobalRotation.Y, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
+            
+            // Write what components a node has in order so that the upcoming details can be read in order
+            for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
+            {
+                bufferWriter.WriteBool(_componentManager.HasComponent(node, i));
+            }
+            
+            // Write out the details for each component in order
+            // We only need to write out the reliable channel because the unreliable-side gets communicated regularly,
+            // often enough that we don't need to care
+            var components = _componentManager.ComponentDictionaryByNode[node];
+            for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
+            {
+                var componentName = _componentManager.ComponentIdToComponentNameDictionary[i];
+
+                if (!components.TryGetValue(componentName, out var component))
+                    continue;
+                
+                if (isReliable)
+                    component.WriteReliableChannel(ref bufferWriter);
+                else
+                    component.WriteUnreliableChannel(ref bufferWriter);
+            }
+        }
+        
+        bufferWriter.FinalWrite(out var byteIndex);
+        return byteIndex;
+        
+        // Array.Resize(ref buffer, byteIndex);
+        // Broadcast(ENetChannels.ReliableServer, buffer, PacketFlags.Reliable);
+        // _newNodeSpawnsToBroadcast.Clear();
+    }
     
     // TODO: REMOVE THIS
     // private void OnServerMessageTimer(ref ServerMessageTimerSignal args)
@@ -316,5 +404,3 @@ public partial class ENetServer : Node
     //     return new NodeState();
     // }
 }
-
-public class ServerMessageTimerSignal : UserSignalArgs;

@@ -1,6 +1,8 @@
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
+using Game.Temperance.Network.Client;
+using Game.Temperance.Network.Server;
 
 namespace Game;
 

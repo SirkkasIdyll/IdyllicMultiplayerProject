@@ -2,6 +2,7 @@
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
+using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
 
 namespace Game.Shared.Systems.Movement;
@@ -13,18 +14,20 @@ public partial class MovementSystem : NodeSystem
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
     // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
-
+    
     public override void _Ready()
     {
         base._Ready();
 
-        _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
+        // _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
     }
 
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
 
+        // TODO: TRACK INPUT AT SPECIFIC NETWORK TICK FOR CLIENT CON TROLLED NODE
+        // TODO: SOMETHING SOMETHING RECONCILE INCORRECT POSITIONS BUT NOT VISUALS
         _componentManager.GetNodesWithComponent<MovementComponent>(out var nodes);
         foreach (var node in nodes)
         {
@@ -55,23 +58,33 @@ public partial class MovementSystem : NodeSystem
         if (!@event.IsAction("move_left") && !@event.IsAction("move_right") && !@event.IsAction("move_up") && !@event.IsAction("move_down"))
             return;
 
+        if (ENetClient.Instance.ClientControlledNode == null)
+            return;
+
+        if (!_componentManager.TryGetComponent<MovementComponent>(ENetClient.Instance.ClientControlledNode,
+                out var movementComponent))
+            return;
+        
+        var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+        movementComponent.InputDirection = input;
+
         // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
         //     return;
         //
         // if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
         //     return;
-        
+
         // Set the movement locally for prediction
         // var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
         // movementComponent.InputDirection = input;
-        
+
         // Send the movement to the server so that it can simulate it on its side
         // var userInputMessage = new UserInput { Movement = new GdVector2 { X = input.X, Y = input.Y } };
         // ENetClient.Instance.Send(ENetChannels.UserInputUnreliable, userInputMessage);
     }
 
-    private void OnReceiveMovementInput(Guid netGuid, Vector2 input, ref ReceiveMovementInputSignal signal)
-    {
+    // private void OnReceiveMovementInput(Guid netGuid, Vector2 input, ref ReceiveMovementInputSignal signal)
+    // {
         // if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
         //     return;
         //
@@ -80,8 +93,7 @@ public partial class MovementSystem : NodeSystem
         //
         // movementComponent.InputDirection = input;
         // GD.Print("Updated movement input");
-        
-    }
+    // }
 
     // private void OnSendNodeStates(ref SendNodeStatesSignal args)
     // {

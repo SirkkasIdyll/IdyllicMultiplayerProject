@@ -1,5 +1,7 @@
 ﻿using System;
 using ENet;
+using Game.Temperance.Network.Client;
+using Game.Temperance.Network.Server;
 using Godot;
 using Game.Temperance.Signals;
 
@@ -8,9 +10,9 @@ namespace Game.Temperance.Network;
 public static class Networking
 {
     public static readonly double PhysicsTickLength = (double)1 / Engine.GetPhysicsTicksPerSecond();
-    public static readonly TimeSpan PhysicsTickSpan = TimeSpan.FromSeconds(PhysicsTickLength);
-    public static readonly double ServerTickLength = PhysicsTickLength * 2;
-    public static readonly TimeSpan ServerTickSpan = TimeSpan.FromSeconds(ServerTickLength);
+    public static readonly TimeSpan PhysicsTickTimeSpan = TimeSpan.FromSeconds(PhysicsTickLength);
+    public static readonly double NetworkTickLength = PhysicsTickLength * 2;
+    public static readonly TimeSpan NetworkTickTimeSpan = TimeSpan.FromSeconds(NetworkTickLength);
     public const int MaxPacketTypesPerChannel = 15;
     
     public static bool IsServer()
@@ -45,23 +47,27 @@ public static class Networking
 
         if (IsServer())
         {
+            var server = ENetServer.Instance;
             switch (channel, packetType)
             {
                 case (ENetChannels.ReliableClient, (int)ReliableClientPacketType.ConnectionVerificationAttempt):
-                    ENetServer.Instance.TryClientVerification(peer, ref bufferReader);
+                    server.TryClientVerification(peer, ref bufferReader);
                     break;
                 case (ENetChannels.UnreliableClient, (int)UnreliableClientPacketType.UserInput):
+                    server.ProcessUserInput(peer, ref bufferReader);
                     break;
             }
         }
         else
         {
+            var client = ENetClient.Instance;
             switch (channel, packetType)
             {
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.LateJoinSynchronization):
+                    client.ProcessLateJoinSynchronizationPacket(ref bufferReader);
                     break;
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeSpawns):
-                    ENetClient.Instance.ProcessNodeSpawnPacket(ref bufferReader);
+                    client.ProcessNodeSpawnPacket(ref bufferReader);
                     break;
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeDespawns):
                     break;
@@ -72,6 +78,7 @@ public static class Networking
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.SynchronizeOnChange):
                     break;
                 case (ENetChannels.UnreliableServer, (int)UnreliableServerPacketType.StateUpdates):
+                    client.ProcessStateUpdates(ref bufferReader);
                     break;
             }
         }

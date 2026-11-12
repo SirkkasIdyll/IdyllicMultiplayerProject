@@ -1,5 +1,6 @@
 using Godot;
 using Game.Temperance.Network;
+using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
 
 namespace Game.Client.Scenes;
