@@ -45,41 +45,19 @@ public partial class MovementSystem : NodeSystem
             if (!characterBody3D.Velocity.IsZeroApprox())
                 characterBody3D.MoveAndSlide();
         }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        base._UnhandledInput(@event);
-
+        
         if (Networking.IsServer())
-            return;
-
-        if (!@event.IsAction("move_left") && !@event.IsAction("move_right") && !@event.IsAction("move_up") && !@event.IsAction("move_down"))
             return;
 
         if (ENetClient.Instance.ClientControlledNode == null)
             return;
 
         if (!_componentManager.TryGetComponent<MovementComponent>(ENetClient.Instance.ClientControlledNode,
-                out var movementComponent))
+                out var movementComponent2))
             return;
         
         var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        movementComponent.InputDirection = input;
-
-        // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
-        //     return;
-        //
-        // if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
-        //     return;
-
-        // Set the movement locally for prediction
-        // var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        // movementComponent.InputDirection = input;
-
-        // Send the movement to the server so that it can simulate it on its side
-        // var userInputMessage = new UserInput { Movement = new GdVector2 { X = input.X, Y = input.Y } };
-        // ENetClient.Instance.Send(ENetChannels.UserInputUnreliable, userInputMessage);
+        movementComponent2.InputDirection = input;
     }
 
     // private void OnReceiveMovementInput(Guid netGuid, Vector2 input, ref ReceiveMovementInputSignal signal)

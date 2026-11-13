@@ -257,13 +257,13 @@ public partial class ENetClient : Node
     /// <param name="isReliable">Was the update from a reliable channel</param>
     private void ReceiveNodeComponentUpdate(ref BufferReader bufferReader, bool isReliable)
     {
-        // Read count of nodes to spawn
-        bufferReader.Read(10, out var nodesToSpawn);
+        // Read count of nodes in the packet
+        bufferReader.Read(10, out var nodes);
 
-        if (nodesToSpawn == 0)
+        if (nodes == 0)
             return;
         
-        for (var i = 0; i < nodesToSpawn; i++)
+        for (var i = 0; i < nodes; i++)
         {
             Node3D? node3D = null;
             

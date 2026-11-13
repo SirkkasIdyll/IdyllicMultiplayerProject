@@ -161,7 +161,7 @@ public partial class ENetServer : Node
 
     private void OnPeerReceivedPacket(Event netEvent)
     {
-        GD.Print("ENet Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+        // GD.Print("ENet Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
         var buffer = new byte[netEvent.Packet.Length];
         netEvent.Packet.CopyTo(buffer);
         

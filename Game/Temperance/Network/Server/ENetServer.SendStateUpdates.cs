@@ -18,9 +18,8 @@ public partial class ENetServer
         // Write server tick
         bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
         
-        var byteIndex = SendNodeComponentUpdate(ref bufferWriter, false, [.. _newNodeSpawnsToBroadcast]);
+        var byteIndex = SendNodeComponentUpdate(ref bufferWriter, false, [.. _nodeManager.NodeNetworkIdDictionary.Keys]);
         Array.Resize(ref buffer, byteIndex);
         Broadcast(ENetChannels.UnreliableServer, buffer);
-        _newNodeSpawnsToBroadcast.Clear();
     }
 }

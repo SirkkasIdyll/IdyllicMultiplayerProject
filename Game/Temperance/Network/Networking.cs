@@ -4,6 +4,7 @@ using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
 using Godot;
 using Game.Temperance.Signals;
+using Environment = System.Environment;
 
 namespace Game.Temperance.Network;
 
@@ -17,6 +18,9 @@ public static class Networking
     
     public static bool IsServer()
     {
+        if (Environment.GetCommandLineArgs().Contains("--server"))
+            return true;
+        
         if (OS.GetCmdlineUserArgs().Contains("--server"))
             return true;
         

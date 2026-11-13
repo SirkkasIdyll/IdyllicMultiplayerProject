@@ -247,6 +247,14 @@ using Godot;");
 
 public partial class ComponentManager
 {");
+        sourceBuilder.AppendLine(@"
+    /// <summary>
+    /// Nodes in the world and what components they have
+    /// First populated when a node spawns
+    /// </summary>
+    public readonly Dictionary<Node, Dictionary<string, Component>> ComponentDictionaryByNode = new();");
+        
+        // Dictionary of components by name for duplication and what nodes have that component
         sourceBuilder.AppendLine(@"    public readonly Dictionary<string, (Component Component, List<Node> Nodes)> ComponentDictionary = new Dictionary<string, (Component Component, List<Node> Nodes)>()
     {");
         foreach (var (component, componentId) in sortedComponentsAndIds)
@@ -257,6 +265,7 @@ public partial class ComponentManager
         
         sourceBuilder.AppendLine("");
         
+        // Lookup dictionary to find component name from ID
         sourceBuilder.AppendLine(@"    public readonly Dictionary<ushort, string> ComponentIdToComponentNameDictionary = new Dictionary<ushort, string>()
     {");
         foreach (var (component, componentId) in sortedComponentsAndIds)
@@ -267,6 +276,7 @@ public partial class ComponentManager
         
         sourceBuilder.AppendLine("");
         
+        // Lookup dictionary to find component ID from name
         sourceBuilder.AppendLine(@"    public readonly Dictionary<string, ushort> ComponentNameToComponentIdDictionary = new Dictionary<string, ushort>()
     {");
         foreach (var (component, componentId) in sortedComponentsAndIds)

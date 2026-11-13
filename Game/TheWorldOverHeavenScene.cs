@@ -1,8 +1,10 @@
+using System;
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
+using Environment = System.Environment;
 
 namespace Game;
 
@@ -29,6 +31,8 @@ public partial class TheWorldOverHeavenScene : Node3D
 		}
 		else
 		{
+			GetWindow().Title = Environment.GetCommandLineArgs().Contains("--verbose") ? "Verbose Client" : "Basic Client";
+
 			AddChild(ENetClient.Instance);
 			ENetServer.Instance.Free();
 		}

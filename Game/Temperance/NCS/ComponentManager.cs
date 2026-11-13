@@ -18,12 +18,6 @@ public partial class ComponentManager : Node
     public static ComponentManager Instance { get; } = new();
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
-    /// <summary>
-    /// Nodes in the world and what components they have
-    /// First populated when a node spawns
-    /// </summary>
-    public readonly Dictionary<Node, Dictionary<string, Component>> ComponentDictionaryByNode = new();
-
     public override void _Ready()
     {
         base._Ready();
@@ -47,6 +41,7 @@ public partial class ComponentManager : Node
             if (child is not Component component)
                 continue;
             
+            ComponentDictionary[component.GetType().Name].Nodes.Add(node);
             ComponentDictionaryByNode.TryAdd(node, []);
             ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
         }
