@@ -1,0 +1,366 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using ENet;
+using Godot;
+using Game.Temperance.NCS;
+using Game.Temperance.Signals;
+
+namespace Game.Temperance.Network.Client;
+
+public partial class ENetClient : Node
+{
+    private readonly ComponentManager _componentManager = ComponentManager.Instance;
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
+    private readonly SignalBus _signalBus = SignalBus.Instance;
+    
+    public static ENetClient Instance { get; } = new();
+
+    /// <summary>
+    /// This is a temporary form of "authentication" that identifies a client before
+    /// I move on to the real stuff
+    /// </summary>
+    public Guid EnetGuid = Guid.CreateVersion7();
+    
+    /// <summary>
+    /// Sends and receives packets
+    /// </summary>
+    private readonly Host _client = new();
+    
+    /// <summary>
+    /// Client's only connect to the server, never with each other, so they only have one peer :(
+    /// </summary>
+    private Peer? _serverPeer;
+
+    /// <summary>
+    /// The node the client is currently in control of
+    /// </summary>
+    public Node? ClientControlledNode;
+    
+    /// <summary>
+    /// When this value exceeds the <see cref="Networking"/> server tick length
+    /// We allow the server to send or receive messages in the interest of reducing used bandwidth
+    /// </summary>
+    private double _clientMessageTimer = 0;
+    
+    /// <summary>
+    /// Kind of like the <see cref="ENetServer"/>'s server tick, except the only real reason we track it on the client
+    /// is so we can tell the server when a specific input happened, then it can tell us when the last client tick
+    /// it received was, so we can rollback to the CLIENT input tick specifically to see if what we predicted was good
+    /// </summary>
+    private uint _clientTick = 0;
+    
+    /// <summary>
+    /// Rather than processing messages from the server immediately, place it into a queue
+    /// Leave two to three messages in the queue to act as a jitter buffer that you slowly play out
+    /// so you don't run into a short period where you don't have any updates to play out at all
+    /// </summary>
+    private readonly Queue<(Peer peer, byte[] buffer)> _unreliableBufferQueue = new();
+    
+    /// <summary>
+    /// Unlike the unreliable messages, we want to apply these immediately
+    /// because it usually represents something significant
+    /// Like something spawning, despawning, health state updates, something important!
+    /// </summary>
+    private readonly Queue<(Peer peer, byte[] buffer)> _reliableBufferQueue = new();
+
+    public override void _Ready()
+    {
+        base._Ready();
+
+        _client.Create();
+        _client.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
+    }
+
+    public override void _ExitTree()
+    {
+        base._ExitTree();
+
+        _serverPeer?.DisconnectNow(0);
+        _client.Dispose();
+    }
+    
+    public override void _PhysicsProcess(double delta)
+    {
+        base._PhysicsProcess(delta);
+        
+        if (_serverPeer == null)
+            return;
+        
+        // Periodically send messages from the server to the client
+        _clientMessageTimer += delta;
+        if (_clientMessageTimer >= Networking.NetworkTickLength)
+        {
+            _clientMessageTimer = 0;
+            BroadcastUserInput();
+        }
+        
+        // Process reliable messages received from the server since the last physics tick
+        while (_reliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _reliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.ReliableServer, peer, buffer);
+        }
+
+        // Process unreliable messages received from the server since the last physics tick
+        while (_unreliableBufferQueue.Count > 0)
+        {
+            var (peer, buffer) = _unreliableBufferQueue.Dequeue();
+            Networking.ProcessPacketFromChannel(ENetChannels.UnreliableServer, peer, buffer);
+        }
+        
+        // Process connection-related messages
+        while (_client.CheckEvents(out var netEvent) > 0 || _client.Service(0, out netEvent) > 0)
+        {
+            switch (netEvent.Type) {
+                case EventType.None:
+                    break;
+                case EventType.Connect:
+                    OnPeerConnected(netEvent);
+                    break;
+                case EventType.Disconnect:
+                    OnPeerDisconnected(netEvent);
+                    break;
+                case EventType.Timeout:
+                    OnPeerTimeout(netEvent);
+                    break;
+                case EventType.Receive:
+                    OnPeerReceivedPacket(netEvent);
+                    netEvent.Packet.Dispose();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        _client.Flush();
+        _clientTick++;
+    }
+    
+    private void OnPeerConnected(Event netEvent)
+    {
+        GD.Print("ENet Client connected to server. " + EnetGuid);
+
+        // A GUID takes up 16 bytes, the channel ID pushes us past that to 17 bytes
+        var buffer = new byte[17];
+        var bufferWriter = new BufferWriter(buffer);
+        bufferWriter.WriteInt((int)ReliableClientPacketType.ConnectionVerificationAttempt, 0, Networking.MaxPacketTypesPerChannel);
+        bufferWriter.StoreOrWrite(EnetGuid.ToByteArray());
+        bufferWriter.FinalWrite(out _);
+        // Send connection verification so that other packets sent
+        // do not get rejected causing an immediate disconnection
+        Send(ENetChannels.ReliableClient, buffer, PacketFlags.Reliable);
+    }
+
+    private void OnPeerDisconnected(Event netEvent)
+    {
+        GD.Print("ENet Client disconnected from server");
+        var signal = new PeerDisconnectedSignal(netEvent);
+        _signalBus.EmitPeerDisconnectedSignal(netEvent, ref signal);
+    }
+
+    private void OnPeerTimeout(Event netEvent)
+    {
+        GD.Print("ENet Client connection timeout");
+    }
+
+    private void OnPeerReceivedPacket(Event netEvent)
+    {
+        // GD.Print("ENet Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " +
+        //          netEvent.Packet.Length);
+        
+        var buffer = new byte[netEvent.Packet.Length];
+        netEvent.Packet.CopyTo(buffer);
+        
+        switch ((ENetChannels)netEvent.ChannelID)
+        {
+            case ENetChannels.ReliableServer:
+                _reliableBufferQueue.Enqueue((netEvent.Peer, buffer));
+                break;
+            case ENetChannels.UnreliableServer:
+                _unreliableBufferQueue.Enqueue((netEvent.Peer, buffer));
+                break;
+            // We should never be getting messages from other clients so ignore them lol
+            case ENetChannels.ReliableClient:
+            case ENetChannels.UnreliableClient:
+            default:
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Returns percent of packets lost compared to packets sent
+    /// </summary>
+    /// <returns>Also returns 0 if not connected</returns>
+    public ulong GetPacketLoss()
+    {
+        if (_serverPeer != null && _serverPeer.Value.PacketsSent != 0)
+            return _serverPeer.Value.PacketsLost / _serverPeer.Value.PacketsSent;
+        
+        return 0;
+    }
+    
+    /// <summary>
+    /// Returns last-known round trip time if connected to server
+    /// </summary>
+    /// <returns>0 if not connected</returns>
+    public uint GetPing()
+    {
+        return _serverPeer?.LastRoundTripTime ?? 0;
+    }
+
+    /// <summary>
+    /// Check if ENet client is connected to server
+    /// </summary>
+    public bool IsConnected()
+    {
+        return _serverPeer?.State == PeerState.Connected;
+    }
+
+    /// <summary>
+    /// Connects to a server if not connected
+    /// If already connected, disconnect from server
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="port"></param>
+    public void ToggleConnection(string host, ushort port)
+    {
+        if (_serverPeer?.State == PeerState.Connected)
+        {
+            TryDisconnect();
+            return;
+        }
+        
+        TryConnect(host, port);
+    }
+
+    /// <summary>
+    /// Send a message to the server on this channel
+    /// </summary>
+    /// <param name="channel">Refer to <see cref="ENetChannels"/></param>
+    /// <param name="buffer">A message to be put into the packet</param>
+    /// <param name="flag">Use reliable for time sequential info or if you need acknowledgement</param>
+    public void Send(ENetChannels channel, byte[] buffer, PacketFlags flag = PacketFlags.None)
+    {
+        var packet = new Packet();
+        packet.Create(buffer, flag);
+
+        _serverPeer?.Send((byte)channel, ref packet);
+    }
+
+    /// <summary>
+    /// Receives a node update packet from the server and updates the details of the node
+    /// on this client
+    /// </summary>
+    /// <param name="bufferReader"></param>
+    /// <param name="isReliable">Was the update from a reliable channel</param>
+    private void ReceiveNodeComponentUpdate(ref BufferReader bufferReader, bool isReliable)
+    {
+        // Read count of nodes in the packet
+        bufferReader.Read(10, out var nodes);
+
+        if (nodes == 0)
+            return;
+        
+        for (var i = 0; i < nodes; i++)
+        {
+            Node3D? node3D = null;
+            
+            if (isReliable)
+            {
+                // Read how long the name of the node is
+                var nodeNameByteCount = bufferReader.ReadInt(0, 32);
+
+                // Read the node name
+                var nodeName = Encoding.UTF8.GetString(bufferReader.Read(nodeNameByteCount));
+                
+                // Read the node network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                
+                // Spawn the node now that we have the name and ID if this came from a reliable channel
+                _nodeManager.TrySpawnNode(nodeName, (ushort)nodeNetworkId, out node3D);
+            }
+            else
+            {
+                // Read the node network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                
+                // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
+                node3D = (Node3D)_nodeManager.NetworkIdNodeDictionary[(ushort)nodeNetworkId];
+            }
+            
+            // For whatever reason, it didn't spawn or isn't spawned, ignore it
+            if (node3D is null)
+                continue;
+
+            if (!isReliable)
+            {
+                // Read node position
+                node3D.SetGlobalPosition(bufferReader.ReadVector3(-5000, 5000, 0.01f));
+                
+                // Read node rotation
+                node3D.SetGlobalRotation(new Vector3(node3D.GetGlobalRotation().X,
+                    bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f), node3D.GlobalRotation.Z));
+            }
+            
+            // Loop through all known components, check if the packet says the node has it,
+            // and then update component details as necessary
+            for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
+            {
+                var componentId = (ushort)j;
+                
+                var hasComponent = bufferReader.ReadBool();
+                if (isReliable)
+                {
+                    // If server says it doesn't have a component, then we don't have the component
+                    // Remove it and move on
+                    if (!hasComponent)
+                    {
+                        _componentManager.RemoveComponent(node3D, componentId);
+                        continue;
+                    }
+                    
+                    // We only add the component for messages coming from the reliable channels
+                    // Ensure that the component exists on the node
+                    _componentManager.TryAddComponent(node3D, componentId);
+                }
+                
+                if (!_componentManager.TryGetComponent(node3D, componentId, out var component))
+                    continue;
+
+                // Different fields will be communicated,
+                // depending on whether the message was intended for the reliable channel
+                // or unreliable channel
+                if (isReliable)
+                    component.ReadReliableChannel(ref bufferReader);
+                else
+                    component.ReadUnreliableChannel(ref bufferReader);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Attempts to connect to a given hostname and port
+    /// Check <see cref="_serverPeer"/> to see how the connection went
+    /// </summary>
+    /// <param name="host">Can be a host name or IP address</param>
+    /// <param name="port"></param>
+    private void TryConnect(string host, ushort port)
+    {
+        var address = new Address();
+        address.Port = port;
+        address.SetHost(host);
+
+        // TODO: Does not gracefully handle rejections when SetMaxDuplicatePeers is 1/hit
+        _serverPeer = _client.Connect(address, Enum.GetNames<ENetChannels>().Length);
+    }
+
+    /// <summary>
+    /// Attempts to disconnect from a server after all queued outgoing packets have been sent
+    /// </summary>
+    private void TryDisconnect()
+    {
+        _serverPeer?.DisconnectLater(0);
+    }
+}

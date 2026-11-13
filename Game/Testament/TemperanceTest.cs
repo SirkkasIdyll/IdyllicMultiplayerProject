@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Godot;
 using Game.Shared.Systems.Movement;
 using Game.Temperance.NCS;
-using Game.Temperance.Network;
+using Game.Temperance.Network.Client;
+using Game.Temperance.Network.Server;
 
 namespace Game.Testament;
 
@@ -28,8 +29,6 @@ public class TemperanceTest
             
             ENetClient.Instance.Free();
             ENetServer.Instance.Free();
-            GRpcClient.Instance.Free();
-            GRpcServer.Instance.Free();
         };
         AddNode(_rootScene);
     }

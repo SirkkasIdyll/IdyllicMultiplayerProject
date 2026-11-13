@@ -1,4 +1,5 @@
 ﻿using System;
+using Game.Temperance.Network;
 using Godot;
 
 namespace Game.Temperance.NCS;
@@ -24,14 +25,19 @@ public abstract partial class Component : Node3D
         SetName(GetType().Name);
         SetOwner(GetParent());
     }
+
+    public abstract void WriteUnreliableChannel(ref BufferWriter bufferWriter);
+    public abstract void ReadUnreliableChannel(ref BufferReader bufferReader);
+    public abstract void WriteReliableChannel(ref BufferWriter bufferWriter);
+    public abstract void ReadReliableChannel(ref BufferReader bufferReader);
 }
 
-/// <summary>
-/// When the Synchronized attribute is added,
-/// the server will constantly communicate the state of SynchronizedFields to clients
-/// </summary>
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class Synchronized : Attribute { }
+// /// <summary>
+// /// When the Synchronized attribute is added,
+// /// the server will constantly communicate the state of SynchronizedFields to clients
+// /// </summary>
+// [AttributeUsage(AttributeTargets.Class)]
+// public sealed class Synchronized : Attribute { }
 
 /// <summary>
 /// Will do nothing if the component is not Synchronized

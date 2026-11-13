@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://ds0l0sivaq2w8"]
 
-[ext_resource type="Script" uid="uid://j4lqgn0twrkc" path="res://Shared/Systems/Metadata/MetadataComponent.cs" id="2_4ctj6"]
 [ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_yr3uu"]
 [ext_resource type="Script" uid="uid://bmq3pauk0ua5j" path="res://Shared/Systems/Camera/CameraComponent.cs" id="3_4ctj6"]
 
@@ -15,10 +14,6 @@ metadata/_custom_type_script = "uid://bmq3pauk0ua5j"
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 20, 0)
 projection = 1
 size = 20.0
-
-[node name="MetadataComponent" type="Node3D" parent="." unique_id=1538776245]
-script = ExtResource("2_4ctj6")
-metadata/_custom_type_script = "uid://j4lqgn0twrkc"
 
 [node name="MovementComponent" type="Node3D" parent="." unique_id=1257891217]
 script = ExtResource("2_yr3uu")

@@ -142,11 +142,32 @@ public ref struct BufferWriter(byte[] buffer)
     }
 
     /// <summary>
+    /// If for some reason you already know what bytes you want to write...
+    /// </summary>
+    /// <param name="bytes"></param>
+    public void StoreOrWrite(byte[] bytes)
+    {
+        if (bytes.Length == 0)
+            return;
+
+        // We don't need to do this but it's nice if we throw the error here so we know
+        // if the overload is where the issue lies
+        if (_wordIndex * 32 + _bitsInTempBuffer + bytes.Length * 8 > _buffer.Length * 8)
+            throw new InvalidOperationException("Potential buffer overflow");
+
+        foreach (var content in bytes)
+        {
+            StoreOrWrite(content, 8);
+        }
+    }
+
+    /// <summary>
     /// If there's nothing left to add via <see cref="StoreOrWrite"/>
     /// write the remaining contents of the temp buffer into the main buffer
     /// ONE BYTE AT A TIME BECAUSE MAYBE I LIKE FARTING OUT MY BYTES LIKE IT'S 1985
     /// </summary>
     /// <param name="byteIndex">How many bytes we can write to the packet</param>
+    /// <param name="buffer">The buffer ready to be sent as a packet</param>
     public void FinalWrite(out int byteIndex)
     {
         // Look at how simple shitting out a byte at a time is

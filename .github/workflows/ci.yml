@@ -35,7 +35,7 @@ jobs:
         with:
           godot-version: '4.7'       # Required: Godot version to use
           godot-net: true
-          dotnet-version: net10.0
+          dotnet-version: net11.0
           paths: 'res://Testament'         # Required: Test directory
           timeout: 10                  # Optional: Test timeout in minutes
           version: 'latest'            # Optional: GdUnit4 version

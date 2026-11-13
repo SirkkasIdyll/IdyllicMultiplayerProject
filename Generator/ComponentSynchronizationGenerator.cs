@@ -25,7 +25,7 @@ public class ComponentSynchronizationGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var synchronizedComponents = context.SyntaxProvider
+        var components = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax,
                 transform: (generatorSyntaxContext, cancellationToken) =>
@@ -46,25 +46,25 @@ public class ComponentSynchronizationGenerator : IIncrementalGenerator
                     if (typedSymbol.BaseType.Name != "Component")
                         return null;
 
-                    var attributes = typedSymbol.GetAttributes().ToList();
-
-                    if (attributes.Find(x => x.AttributeClass?.Name == "Synchronized") == null)
-                        return null;
-
-                    var properties = typedSymbol.GetMembers().ToList();
-
-                    var containsSynchronizedField = false;
-                    foreach (var propertyAttributes in properties.Select(property => property.GetAttributes().ToList()))
-                    {
-                        if (propertyAttributes.Find(x => x.AttributeClass?.Name == "SynchronizedField") == null)
-                            continue;
-                        
-                        containsSynchronizedField = true;
-                        break;
-                    }
-
-                    if (!containsSynchronizedField)
-                        return null;
+                    // var attributes = typedSymbol.GetAttributes().ToList();
+                    //
+                    // if (attributes.Find(x => x.AttributeClass?.Name == "Synchronized") == null)
+                    //     return null;
+                    //
+                    // var properties = typedSymbol.GetMembers().ToList();
+                    //
+                    // var containsSynchronizedField = false;
+                    // foreach (var propertyAttributes in properties.Select(property => property.GetAttributes().ToList()))
+                    // {
+                    //     if (propertyAttributes.Find(x => x.AttributeClass?.Name == "SynchronizedField") == null)
+                    //         continue;
+                    //     
+                    //     containsSynchronizedField = true;
+                    //     break;
+                    // }
+                    //
+                    // if (!containsSynchronizedField)
+                    //     return null;
                     
                     return (typedSymbol);
                 }).Where(typedSymbol => typedSymbol is not null);
@@ -74,14 +74,14 @@ public class ComponentSynchronizationGenerator : IIncrementalGenerator
         // and then order them alphabetically into a string, so that I can use that string
         // I mean, at least I think it's alphabetical. Whatever the default sort method is, it doesn't really matter
         // as long as it's consistent.
-        var alphabeticalComponentString = synchronizedComponents
+        var alphabeticalComponentString = components
             .Select(static (typedSymbol, _) => typedSymbol?.Name).Collect()
             .Select(static (typedSymbolName, _) => string.Join(",", typedSymbolName.Sort()));
         
         // Then we need to go one by one again through our component list,
         // but now with the full component name context in sorted order,
         // and then attach an index number that we're using as our ID to each component
-        var componentAndIds = synchronizedComponents
+        var componentAndIds = components
             .Combine(alphabeticalComponentString)
             .Select(static (typedSymbolAndString, _) =>
         {
@@ -93,10 +93,11 @@ public class ComponentSynchronizationGenerator : IIncrementalGenerator
             return (typedSymbol, componentId);
         });
         
-        context.RegisterSourceOutput(componentAndIds, GenerateFiles);
+        context.RegisterSourceOutput(componentAndIds, GenerateComponentSynchronizationFiles);
+        context.RegisterSourceOutput(componentAndIds.Collect(), GenerateComponentManagerDictionary);
     }
     
-    private void GenerateFiles(SourceProductionContext context, (ITypeSymbol? typedSymbol, ushort componentId) component)
+    private void GenerateComponentSynchronizationFiles(SourceProductionContext context, (ITypeSymbol? typedSymbol, ushort componentId) component)
     {
         if (component.typedSymbol is null)
             return;
@@ -159,7 +160,7 @@ public partial class {className}
         // WriteUnreliable
         sourceBuilder.AppendLine(
             "    // This is where fields whose values need to be constantly communicated to other users goes");
-        sourceBuilder.AppendLine(@"    public void WriteUnreliableChannel(ref BufferWriter bufferWriter)
+        sourceBuilder.AppendLine(@"    public override void WriteUnreliableChannel(ref BufferWriter bufferWriter)
     {");
         foreach (var field in unreliableFields)
         {
@@ -173,7 +174,7 @@ public partial class {className}
         sourceBuilder.AppendLine();
         
         // ReadUnreliable
-        sourceBuilder.AppendLine(@"    public void ReadUnreliableChannel(ref BufferReader bufferReader)
+        sourceBuilder.AppendLine(@"    public override void ReadUnreliableChannel(ref BufferReader bufferReader)
     {");
         foreach (var field in unreliableFields)
         {
@@ -189,7 +190,7 @@ public partial class {className}
         // WriteReliable
         sourceBuilder.AppendLine(
             "    // This is where fields whose values only need to be communicated to users when they change goes");
-        sourceBuilder.AppendLine(@"    public void WriteReliableChannel(ref BufferWriter bufferWriter)
+        sourceBuilder.AppendLine(@"    public override void WriteReliableChannel(ref BufferWriter bufferWriter)
     {");
         foreach (var field in onChangeFields)
         {
@@ -203,7 +204,7 @@ public partial class {className}
         sourceBuilder.AppendLine();
         
         // ReadReliable
-        sourceBuilder.AppendLine(@"    public void ReadReliableChannel(ref BufferReader bufferReader)
+        sourceBuilder.AppendLine(@"    public override void ReadReliableChannel(ref BufferReader bufferReader)
     {");
         foreach (var field in onChangeFields)
         {
@@ -219,6 +220,74 @@ public partial class {className}
         
         
         context.AddSource($"Synchronize.{className}.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+    }
+
+    private void GenerateComponentManagerDictionary(SourceProductionContext context,
+        ImmutableArray<(ITypeSymbol? typedSymbol, ushort componentId)> componentsAndIds)
+    {
+        var sortedComponentsAndIds = componentsAndIds.Sort((a, b) => a.componentId.CompareTo(b.componentId));
+        var namespaces = new HashSet<string>();
+        foreach (var (component, _) in sortedComponentsAndIds)
+        {
+            if (component is null)
+                continue;
+            
+            namespaces.Add(component.ContainingNamespace.ToDisplayString());
+        }
+        
+        var sourceBuilder = new StringBuilder();
+        sourceBuilder.AppendLine(@"using System.Collections.Generic;
+using Godot;");
+        foreach (var name in namespaces)
+        {
+            sourceBuilder.AppendLine($"using {name};");
+        }
+
+        sourceBuilder.AppendLine(@"namespace Game.Temperance.NCS;
+
+public partial class ComponentManager
+{");
+        sourceBuilder.AppendLine(@"
+    /// <summary>
+    /// Nodes in the world and what components they have
+    /// First populated when a node spawns
+    /// </summary>
+    public readonly Dictionary<Node, Dictionary<string, Component>> ComponentDictionaryByNode = new();");
+        
+        // Dictionary of components by name for duplication and what nodes have that component
+        sourceBuilder.AppendLine(@"    public readonly Dictionary<string, (Component Component, List<Node> Nodes)> ComponentDictionary = new Dictionary<string, (Component Component, List<Node> Nodes)>()
+    {");
+        foreach (var (component, componentId) in sortedComponentsAndIds)
+        {
+            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", (new {component?.Name}(), new List<Node>()) }},");
+        }
+        sourceBuilder.AppendLine("    };");
+        
+        sourceBuilder.AppendLine("");
+        
+        // Lookup dictionary to find component name from ID
+        sourceBuilder.AppendLine(@"    public readonly Dictionary<ushort, string> ComponentIdToComponentNameDictionary = new Dictionary<ushort, string>()
+    {");
+        foreach (var (component, componentId) in sortedComponentsAndIds)
+        {
+            sourceBuilder.AppendLine($"        {{ {componentId}, \"{component?.Name}\" }},");
+        }
+        sourceBuilder.AppendLine("    };");
+        
+        sourceBuilder.AppendLine("");
+        
+        // Lookup dictionary to find component ID from name
+        sourceBuilder.AppendLine(@"    public readonly Dictionary<string, ushort> ComponentNameToComponentIdDictionary = new Dictionary<string, ushort>()
+    {");
+        foreach (var (component, componentId) in sortedComponentsAndIds)
+        {
+            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", {componentId} }},");
+        }
+        sourceBuilder.AppendLine("    };");
+        
+        
+        sourceBuilder.AppendLine("}");
+        context.AddSource("Dictionary.ComponentManager.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
 
     /// <summary>

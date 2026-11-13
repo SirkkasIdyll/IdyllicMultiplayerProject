@@ -10,10 +10,10 @@ reflected_light_source = 1
 
 [node name="TheWorld" unique_id=242226116 instance=ExtResource("1_ur7jy")]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." index="1" unique_id=1861971367]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." index="0" unique_id=1861971367]
 environment = SubResource("Environment_dy6er")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." index="2" unique_id=1675587220]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." index="1" unique_id=1675587220]
 transform = Transform3D(-0.8964864, 0.19561854, -0.3975494, 0, 0.8972584, 0.44150582, 0.44307125, 0.395804, -0.80437994, 0, 5.3795166, -4.208252)
 visible = false
 light_color = Color(1, 0.76862746, 0.6627451, 1)
@@ -21,7 +21,7 @@ light_angular_distance = 10.0
 shadow_enabled = true
 shadow_bias = 0.964
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." index="3" unique_id=1828096665]
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." index="2" unique_id=1828096665]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.375, -0.25, -0.25)
 material_overlay = SubResource("StandardMaterial3D_tss5c")
 gi_mode = 0
@@ -71,7 +71,7 @@ size = Vector3(8.561523, 3.95, 1)
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.0307617, 0.025000095, -4.4450693)
 size = Vector3(8.561523, 3.95, 0.5)
 
-[node name="Camera3D" type="Camera3D" parent="." index="4" unique_id=953826945]
+[node name="Camera3D" type="Camera3D" parent="." index="3" unique_id=953826945]
 transform = Transform3D(1, 0, 0, 0, 0.49999997, 0.86602545, 0, -0.86602545, 0.49999997, 0, 30, 15)
 projection = 1
 size = 20.0

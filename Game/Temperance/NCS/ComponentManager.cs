@@ -2,9 +2,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Godot;
-using Google.Protobuf.Collections;
-using Game.Shared.Systems.Metadata;
-using Game.Temperance.Network;
 using Game.Temperance.Signals;
 using static GdUnit4.Assertions;
 
@@ -16,155 +13,178 @@ namespace Game.Temperance.NCS;
 /// The ComponentManager is responsible for getting, adding, or removing components
 /// or finding nodes that have specific components
 /// </summary>
-public class ComponentManager
+public partial class ComponentManager : Node
 {
     public static ComponentManager Instance { get; } = new();
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
-    private readonly Dictionary<string, Component> _componentDictionary = [];
-    public readonly Dictionary<string, List<Node>> NodeDictionary = [];
-
-    private ComponentManager()
+    public override void _Ready()
     {
-        GetAllComponents();
+        base._Ready();
+
+        _signalBus.NodeSpawnedSignal += OnNodeSpawned;
     }
 
-    /// <summary>
-    /// Gets all <see cref="Component"/> by looking for classes with the [GlobalClass] attribute
-    /// and if their name ends in "Component"
-    ///
-    /// Populates the internal component and node dictionaries to be used in other functions
-    /// </summary>
-    private void GetAllComponents()
+    public override void _ExitTree()
     {
-        var globalClassList = ProjectSettings.GetGlobalClassList();
-        foreach (var dict in globalClassList)
+        base._ExitTree();
+		
+        // Kill the orphans
+        PurgeDictionary();
+    }
+
+    private void OnNodeSpawned(Node node, ref NodeSpawnedSignal args)
+    {
+        var children = node.GetChildren();
+        foreach (var child in children)
         {
-            var resource = ResourceLoader.Load( (StringName) dict["path"], "Script");
-            if (resource is not Script script)
-                continue;
-
-            if (script.IsAbstract())
-                continue;
-
-            if (!script.GetGlobalName().ToString().EndsWith("Component", true, null))
+            if (child is not Component component)
                 continue;
             
-            var component = (Component) GD.Load<CSharpScript>(script.ResourcePath).New();
-            _componentDictionary.Add(component.GetType().Name, component);
+            ComponentDictionary[component.GetType().Name].Nodes.Add(node);
+            ComponentDictionaryByNode.TryAdd(node, []);
+            ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
         }
     }
-
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private bool HasComponent(Node node, string componentName)
-    {
-        var comp = node.GetNodeOrNull(componentName);
-        return comp != null;
-    }
     
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private void RemoveComponent(Node node, string componentName)
-    {
-        var component = node.GetNodeOrNull(componentName);
-        if (component == null)
-            return;
-        
-        node.RemoveChild(component);
-        var signal = new ComponentRemovedSignal((node, (Component)component));
-        _signalBus.EmitComponentRemovedSignal((node, (Component)component), ref signal);
-        component.QueueFree();
-    }
-
-    /// <summary>
-    /// Don't use this, it's just because I can't get the generic types directly from a protobuf message
-    /// for syncing components on spawn
-    /// </summary>
-    private bool TryAddComponent(Node node, string componentName)
-    {
-        _componentDictionary.TryGetValue(componentName, out var component);
-
-        if (component == null)
-            return false;
-        
-        var dupe = component.Duplicate();
-        node.AddChild(dupe);
-        var signal = new ComponentAddedSignal((node, (Component)dupe));
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
-        
-        return true;
-    }
-
     /// <summary>
     /// Prevent memory leaks by purging resources, should be signaled when closing
     /// </summary>
     public void PurgeDictionary()
     {
-        foreach (var node in _componentDictionary.Values)
-            node.Free();
+        foreach (var (component, _) in ComponentDictionary.Values)
+            component.Free();
     }
 
     /// <summary>
+    /// TODO: REWORK THIS
     /// This is really only something useful for clients
     /// When a client late-joins, they need to be aware of all the correct components something has
     /// </summary>
     /// <param name="node3D"></param>
     /// <param name="components"></param>
-    public void SyncComponentsOnSpawn(Node3D node3D, RepeatedField<string> components)
-    {
-        // We shouldn't need to declare this, but we're doing it to make a point
-        if (Networking.IsServer())
-            return;
-
-        // MetadataComponent contains our list of initial components
-        if (!TryGetComponent<MetadataComponent>(node3D, out var metadataComponent))
-            return;
-        
-        List<string> initialComponentsList = new List<string>(metadataComponent.ComponentDictionary.Keys);
-        
-        // Compare the list of components that the server's version has to what we spawned by default
-        // There are three scenarios to account for
-        foreach (var componentName in components)
-        {
-            // 1. We already have the component, so we don't need to add it or remove it from the node
-            if (HasComponent(node3D, componentName))
-                initialComponentsList.Remove(componentName);
-            
-            // 2. We don't have the component, so we add it to the node
-            TryAddComponent(node3D, componentName);
-        }
-        
-        // 3. The component wasn't communicated, meaning it was removed, so we remove it from the node
-        foreach (var componentName in initialComponentsList)
-            RemoveComponent(node3D, componentName);
-    }
+    // public void SyncComponentsOnSpawn(Node3D node3D, RepeatedField<string> components)
+    // {
+    //     // We shouldn't need to declare this, but we're doing it to make a point
+    //     if (Networking.IsServer())
+    //         return;
+    //
+    //     // MetadataComponent contains our list of initial components
+    //     if (!TryGetComponent<MetadataComponent>(node3D, out var metadataComponent))
+    //         return;
+    //     
+    //     List<string> initialComponentsList = new List<string>(metadataComponent.ComponentDictionary.Keys);
+    //     
+    //     // Compare the list of components that the server's version has to what we spawned by default
+    //     // There are three scenarios to account for
+    //     foreach (var componentName in components)
+    //     {
+    //         // 1. We already have the component, so we don't need to add it or remove it from the node
+    //         if (HasComponent(node3D, componentName))
+    //             initialComponentsList.Remove(componentName);
+    //         
+    //         // 2. We don't have the component, so we add it to the node
+    //         TryAddComponent(node3D, componentName);
+    //     }
+    //     
+    //     // 3. The component wasn't communicated, meaning it was removed, so we remove it from the node
+    //     foreach (var componentName in initialComponentsList)
+    //         RemoveComponent(node3D, componentName);
+    // }
     
     /// <summary>
     /// Checks if GetNodeOrNull returns the type of T
     /// </summary>
     public bool HasComponent<T>(Node node) where T : Component
     {
-        var comp = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        return comp != null;
-    }
-    
-    public bool TryAddComponent<T>(Node node) where T : Component
-    {
-        _componentDictionary.TryGetValue(typeof(T).Name, out var component);
-
-        if (component == null)
+        if (ComponentDictionaryByNode.TryAdd(node, []))
             return false;
         
-        var dupe = component.Duplicate();
-        node.AddChild(dupe);
-        var signal = new ComponentAddedSignal((node, (Component)dupe));
-        _signalBus.EmitComponentAddedSignal((node, (Component)dupe), ref signal);
+        if (ComponentDictionaryByNode[node].ContainsKey(typeof(T).Name))
+            return true;
         
+        // The below is the backup if we for some reason haven't recorded it in the dictionary
+        // Not sure why it wouldn't be recorded in the dictionary at this point
+        // It means the component was added by circumventing TryAddComponent and TrySpawnNode
+        // Record it anyways
+        var comp = node.GetNodeOrNull<T>($"{typeof(T).Name}");
+        if (comp == null)
+            return false;
+        
+        ComponentDictionaryByNode[node].Add(typeof(T).Name, comp);
+        return true;
+    }
+    
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public bool HasComponent(Node node, ushort componentId)
+    {
+        // Invalid component ID check
+        if (!ComponentIdToComponentNameDictionary.TryGetValue(componentId, out var componentName))
+            return false;
+    
+        if (!ComponentDictionary.TryGetValue(componentName, out var componentAndNodes))
+            return false;
+    
+        var (component, _) = componentAndNodes;
+        
+        if (ComponentDictionaryByNode.TryAdd(node, []))
+            return false;
+        
+        if (ComponentDictionaryByNode[node].ContainsKey(component.GetType().Name))
+            return true;
+        
+        // The below is the backup if we for some reason haven't recorded it in the dictionary
+        // Not sure why it wouldn't be recorded in the dictionary at this point
+        // It means the component was added by circumventing TryAddComponent and TrySpawnNode
+        // Record it anyways
+        if (node.GetNodeOrNull($"{component.GetType().Name}") is not Component comp)
+            return false;
+        
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, comp);
+        return true;
+    }
+    
+    /// <summary>
+    /// Returns false if the node already has the Component
+    /// </summary>
+    public bool TryAddComponent<T>(Node node) where T : Component, new()
+    {
+        if (HasComponent<T>(node))
+            return false;
+
+        var component = new T();
+        node.AddChild(component);
+
+        ComponentDictionary[typeof(T).Name].Nodes.Add(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
+        
+        var signal = new ComponentAddedSignal((node, component));
+        _signalBus.EmitComponentAddedSignal((node, component), ref signal);
+        return true;
+    }
+
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public bool TryAddComponent(Node node, ushort componentId)
+    {
+        if (HasComponent(node, componentId))
+            return false;
+
+        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        
+        var component = (Component)ComponentDictionary[componentName].Component.Duplicate();
+        node.AddChild(component);
+
+        ComponentDictionary[componentName].Nodes.Add(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
+        
+        var signal = new ComponentAddedSignal((node, component));
+        _signalBus.EmitComponentAddedSignal((node, component), ref signal);
         return true;
     }
 
@@ -173,8 +193,30 @@ public class ComponentManager
     /// </summary>
     public bool TryGetComponent<T>(Node node, [NotNullWhen(true)] out T? component) where T : Component
     {
-        component = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        return component != null;
+        component = null;
+
+        var nodeComponents = ComponentDictionaryByNode[node];
+        var componentName = $"{typeof(T).Name}";
+        if (nodeComponents.TryGetValue(componentName, out var comp))
+            component = (T)comp;
+
+        return nodeComponents.ContainsKey(componentName);
+    }
+
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public bool TryGetComponent(Node node, ushort componentId, [NotNullWhen(true)] out Component? component)
+    {
+        component = null;
+        
+        if (!ComponentDictionaryByNode.TryGetValue(node, out var nodeComponents))
+            return false;
+
+        if (!ComponentIdToComponentNameDictionary.TryGetValue(componentId, out var componentName))
+            return false;
+        
+        return nodeComponents.TryGetValue(componentName, out component);
     }
 
     /// <summary>
@@ -183,12 +225,36 @@ public class ComponentManager
     /// </summary>
     public void RemoveComponent<T>(Node node) where T : Component
     {
-        var component = node.GetNodeOrNull<T>($"{typeof(T).Name}");
-        if (component == null)
+        if (!TryGetComponent<T>(node, out var component))
             return;
+
+        ComponentDictionary[typeof(T).Name].Nodes.Remove(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Remove(typeof(T).Name);
+        
+        var signal = new ComponentRemovedSignal((node, component));
+        _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
+        
+        node.RemoveChild(component);
+        component.QueueFree();
+    }
+
+    /// <summary>
+    /// Overload for network response that only has the component ID
+    /// </summary>
+    public void RemoveComponent(Node node, ushort componentId)
+    {
+        if (!TryGetComponent(node, componentId, out var component))
+            return;
+        
+        var componentName = ComponentIdToComponentNameDictionary[componentId];
+        ComponentDictionary[componentName].Nodes.Remove(node);
+        ComponentDictionaryByNode.TryAdd(node, []);
+        ComponentDictionaryByNode[node].Remove(componentName);
 
         var signal = new ComponentRemovedSignal((node, component));
         _signalBus.EmitComponentRemovedSignal((node, component), ref signal);
+        
         node.RemoveChild(component);
         component.QueueFree();
     }
@@ -200,8 +266,8 @@ public class ComponentManager
     public void GetNodesWithComponent<T>(out List<Node> nodes) where T : Component
     {
         nodes = [];
-        if (NodeDictionary.TryGetValue(typeof(T).Name, out var nodeList))
-            nodes = nodeList;
+        if (ComponentDictionary.TryGetValue(typeof(T).Name, out var componentAndNodes))
+            nodes = componentAndNodes.Nodes;
     }
 }
 
@@ -224,36 +290,6 @@ public class ComponentRemovedSignal : UserSignalArgs
         Node = node;
     }
 }
-
-/// <summary>
-/// The PeerSynchronized attribute will add a MultiplayerSynchronizer
-/// </summary>
-// [AttributeUsage(AttributeTargets.Class)]
-// public class PeerSynchronized : Attribute
-// {
-//     /// <summary>
-//     /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ON_CHANGE
-//     /// </summary>
-//     public float DeltaInterval = 0.0f;
-//     
-//     /// <summary>
-//     /// When true, all multiplayer peers get updates sent out.
-//     /// When false, visibility should be controlled by adding a visibility filter
-//     /// </summary>
-//     public bool PublicVisibility = true;
-//     
-//     /// <summary>
-//     /// Used when a ReplicationConfig property has their ReplicationMode set to REPLICATION_MODE_ALWAYS
-//     /// </summary>
-//     public float ReplicationInterval = 0.0f;
-//     
-//     /// <summary>
-//     /// Chooses if visibility filters are updated automatically during process frames,
-//     /// physics frames, or entirely manually
-//     /// </summary>
-//     public VisibilityUpdateModeEnum VisibilityUpdateMode = VisibilityUpdateModeEnum.Idle;
-// }
-
 
 /// <summary>
 /// A struct for dealing with a Node and Component tuple so that you can reference a node and it's component

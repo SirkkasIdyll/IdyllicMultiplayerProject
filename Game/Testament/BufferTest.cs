@@ -1,5 +1,4 @@
 using System;
-using ENet;
 using Game.Temperance.Network;
 using Godot;
 using Vector2 = Godot.Vector2;
@@ -433,5 +432,19 @@ public class BufferTest
         
         var readFreebie = bufferReader.ReadInt(0, 5);
         AssertInt(readFreebie).IsEqual(freebie);
+    }
+
+    [TestCase]
+    public void GuidReadAndWriteTest()
+    {
+        var buffer = new byte[16];
+        var bufferWriter = new BufferWriter(buffer);
+        var guid = Guid.CreateVersion7();
+        bufferWriter.StoreOrWrite(guid.ToByteArray());
+        
+        var bufferReader = new BufferReader(buffer);
+        var readGuid = new Guid(bufferReader.Read(16));
+        AssertBool(readGuid == guid).IsTrue();
+        AssertBool(readGuid.Version == 7).IsTrue();
     }
 }
