@@ -38,4 +38,4 @@ jobs:
           dotnet-version: net11.0
           paths: 'res://Game/Testament'         # Required: Test directory
           timeout: 10                  # Optional: Test timeout in minutes
-          version: '6.2.2'            # Optional: GdUnit4 version
+          version: 'v6.2.2'            # Optional: GdUnit4 version
