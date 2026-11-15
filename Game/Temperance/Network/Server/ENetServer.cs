@@ -321,7 +321,6 @@ public partial class ENetServer : Node
             if (node is not Node3D node3D)
                 continue;
             
-
             if (isReliable)
             {
                 // Write length of node name

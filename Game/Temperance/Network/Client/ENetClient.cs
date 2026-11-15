@@ -309,22 +309,26 @@ public partial class ENetClient : Node
             for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
             {
                 var componentId = (ushort)j;
-                
                 var hasComponent = bufferReader.ReadBool();
-                if (isReliable)
+                if (!isReliable)
+                    continue;
+                
+                // If server says it doesn't have a component, then we don't have the component
+                // Remove it and move on
+                if (!hasComponent)
                 {
-                    // If server says it doesn't have a component, then we don't have the component
-                    // Remove it and move on
-                    if (!hasComponent)
-                    {
-                        _componentManager.RemoveComponent(node3D, componentId);
-                        continue;
-                    }
-                    
-                    // We only add the component for messages coming from the reliable channels
-                    // Ensure that the component exists on the node
-                    _componentManager.TryAddComponent(node3D, componentId);
+                    _componentManager.RemoveComponent(node3D, componentId);
+                    continue;
                 }
+                    
+                // We only add the component for messages coming from the reliable channels
+                // Ensure that the component exists on the node
+                _componentManager.TryAddComponent(node3D, componentId);
+            }
+
+            for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
+            {
+                var componentId = (ushort)j;
                 
                 if (!_componentManager.TryGetComponent(node3D, componentId, out var component))
                     continue;
