@@ -1,3 +1,6 @@
+using Game.Temperance.Signals;
+using Godot;
+
 namespace Game.Temperance.Network.Client;
 
 public partial class ENetClient
@@ -14,5 +17,12 @@ public partial class ENetClient
             return;
 
         ClientControlledNode = node;
+        var signal = new UpdateClientControlledNodeSignal(node);
+        _signalBus.EmitUpdateClientControlledNodeSignal(node, ref signal);
     }
+}
+
+public class UpdateClientControlledNodeSignal(Node node) : UserSignalArgs
+{
+    private Node _node = node;
 }

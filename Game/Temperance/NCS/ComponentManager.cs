@@ -45,6 +45,9 @@ public partial class ComponentManager : Node
             ComponentDictionaryByNode.TryAdd(node, []);
             ComponentDictionaryByNode[node].Add(component.GetType().Name, component);
         }
+
+        var signal = new ComponentsRegisteredSignal(node);
+        _signalBus.EmitComponentsRegisteredSignal(node, ref signal);
     }
     
     /// <summary>
@@ -271,24 +274,19 @@ public partial class ComponentManager : Node
     }
 }
 
-public class ComponentAddedSignal : UserSignalArgs
+public class ComponentAddedSignal(Node<Component> node) : UserSignalArgs
 {
-    private Node<Component> Node;
-
-    public ComponentAddedSignal(Node<Component> node)
-    {
-        Node = node;
-    }
+    private Node<Component> _node = node;
 }
 
-public class ComponentRemovedSignal : UserSignalArgs
+public class ComponentsRegisteredSignal(Node node) : UserSignalArgs
 {
-    private Node<Component> Node;
-    
-    public ComponentRemovedSignal(Node<Component> node)
-    {
-        Node = node;
-    }
+    private Node _node = node;
+}
+
+public class ComponentRemovedSignal(Node<Component> node) : UserSignalArgs
+{
+    private Node<Component> _node = node;
 }
 
 /// <summary>

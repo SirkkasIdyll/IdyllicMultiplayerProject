@@ -254,14 +254,9 @@ public partial class NodeManager : Node
     }
 }
 
-public class NodeSpawnedSignal : UserSignalArgs
+public class NodeSpawnedSignal(Node node) : UserSignalArgs
 {
-    private Node _node;
-
-    public NodeSpawnedSignal(Node node)
-    {
-        _node = node;
-    }
+    private Node _node = node;
 }
 
 // public class NodeSpawnedSignal : UserSignalArgs

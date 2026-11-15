@@ -2,6 +2,7 @@
 using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
+using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
 
 namespace Game.Shared.Systems.Camera;
@@ -11,7 +12,7 @@ public partial class CameraSystem : NodeSystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
     [InjectedDependency] private readonly OrientationSystem _orientationSystem = null!;
 
@@ -28,7 +29,7 @@ public partial class CameraSystem : NodeSystem
 
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
-        // _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        // _signalBus.ComponentsRegisteredSignal += OnComponentsRegistered;
         _signalBus.UpdateRotationSignal += OnUpdateRotation;
     }
 
@@ -65,6 +66,39 @@ public partial class CameraSystem : NodeSystem
     {
         args.SystemsList?.AddItem(DebugOptionName);
     }
+
+    // private void OnComponentsRegistered(Node node, ref ComponentsRegisteredSignal args)
+    // {
+    //     if (Networking.IsServer() || ENetClient.Instance.ClientControlledNode == null)
+    //         return;
+    //
+    //     if (node != ENetClient.Instance.ClientControlledNode)
+    //         return;
+    //
+    //     if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+    //         return;
+    //     
+    //     GD.Print("Setting camera and camera size");
+    //     cameraComponent.Camera?.MakeCurrent();
+    //     cameraComponent.Camera?.Size = 20f;
+    //     
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
+    //             out var personalVisionComponent))
+    //         return;
+    //     
+    //     personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
+    //     personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
+    //     personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
+    //     personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
+    //     personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
+    //     personalVisionComponent.VisionCone?.SetVisible(true);
+    //     
+    //     personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
+    //     personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
+    //     personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
+    //     personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
+    //     personalVisionComponent.VisionCircle?.SetVisible(true);
+    // }
 
     // private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
     // {

@@ -1,4 +1,5 @@
-﻿using Godot;
+﻿using Game.Shared.Systems.Visuals;
+using Godot;
 using Game.Temperance.NCS;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
@@ -11,7 +12,7 @@ public partial class MovementSystem : NodeSystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
     
     public override void _Ready()
@@ -44,12 +45,17 @@ public partial class MovementSystem : NodeSystem
             
             if (!characterBody3D.Velocity.IsZeroApprox())
                 characterBody3D.MoveAndSlide();
+
+            if (!_nodeSystemManager.TryGetNodeSystem<VisualSystem>(out var visualSystem))
+                continue;
+
+            if (Networking.IsServer())
+                continue;
+            
+            visualSystem.LerpVisualComponents(node);
         }
         
-        if (Networking.IsServer())
-            return;
-
-        if (ENetClient.Instance.ClientControlledNode == null)
+        if (Networking.IsServer() || ENetClient.Instance.ClientControlledNode == null)
             return;
 
         if (!_componentManager.TryGetComponent<MovementComponent>(ENetClient.Instance.ClientControlledNode,
