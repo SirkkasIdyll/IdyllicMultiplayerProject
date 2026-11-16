@@ -26,7 +26,7 @@ public partial class MovementSystem : NodeSystem
     {
         base._PhysicsProcess(delta);
 
-        // TODO: TRACK INPUT AT SPECIFIC NETWORK TICK FOR CLIENT CON TROLLED NODE
+        // TODO: TRACK INPUT AT SPECIFIC NETWORK TICK FOR CLIENT CONTROLLED NODE
         // TODO: SOMETHING SOMETHING RECONCILE INCORRECT POSITIONS BUT NOT VISUALS
         _componentManager.GetNodesWithComponent<MovementComponent>(out var nodes);
         foreach (var node in nodes)

@@ -14,7 +14,6 @@ public partial class CameraSystem : NodeSystem
     [InjectedDependency] private readonly NodeManager _nodeManager = null!;
     [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
-    [InjectedDependency] private readonly OrientationSystem _orientationSystem = null!;
 
     private const string DebugOptionName = "Camera Aiming";
     private const float CameraAimSpeed = 3f;
@@ -23,14 +22,19 @@ public partial class CameraSystem : NodeSystem
     private const double AimingThresholdTime = 0.3;
     private double _timeHeldAiming = 0;
     
+    /// <summary>
+    /// Flag used for changing camera to camera of controlled node
+    /// </summary>
+    private bool _controlledNodeChanged;
+    
     public override void _Ready()
     {
         base._Ready();
 
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
-        // _signalBus.ComponentsRegisteredSignal += OnComponentsRegistered;
-        _signalBus.UpdateRotationSignal += OnUpdateRotation;
+        _signalBus.UpdateClientControlledNodeSignal += OnUpdateClientControlledNodeSignal;
+        // _signalBus.UpdateRotationSignal += OnUpdateRotation;
     }
 
     public override void _Process(double delta)
@@ -39,32 +43,43 @@ public partial class CameraSystem : NodeSystem
         
         if (Networking.IsServer())
             return;
+
+        if (ENetClient.Instance.ClientControlledNode == null)
+            return;
+
+        if (!_componentManager.TryGetComponent<CameraComponent>(ENetClient.Instance.ClientControlledNode,
+                out var cameraComponent))
+            return;
+
+        if (_controlledNodeChanged)
+        {
+            cameraComponent.Camera?.MakeCurrent();
+            cameraComponent.Camera?.Size = cameraComponent.CameraSize;
+            _controlledNodeChanged = false;
+        }
+            
+        if (!Input.IsActionPressed("aim"))
+        {
+            _timeHeldAiming = 0;
+            ResetCamera((ENetClient.Instance.ClientControlledNode, cameraComponent), delta);
+            return;
+        }
         
-        // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
-        //     return;
-        //
-        // var node = nodeUpdateInfo.Node;
-        //
-        // if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
-        //     return;
-        //
-        // if (!Input.IsActionPressed("aim"))
-        // {
-        //     _timeHeldAiming = 0;
-        //     ResetCamera((node, cameraComponent), delta);
-        //     return;
-        // }
-        //
-        // _timeHeldAiming += delta;
-        // if (_timeHeldAiming < AimingThresholdTime)
-        //     return;
-        //
-        // AimCamera((node, cameraComponent), delta);
+        _timeHeldAiming += delta;
+        if (_timeHeldAiming < AimingThresholdTime)
+            return;
+        
+        AimCamera((ENetClient.Instance.ClientControlledNode, cameraComponent), delta);
     }
 
     private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
     {
         args.SystemsList?.AddItem(DebugOptionName);
+    }
+
+    private void OnUpdateClientControlledNodeSignal(Node node, ref UpdateClientControlledNodeSignal args)
+    {
+        _controlledNodeChanged = true;
     }
 
     // private void OnComponentsRegistered(Node node, ref ComponentsRegisteredSignal args)
@@ -160,36 +175,33 @@ public partial class CameraSystem : NodeSystem
         // args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
     }
 
-    private void OnUpdateRotation(Node<RotationComponent> node, ref UpdateRotationSignal args)
-    {
-        if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
-                out var personalVisionComponent))
-            return;
-
-        // Vision cone faces -Z by default instead of X, so we need to rotate it by -90 degrees after we set it
-        personalVisionComponent.VisionCone?.Basis = node.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
-    }
+    // private void OnUpdateRotation(Node<RotationComponent> node, ref UpdateRotationSignal args)
+    // {
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
+    //             out var personalVisionComponent))
+    //         return;
+    //
+    //     // Vision cone faces -Z by default instead of X, so we need to rotate it by -90 degrees after we set it
+    //     personalVisionComponent.VisionCone?.Basis = node.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
+    // }
 
     private void ResetCamera(Node<CameraComponent> node, double delta)
     {
-        if (node.Owner is not Node3D node3D)
-            return;
-
         if (node.Comp.Camera is null)
             return;
 
-        if (node3D.GlobalPosition.DistanceTo(node.Comp.GlobalPosition) < 0.01)
+        if (node.Comp.GlobalPosition.DistanceTo(node.Comp.Camera.GlobalPosition) < 0.01)
             return;
         
         var weight = 1f - Mathf.Exp(-CameraResetSpeed * (float)delta);
-        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(node3D.GlobalPosition, weight));
+        node.Comp.Camera.SetGlobalPosition(node.Comp.Camera.GlobalPosition.Lerp(node.Comp.GlobalPosition, weight));
     }
 
     private void AimCamera(Node<CameraComponent> node, double delta)
     {
         if (node.Owner is not Node3D node3D)
             return;
-
+        
         if (node.Comp.Camera is null)
             return;
         
@@ -198,17 +210,16 @@ public partial class CameraSystem : NodeSystem
         if (newCameraPosition == null)
             return;
         
-        node.Comp.SetGlobalPosition(node.Comp.GlobalPosition.Lerp(newCameraPosition.Value, weight));
-
-        if (!_componentManager.TryGetComponent<RotationComponent>(node, out var rotationComponent))
-            return;
+        node.Comp.Camera.SetGlobalPosition(node.Comp.Camera.GlobalPosition.Lerp(newCameraPosition.Value, weight));
         
         var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
 
         if (mouseOffsetFromCenter is null)
             return;
         
-        _orientationSystem.OrientCharacter((node, rotationComponent), mouseOffsetFromCenter.Value.Normalized());
+        // We rotate the node around the Y axis since we're a top-down game
+        node.Comp.AngleOfCameraPositionFromDefaultPosition = mouseOffsetFromCenter.Value.Normalized().Angle();
+        // node3D.Basis = new Basis(Vector3.Up, mouseOffsetFromCenter.Value.Normalized().Angle());
     }
 
     private Vector2? GetMouseOffsetFromCenter()
@@ -218,9 +229,6 @@ public partial class CameraSystem : NodeSystem
 
     private Vector3? GetNewCameraPosition(Node<CameraComponent> node, float maxDistance)
     {
-        if (node.Owner is not Node3D node3D)
-            return null;
-
         if (node.Comp.Camera is null)
             return null;
         
@@ -235,12 +243,12 @@ public partial class CameraSystem : NodeSystem
         
         // Target position clamped by how far we actually want the camera to be able to go from the player
         var targetPosition = new Vector3(
-            node3D.GlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
-            node3D.GlobalPosition.Y,
-            node3D.GlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
+            node.Comp.GlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
+            node.Comp.GlobalPosition.Y,
+            node.Comp.GlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
 
-        if (node3D.GlobalPosition.DistanceTo(targetPosition) > maxDistance)
-            return node3D.GlobalPosition + (targetPosition - node3D.GlobalPosition).Normalized() * maxDistance;
+        if (node.Comp.GlobalPosition.DistanceTo(targetPosition) > maxDistance)
+            return node.Comp.GlobalPosition + (targetPosition - node.Comp.GlobalPosition).Normalized() * maxDistance;
         
         return targetPosition;
     }

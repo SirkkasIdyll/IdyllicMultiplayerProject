@@ -15,9 +15,9 @@ public partial class VisualSystem
     /// </summary>
     private string[] _visualComponentNames =
     [
-        "CameraComponent",
-        "PersonalVisionComponent",
-        "SpriteComponent"
+        nameof(CameraComponent),
+        nameof(PersonalVisionComponent),
+        nameof(SpriteComponent)
     ];
     
     /// <summary>
@@ -36,7 +36,6 @@ public partial class VisualSystem
                 continue;
 
             component.TopLevel = true;
-            GD.Print("Set top level for " + componentName);
         }
     }
     
@@ -55,7 +54,6 @@ public partial class VisualSystem
             
             var startingPosition = new Vector2(component.GlobalPosition.X, component.GlobalPosition.Z);
             var targetPosition = new Vector2(node3D.GlobalPosition.X, node3D.GlobalPosition.Z);
-            GD.Print( componentName + " Starting position:" + startingPosition + " Target position:" + targetPosition);
             var (newPositionX, newPositionZ) = startingPosition.DistanceTo(targetPosition) < 1f
                 ? startingPosition.Lerp(targetPosition, 0.95f)
                 : startingPosition.Lerp(targetPosition, 0.85f);

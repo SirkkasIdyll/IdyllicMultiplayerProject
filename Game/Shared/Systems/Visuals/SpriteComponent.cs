@@ -9,5 +9,6 @@ namespace Game.Shared.Systems.Visuals;
 [GlobalClass]
 public partial class SpriteComponent : Component
 {
-
+    [Export]
+    public Sprite3D? Sprite3D;
 }

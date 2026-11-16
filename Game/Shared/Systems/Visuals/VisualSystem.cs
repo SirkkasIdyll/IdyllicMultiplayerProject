@@ -1,4 +1,6 @@
+using Game.Shared.Systems.Camera;
 using Game.Temperance.NCS;
+using Game.Temperance.Network;
 using Game.Temperance.Signals;
 using Godot;
 
@@ -26,6 +28,30 @@ public partial class VisualSystem : NodeSystem
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
+
+        if (Networking.IsServer())
+            return;
+        
+        _componentManager.GetNodesWithComponent<CameraComponent>(out var cameraNodes);
+        foreach (var node in cameraNodes)
+        {
+            if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+                continue;
+
+            if (node is not Node3D node3D)
+                continue;
+            
+            node3D.Basis = new Basis(Vector3.Up, cameraComponent.AngleOfCameraPositionFromDefaultPosition);
+        }
+
+        _componentManager.GetNodesWithComponent<SpriteComponent>(out var spriteNodes);
+        foreach (var node in spriteNodes)
+        {
+            if (!_componentManager.TryGetComponent<SpriteComponent>(node, out var spriteComponent))
+                continue;
+            
+            OrientSpriteToParentRotation((node, spriteComponent));
+        }
     }
 
     private void OnComponentsRegistered(Node node, ref ComponentsRegisteredSignal args)
