@@ -4,6 +4,7 @@ using Game.Temperance.NCS;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
+using Game.Temperance.Signals;
 using Environment = System.Environment;
 
 namespace Game;
@@ -20,7 +21,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 		NodeSystemManager.Instance.InitializeNodeSystems(this);
 		AddChild(NodeManager.Instance);
 		AddChild(ComponentManager.Instance);
-
+		
 		// Add the required server or client instances depending on which we are
 		// so that they may initialize themselves upon entry to the SceneTree
 		// and delete the unused counterpart to prevent having an orphaned node
@@ -44,5 +45,8 @@ public partial class TheWorldOverHeavenScene : Node3D
 		
 		if (Networking.IsServer())
 			NodeManager.Instance.TrySpawnNode("TheWorld", null, out _);
+		
+		var signal = new DependenciesInjectedSignal();
+		SignalBus.Instance.EmitDependenciesInjectedSignal(ref signal);
 	}
 }
