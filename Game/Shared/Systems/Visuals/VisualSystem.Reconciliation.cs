@@ -10,17 +10,6 @@ namespace Game.Shared.Systems.Visuals;
 public partial class VisualSystem
 {
     /// <summary>
-    /// The components that have a visual element to them,
-    /// and need to have their transforms separated from the parent node's physics body
-    /// </summary>
-    private string[] _visualComponentNames =
-    [
-        nameof(CameraComponent),
-        nameof(PersonalVisionComponent),
-        nameof(SpriteComponent)
-    ];
-    
-    /// <summary>
     /// Setting top level on a node's transform separates its own position from its parent
     /// Visual components should be slowly lerped to the actual position of the parent
     /// Rather than immediately, and jarringly, jumping to the position communicated by the server
@@ -39,7 +28,7 @@ public partial class VisualSystem
         }
     }
     
-    public void LerpVisualComponents(Node node)
+    public void LerpVisualComponentPositions(Node node)
     {
         if (node is not Node3D node3D)
             return;
