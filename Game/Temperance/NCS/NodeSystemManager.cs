@@ -105,3 +105,5 @@ public partial class NodeSystemManager
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
 public class InjectedDependency : Attribute { }
+
+public class DependenciesInjectedSignal : UserSignalArgs { }
