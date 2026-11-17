@@ -45,14 +45,6 @@ public partial class MovementSystem : NodeSystem
             
             if (!characterBody3D.Velocity.IsZeroApprox())
                 characterBody3D.MoveAndSlide();
-
-            if (!_nodeSystemManager.TryGetNodeSystem<VisualSystem>(out var visualSystem))
-                continue;
-
-            if (Networking.IsServer())
-                continue;
-            
-            visualSystem.LerpVisualComponents(node);
         }
         
         if (Networking.IsServer() || ENetClient.Instance.ClientControlledNode == null)
