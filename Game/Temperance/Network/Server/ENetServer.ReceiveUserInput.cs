@@ -1,5 +1,7 @@
 using ENet;
+using Game.Shared.Systems.Camera;
 using Game.Shared.Systems.Movement;
+using Godot;
 
 namespace Game.Temperance.Network.Server;
 
@@ -7,9 +9,9 @@ public partial class ENetServer
 {
     public void ProcessUserInput(Peer peer, ref BufferReader bufferReader)
     {
-        foreach (var (networkId, controlledByPeer) in _nodesControlledByPeers)
+        foreach (var (networkId, controlledByPeer) in _entitiesControlledByPeers)
         {
-            if (!_nodeManager.NetworkIdNodeDictionary.TryGetValue(networkId, out var node))
+            if (!_entityManager.NetworkIdEntityDictionary.TryGetValue(networkId, out var entity))
                 continue;
             
             if (controlledByPeer == null)
@@ -23,11 +25,19 @@ public partial class ENetServer
         
             // Read user input
             var userInput = bufferReader.ReadVector2(-1f, 1f, 0.01f);
+            
+            // Read camera angle
+            var cameraAngle = bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
 
-            if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
+            if (!_componentManager.TryGetComponent<MovementComponent>(entity, out var movementComponent))
                 return;
             
             movementComponent.InputDirection = userInput;
+
+            if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
+                return;
+            
+            cameraComponent.AngleOfCameraPositionFromDefaultPosition = cameraAngle;
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using ENet;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Signals;
 
 namespace Game.Temperance.Network.Server;
@@ -12,8 +12,8 @@ namespace Game.Temperance.Network.Server;
 public partial class ENetServer : Node
 {
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
-    private readonly NodeManager _nodeManager = NodeManager.Instance;
-    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
+    private readonly EntityManager _entityManager = EntityManager.Instance;
+    private readonly EntitySystemManager _entitySystemManager = EntitySystemManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
     public static ENetServer Instance { get; } = new();
@@ -25,13 +25,13 @@ public partial class ENetServer : Node
     
     // The Guid used won't change between disconnects,
     // but the peer may change as a result of disconnects
-    // and the node they control may not even exist yet
+    // and the entity they control may not even exist yet
     private readonly Dictionary<Guid, Peer?> _verifiedPeers = new();
     
-    // A node may be controlled by a peer,
+    // A entity may be controlled by a peer,
     // but sometimes the peer will disconnect and be reassigned to a different Peer ID
     // So we keep it nullable in case someone else connects
-    private readonly Dictionary<ushort, Peer?> _nodesControlledByPeers = new();
+    private readonly Dictionary<ushort, Peer?> _entitiesControlledByPeers = new();
     
     /// <summary>
     /// When this value exceeds the <see cref="Networking"/> server tick length
@@ -70,7 +70,7 @@ public partial class ENetServer : Node
         _server.SetChannelLimit(Enum.GetNames<ENetChannels>().Length);
 
         _signalBus.PeerConnectedSignal += OnPeerConnected;
-        _signalBus.NodeSpawnedSignal += OnNodeSpawned;
+        _signalBus.EntitySpawnedSignal += OnEntitySpawned;
     }
 
     public override void _ExitTree()
@@ -92,8 +92,8 @@ public partial class ENetServer : Node
             
             // Reliable stuff
             BroadcastLateJoinSynchronization();
-            BroadcastNodeSpawns();
-            BroadcastChangeControlledNode();
+            BroadcastEntitySpawns();
+            BroadcastChangeControlledEntity();
             
             // Unreliable stuff
             BroadcastStateUpdates();
@@ -228,11 +228,11 @@ public partial class ENetServer : Node
         _verifiedPeers.Add(guid, peer);
         
         // TODO: Replace this later with a proper join -> spawn flow
-        var temporaryNetworkId = (ushort)_nodeManager.NodeNetworkIdDictionary.Count;
-        if (NodeManager.Instance.TrySpawnNode("TestCharacter", new Vector3(0, 2, 0), temporaryNetworkId, out _))
+        var temporaryNetworkId = (ushort)_entityManager.EntityNetworkIdDictionary.Count;
+        if (EntityManager.Instance.TrySpawnEntity("TestCharacter", new Vector3(0, 2, 0), temporaryNetworkId, out _))
         {
-            _nodesControlledByPeers.Add(temporaryNetworkId, peer);
-            _changedControlledNodes.TryAdd(temporaryNetworkId, peer);
+            _entitiesControlledByPeers.Add(temporaryNetworkId, peer);
+            _changedControlledEntities.TryAdd(temporaryNetworkId, peer);
         }
         return true;
     }
@@ -283,7 +283,7 @@ public partial class ENetServer : Node
     }
 
     /// <summary>
-    /// Disconnects the peer, and if we have a guid or node correlated with that peer, sets the peer it knows to null
+    /// Disconnects the peer, and if we have a guid or entity correlated with that peer, sets the peer it knows to null
     /// </summary>
     /// <param name="peer"></param>
     private void DisconnectPeer(Peer peer)
@@ -292,64 +292,61 @@ public partial class ENetServer : Node
         if (verifiedPeer.Value != null)
             _verifiedPeers[verifiedPeer.Key] = null;
         
-        var nodeControlledByPeer =
-            _nodesControlledByPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
-        if (nodeControlledByPeer.Value != null)
-            _nodesControlledByPeers[nodeControlledByPeer.Key] = null;
+        var entityControlledByPeer =
+            _entitiesControlledByPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
+        if (entityControlledByPeer.Value != null)
+            _entitiesControlledByPeers[entityControlledByPeer.Key] = null;
         
         peer.DisconnectNow(0);
     }
 
 
     /// <summary>
-    /// Adds node component information to the BufferWriter to be sent
+    /// Adds entity component information to the BufferWriter to be sent
     /// </summary>
     /// <param name="bufferWriter"></param>
     /// <param name="isReliable">Is the message intended for the reliable channel</param>
-    /// <param name="nodes">The nodes to be communicated</param>
+    /// <param name="entities">The entities to be communicated</param>
     /// <returns>Returns the byte index for the buffer</returns>
-    private int SendNodeComponentUpdate(ref BufferWriter bufferWriter, bool isReliable, List<Node> nodes)
+    private int SendEntityComponentUpdate(ref BufferWriter bufferWriter, bool isReliable, List<Entity> entities)
     {
-        // Write count of nodes
-        bufferWriter.StoreOrWrite((uint)nodes.Count, 10);
+        // Write count of entities
+        bufferWriter.StoreOrWrite((uint)entities.Count, 10);
         
-        foreach (var node in nodes)
+        foreach (var entity in entities)
         {
-            if (!_nodeManager.NodeNetworkIdDictionary.TryGetValue(node, out var networkId))
+            if (!_entityManager.EntityNetworkIdDictionary.TryGetValue(entity, out var networkId))
                 continue;
             
-            if (node is not Node3D node3D)
-                continue;
-            
-
             if (isReliable)
             {
-                // Write length of node name
+                // Write length of entity name
                 // (I'm just gonna assume we're not gonna need more than 32 bytes to write a simple name man)
-                bufferWriter.WriteInt(Encoding.UTF8.GetByteCount(_nodeManager.GetNodeName(node)), 0, 32);
+                bufferWriter.WriteInt(Encoding.UTF8.GetByteCount(_entityManager.GetNodeName(entity)), 0, 32);
                 
-                // Write node name for spawning, shorter than the full file path
-                bufferWriter.StoreOrWrite(Encoding.UTF8.GetBytes(_nodeManager.GetNodeName(node)));
+                // Write entity name for spawning, shorter than the full file path
+                bufferWriter.StoreOrWrite(Encoding.UTF8.GetBytes(_entityManager.GetNodeName(entity)));
             }
             
-            // Write node network ID
+            // Write entity network ID
             bufferWriter.StoreOrWrite(networkId, sizeof(ushort) * 8);
             
             if (!isReliable)
             {
-                // Write node position
-                bufferWriter.WriteVector3(node3D.GlobalPosition, -5000, 5000, 0.01f);
+                // Write entity position
+                bufferWriter.WriteVector3(entity.GlobalPosition, -5000, 5000, 0.01f);
 
-                // Write node rotation (the only rotation that matters in our top down game)
-                bufferWriter.WriteFloat(node3D.GlobalRotation.Y, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
+                // Write entity rotation (the only rotation that matters in our top down game)
+                bufferWriter.WriteQuaternion(entity.Quaternion);
+                // bufferWriter.WriteFloat(entity.GlobalRotation.Y, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
             }
             
-            // Write what components a node has in ascending ID order
+            // Write what components a entity has in ascending ID order
             for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
-                bufferWriter.WriteBool(_componentManager.HasComponent(node, i));
+                bufferWriter.WriteBool(_componentManager.HasComponent(entity, i));
             
             // Write out the details for each component in order
-            var components = _componentManager.ComponentDictionaryByNode[node];
+            var components = entity.Components;
             for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
             {
                 var componentName = _componentManager.ComponentIdToComponentNameDictionary[i];

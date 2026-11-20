@@ -1,4 +1,4 @@
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Godot;
 
 namespace Game.Shared.Systems.Camera;

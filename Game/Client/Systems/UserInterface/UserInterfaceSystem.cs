@@ -1,11 +1,16 @@
 ﻿using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
+using Game.Temperance.Signals;
 
 namespace Game.Client.Systems.UserInterface;
 
 [GlobalClass]
-public partial class UserInterfaceSystem : NodeSystem
+public partial class UserInterfaceSystem : EntitySystem
 {
+    [InjectedDependency] private readonly ComponentManager _componentManager = null!;
+    [InjectedDependency] private readonly EntityManager _entityManager = null!;
+    [InjectedDependency] private readonly EntitySystemManager _entitySystemManager = null!;
+    [InjectedDependency] private readonly SignalBus _signalBus = null!;
     private CanvasLayer _canvasLayer = new();
 
     public override void _UnhandledKeyInput(InputEvent @event)
@@ -21,11 +26,16 @@ public partial class UserInterfaceSystem : NodeSystem
         base._Ready();
         
         AddChild(_canvasLayer);
-        AddControlToUiLayer(GD.Load<PackedScene>("res://Client/Scenes/DebugDisplay.tscn").Instantiate<Control>());
+        _signalBus.DependenciesInjectedSignal += OnDependenciesInjected;
     }
 
     public void AddControlToUiLayer(Control control)
     {
         _canvasLayer.AddChild(control);
+    }
+
+    private void OnDependenciesInjected(ref DependenciesInjectedSignal args)
+    {
+        AddControlToUiLayer(GD.Load<PackedScene>("res://Client/Scenes/DebugDisplay.tscn").Instantiate<Control>());
     }
 }

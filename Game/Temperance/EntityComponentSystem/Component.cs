@@ -2,20 +2,20 @@
 using Game.Temperance.Network;
 using Godot;
 
-namespace Game.Temperance.NCS;
+namespace Game.Temperance.EntityComponentSystem;
 
 /// <summary>
-/// NCS - Node, Component, (Node)System architecture
+/// ECS - Entity, Component, (Entity)System architecture
 ///
 /// USE THE GLOBALCLASS ATTRIBUTE, DON'T FORGET IT GOD DAMN IT
-/// Components represent a particular quality you want to give to a node,
-/// and contain the fields needed to implement that kind of behavior when accessed by a <see cref="NodeSystem"/>
+/// Components represent a particular quality you want to give to a entity,
+/// and contain the fields needed to implement that kind of behavior when accessed by a <see cref="EntitySystem"/>
 /// Only one unique instance of a component can be added to a node
 /// </summary>
-public abstract partial class Component : Node3D
+public abstract partial class Component : Node
 {
     /// <summary>
-    /// Set node name to the class name because Godot[GlobalClass] requires the node name to match the class name
+    /// Set entity name to the class name because Godot[GlobalClass] requires the entity name to match the class name
     /// </summary>
     public override void _EnterTree()
     {

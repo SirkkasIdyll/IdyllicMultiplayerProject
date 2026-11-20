@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ENet;
-using Game.Temperance.NCS;
-using Godot;
+using Game.Temperance.EntityComponentSystem;
 
 namespace Game.Temperance.Network.Server;
 
@@ -10,36 +9,36 @@ namespace Game.Temperance.Network.Server;
 // Here's a file with all the packet formations
 public partial class ENetServer
 {
-    private readonly List<Node> _newNodeSpawnsToBroadcast = [];
+    private readonly List<Entity> _newEntitySpawnsToBroadcast = [];
     
     /// <summary>
-    /// When a node gets spawned on the server, queue it up to be sent on the next 
+    /// When a entity gets spawned on the server, queue it up to be sent on the next 
     /// </summary>
-    private void OnNodeSpawned(Node node, ref NodeSpawnedSignal args)
+    private void OnEntitySpawned(Entity entity, ref EntitySpawnedSignal args)
     {
-        _newNodeSpawnsToBroadcast.Add(node);
+        _newEntitySpawnsToBroadcast.Add(entity);
     }
     
     /// <summary>
-    /// Send connected clients the nodes that just spawned
+    /// Send connected clients the entities that just spawned
     /// </summary>
-    private void BroadcastNodeSpawns()
+    private void BroadcastEntitySpawns()
     {
-        if (_newNodeSpawnsToBroadcast.Count == 0)
+        if (_newEntitySpawnsToBroadcast.Count == 0)
             return;
         
         var buffer = new byte[10000];
         var bufferWriter = new BufferWriter(buffer);
 
         // Write packet type
-        bufferWriter.WriteInt((byte)ReliableServerPacketType.NodeSpawns, 0, Networking.MaxPacketTypesPerChannel);
+        bufferWriter.WriteInt((byte)ReliableServerPacketType.EntitySpawns, 0, Networking.MaxPacketTypesPerChannel);
         
         // Write server tick
         bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
         
-        var byteIndex = SendNodeComponentUpdate(ref bufferWriter, true, [.. _newNodeSpawnsToBroadcast]);
+        var byteIndex = SendEntityComponentUpdate(ref bufferWriter, true, [.. _newEntitySpawnsToBroadcast]);
         Array.Resize(ref buffer, byteIndex);
         Broadcast(ENetChannels.ReliableServer, buffer, PacketFlags.Reliable);
-        _newNodeSpawnsToBroadcast.Clear();
+        _newEntitySpawnsToBroadcast.Clear();
     }
 }

@@ -15,8 +15,8 @@ public partial class SignalBus
 
 /// <summary>
 /// I'm implementing a custom user signals class because I hate how clunky it is having to use
-/// Godot's Signal attribute/EventHandler stuff. It's difficult having to connect each node in the editor and
-/// then connecting each node to the exact signals coming from each node.
+/// Godot's Signal attribute/EventHandler stuff. It's difficult having to connect each entity in the editor and
+/// then connecting each entity to the exact signals coming from each entity.
 /// <see cref="Signals.SignalBus"/> to the rescue!
 /// </summary>
 public abstract partial class UserSignalArgs

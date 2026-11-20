@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ENet;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Signals;
 
 namespace Game.Temperance.Network.Client;
@@ -11,8 +11,8 @@ namespace Game.Temperance.Network.Client;
 public partial class ENetClient : Node
 {
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
-    private readonly NodeManager _nodeManager = NodeManager.Instance;
-    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
+    private readonly EntityManager _entityManager = EntityManager.Instance;
+    private readonly EntitySystemManager _entitySystemManager = EntitySystemManager.Instance;
     private readonly SignalBus _signalBus = SignalBus.Instance;
     
     public static ENetClient Instance { get; } = new();
@@ -34,9 +34,9 @@ public partial class ENetClient : Node
     private Peer? _serverPeer;
 
     /// <summary>
-    /// The node the client is currently in control of
+    /// The entity the client is currently in control of
     /// </summary>
-    public Node? ClientControlledNode;
+    public Entity? ClientControlledEntity;
     
     /// <summary>
     /// When this value exceeds the <see cref="Networking"/> server tick length
@@ -250,83 +250,89 @@ public partial class ENetClient : Node
     }
 
     /// <summary>
-    /// Receives a node update packet from the server and updates the details of the node
+    /// Receives a entity update packet from the server and updates the details of the node
     /// on this client
     /// </summary>
     /// <param name="bufferReader"></param>
     /// <param name="isReliable">Was the update from a reliable channel</param>
-    private void ReceiveNodeComponentUpdate(ref BufferReader bufferReader, bool isReliable)
+    private void ReceiveEntityComponentUpdate(ref BufferReader bufferReader, bool isReliable)
     {
-        // Read count of nodes in the packet
-        bufferReader.Read(10, out var nodes);
+        // Read count of entities in the packet
+        bufferReader.Read(10, out var entities);
 
-        if (nodes == 0)
+        if (entities == 0)
             return;
         
-        for (var i = 0; i < nodes; i++)
+        for (var i = 0; i < entities; i++)
         {
-            Node3D? node3D = null;
+            Entity? entity = null;
             
             if (isReliable)
             {
-                // Read how long the name of the node is
-                var nodeNameByteCount = bufferReader.ReadInt(0, 32);
+                // Read how long the name of the entity is
+                var entityNameByteCount = bufferReader.ReadInt(0, 32);
 
-                // Read the node name
-                var nodeName = Encoding.UTF8.GetString(bufferReader.Read(nodeNameByteCount));
+                // Read the entity name
+                var entityName = Encoding.UTF8.GetString(bufferReader.Read(entityNameByteCount));
                 
-                // Read the node network ID
-                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                // Read the entity network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var entityNetworkId);
                 
-                // Spawn the node now that we have the name and ID if this came from a reliable channel
-                _nodeManager.TrySpawnNode(nodeName, (ushort)nodeNetworkId, out node3D);
+                // Spawn the entity now that we have the name and ID if this came from a reliable channel
+                _entityManager.TrySpawnEntity(entityName, (ushort)entityNetworkId, out entity);
             }
             else
             {
-                // Read the node network ID
-                bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+                // Read the entity network ID
+                bufferReader.Read(sizeof(ushort) * 8, out var entityNetworkId);
                 
                 // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
-                node3D = (Node3D)_nodeManager.NetworkIdNodeDictionary[(ushort)nodeNetworkId];
+                entity = _entityManager.NetworkIdEntityDictionary[(ushort)entityNetworkId];
             }
             
             // For whatever reason, it didn't spawn or isn't spawned, ignore it
-            if (node3D is null)
+            if (entity is null)
                 continue;
 
             if (!isReliable)
             {
-                // Read node position
-                node3D.SetGlobalPosition(bufferReader.ReadVector3(-5000, 5000, 0.01f));
+                // TODO: DON'T DO THIS, SAVE THE POSITIONS ALONG WITH THE TICK IT CAME FROM
+                // Read entity position
+                entity.SetGlobalPosition(bufferReader.ReadVector3(-5000, 5000, 0.01f));
                 
-                // Read node rotation
-                node3D.SetGlobalRotation(new Vector3(node3D.GetGlobalRotation().X,
-                    bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f), node3D.GlobalRotation.Z));
+                // Read entity rotation
+                entity.SetQuaternion(bufferReader.ReadQuaternion());
+                // entity.SetGlobalRotation(new Vector3(entity.GetGlobalRotation().X,
+                //     bufferReader.ReadFloat(-2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f), entity.GlobalRotation.Z));
             }
             
-            // Loop through all known components, check if the packet says the node has it,
+            // Loop through all known components, check if the packet says the entity has it,
             // and then update component details as necessary
             for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
             {
                 var componentId = (ushort)j;
-                
                 var hasComponent = bufferReader.ReadBool();
-                if (isReliable)
-                {
-                    // If server says it doesn't have a component, then we don't have the component
-                    // Remove it and move on
-                    if (!hasComponent)
-                    {
-                        _componentManager.RemoveComponent(node3D, componentId);
-                        continue;
-                    }
-                    
-                    // We only add the component for messages coming from the reliable channels
-                    // Ensure that the component exists on the node
-                    _componentManager.TryAddComponent(node3D, componentId);
-                }
+                if (!isReliable)
+                    continue;
                 
-                if (!_componentManager.TryGetComponent(node3D, componentId, out var component))
+                // If server says it doesn't have a component, then we don't have the component
+                // Remove it and move on
+                if (!hasComponent)
+                {
+                    _componentManager.RemoveComponent(entity, componentId);
+                    continue;
+                }
+                    
+                // We only add the component for messages coming from the reliable channels
+                // Ensure that the component exists on the node
+                _componentManager.TryAddComponent(entity, componentId);
+            }
+
+            for (var j = 0; j < _componentManager.ComponentIdToComponentNameDictionary.Count; j++)
+            {
+                var componentId = (ushort)j;
+                
+                if (!_componentManager.TryGetComponent(entity, componentId, out var component))
                     continue;
 
                 // Different fields will be communicated,

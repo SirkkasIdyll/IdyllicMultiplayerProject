@@ -1,5 +1,7 @@
 using System;
+using Game.Shared.Systems.Camera;
 using Game.Shared.Systems.Movement;
+using Godot;
 
 namespace Game.Temperance.Network.Client;
 
@@ -7,10 +9,13 @@ public partial class ENetClient
 {
     private void BroadcastUserInput()
     {
-        if (ClientControlledNode == null)
+        if (ClientControlledEntity == null)
             return;
 
-        if (!_componentManager.TryGetComponent<MovementComponent>(ClientControlledNode, out var movementComponent))
+        if (!_componentManager.TryGetComponent<MovementComponent>(ClientControlledEntity, out var movementComponent))
+            return;
+
+        if (!_componentManager.TryGetComponent<CameraComponent>(ClientControlledEntity, out var cameraComponent))
             return;
         
         var buffer = new byte[10000];
@@ -24,6 +29,9 @@ public partial class ENetClient
 
         // Write input vector
         bufferWriter.WriteVector2(movementComponent.InputDirection, -1f, 1f, 0.01f);
+        
+        // Write camera angle
+        bufferWriter.WriteFloat(cameraComponent.AngleOfCameraPositionFromDefaultPosition, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
         
         bufferWriter.FinalWrite(out var byteIndex);
         Array.Resize(ref buffer, byteIndex);
