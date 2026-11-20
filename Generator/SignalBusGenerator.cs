@@ -58,9 +58,9 @@ public class SignalBusGenerator : IIncrementalGenerator
         var sourceBuilder = new StringBuilder(@"using System;
 using ENet;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 ");
-        if (symbolNameSpace != "Game.Temperance.NCS")
+        if (symbolNameSpace != "Game.Temperance.EntityComponentSystem")
             sourceBuilder.AppendLine($"using {symbolNameSpace};");
         sourceBuilder.AppendLine(@"
 namespace Game.Temperance.Signals;

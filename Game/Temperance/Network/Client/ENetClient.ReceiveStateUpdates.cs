@@ -6,6 +6,6 @@ public partial class ENetClient
     {
         // Read server tick
         bufferReader.Read(sizeof(uint) * 8, out var serverTick);
-        ReceiveNodeComponentUpdate(ref bufferReader, false);
+        ReceiveEntityComponentUpdate(ref bufferReader, false);
     }
 }

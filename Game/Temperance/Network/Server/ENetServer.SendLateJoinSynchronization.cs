@@ -11,7 +11,7 @@ public partial class ENetServer
     /// <summary>
     /// When a peer connects to the server,
     /// queue them up as part of the peers that need to have
-    /// all the nodes on the server communicated to them
+    /// all the entities on the server communicated to them
     /// </summary>
     private void OnPeerConnected(Event netEvent, ref PeerConnectedSignal args)
     {
@@ -19,7 +19,7 @@ public partial class ENetServer
     }
     
     /// <summary>
-    /// Send newly connected clients all the nodes that are spawned on the server
+    /// Send newly connected clients all the entities that are spawned on the server
     /// </summary>
     private void BroadcastLateJoinSynchronization()
     {
@@ -35,7 +35,7 @@ public partial class ENetServer
         // Write server tick
         bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
         
-        var byteIndex = SendNodeComponentUpdate(ref bufferWriter, true, [.. _nodeManager.NodeNetworkIdDictionary.Keys]);
+        var byteIndex = SendEntityComponentUpdate(ref bufferWriter, true, [.. _entityManager.EntityNetworkIdDictionary.Keys]);
         Array.Resize(ref buffer, byteIndex);
         Broadcast(ENetChannels.ReliableServer, buffer, [.. _newPeersThatNeedSynchronization], PacketFlags.Reliable);
         _newPeersThatNeedSynchronization.Clear();

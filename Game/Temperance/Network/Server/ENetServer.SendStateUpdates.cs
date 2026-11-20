@@ -6,7 +6,7 @@ public partial class ENetServer
 {
     private void BroadcastStateUpdates()
     {
-        if (_nodeManager.NodeNetworkIdDictionary.Count == 0)
+        if (_entityManager.EntityNetworkIdDictionary.Count == 0)
             return;
         
         var buffer = new byte[10000];
@@ -18,7 +18,7 @@ public partial class ENetServer
         // Write server tick
         bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
         
-        var byteIndex = SendNodeComponentUpdate(ref bufferWriter, false, [.. _nodeManager.NodeNetworkIdDictionary.Keys]);
+        var byteIndex = SendEntityComponentUpdate(ref bufferWriter, false, [.. _entityManager.EntityNetworkIdDictionary.Keys]);
         Array.Resize(ref buffer, byteIndex);
         Broadcast(ENetChannels.UnreliableServer, buffer);
     }

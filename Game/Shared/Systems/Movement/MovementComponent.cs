@@ -1,5 +1,5 @@
 ﻿using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 
 namespace Game.Shared.Systems.Movement;
 

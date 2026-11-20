@@ -9,13 +9,13 @@ public partial class ENetClient
 {
     private void BroadcastUserInput()
     {
-        if (ClientControlledNode == null)
+        if (ClientControlledEntity == null)
             return;
 
-        if (!_componentManager.TryGetComponent<MovementComponent>(ClientControlledNode, out var movementComponent))
+        if (!_componentManager.TryGetComponent<MovementComponent>(ClientControlledEntity, out var movementComponent))
             return;
 
-        if (!_componentManager.TryGetComponent<CameraComponent>(ClientControlledNode, out var cameraComponent))
+        if (!_componentManager.TryGetComponent<CameraComponent>(ClientControlledEntity, out var cameraComponent))
             return;
         
         var buffer = new byte[10000];

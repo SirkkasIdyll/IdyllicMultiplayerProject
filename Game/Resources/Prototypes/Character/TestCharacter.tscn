@@ -9,29 +9,22 @@
 
 [node name="TestCharacter" unique_id=377517059 instance=ExtResource("1_vg6n3")]
 
-[node name="CameraComponent" parent="." index="0" unique_id=1285031545]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20.005, 0)
-
-[node name="Camera3D" parent="CameraComponent" index="0" unique_id=1411362502]
-size = 20.0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="2" unique_id=1672793535]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="1" unique_id=1672793535]
 shape = SubResource("CapsuleShape3D_ag62g")
 
-[node name="SpriteComponent" type="Node3D" parent="." index="3" unique_id=505401521 node_paths=PackedStringArray("Sprite3D")]
+[node name="SpriteComponent" type="Node3D" parent="." index="2" unique_id=505401521 node_paths=PackedStringArray("Sprite3D")]
 script = ExtResource("3_3shwg")
 Sprite3D = NodePath("Sprite3D")
 metadata/_custom_type_script = "uid://be6nkpayys20u"
 
 [node name="Sprite3D" type="Sprite3D" parent="SpriteComponent" index="0" unique_id=1873701755]
-layers = 524288
 pixel_size = 0.08
 billboard = 1
 texture_filter = 0
 texture = ExtResource("2_ut7n5")
 hframes = 2
 
-[node name="PersonalVisionComponent" type="Node3D" parent="." index="4" unique_id=2071778063 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
+[node name="PersonalVisionComponent" type="Node3D" parent="." index="3" unique_id=2071778063 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
 script = ExtResource("3_ut7n5")
 VisionCone = NodePath("SpotLight3D")
 VisionCircle = NodePath("OmniLight3D")
@@ -47,3 +40,7 @@ shadow_caster_mask = 4294443007
 [node name="OmniLight3D" type="OmniLight3D" parent="PersonalVisionComponent" index="1" unique_id=1931347052]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 visible = false
+
+[node name="@Camera3D@50674" parent="CameraComponent" parent_id_path=PackedInt32Array(1244632804) index="0" unique_id=1071643634]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 20, 0)
+projection = 1

@@ -1,28 +1,28 @@
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Signals;
-using Godot;
 
 namespace Game.Temperance.Network.Client;
 
 public partial class ENetClient
 {
-    public void ProcessChangeControlledNode(ref BufferReader bufferReader)
+    public void ProcessChangeControlledEntity(ref BufferReader bufferReader)
     {
         // Read server tick
         bufferReader.Read(sizeof(uint) * 8, out var serverTick);
         
-        // Read the node network ID
-        bufferReader.Read(sizeof(ushort) * 8, out var nodeNetworkId);
+        // Read the entity network ID
+        bufferReader.Read(sizeof(ushort) * 8, out var entityNetworkId);
 
-        if (!_nodeManager.NetworkIdNodeDictionary.TryGetValue((ushort)nodeNetworkId, out var node))
+        if (!_entityManager.NetworkIdEntityDictionary.TryGetValue((ushort)entityNetworkId, out var entity))
             return;
 
-        ClientControlledNode = node;
-        var signal = new UpdateClientControlledNodeSignal(node);
-        _signalBus.EmitUpdateClientControlledNodeSignal(node, ref signal);
+        ClientControlledEntity = entity;
+        var signal = new UpdateClientControlledEntitySignal(entity);
+        _signalBus.EmitUpdateClientControlledEntitySignal(entity, ref signal);
     }
 }
 
-public class UpdateClientControlledNodeSignal(Node node) : UserSignalArgs
+public class UpdateClientControlledEntitySignal(Entity entity) : UserSignalArgs
 {
-    private Node _node = node;
+    private Entity _entity = entity;
 }

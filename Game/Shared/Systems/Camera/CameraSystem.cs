@@ -1,6 +1,6 @@
 ﻿using Game.Client.Scenes;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
@@ -8,11 +8,11 @@ using Game.Temperance.Signals;
 namespace Game.Shared.Systems.Camera;
 
 [GlobalClass]
-public partial class CameraSystem : NodeSystem
+public partial class CameraSystem : EntitySystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
-    [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly EntityManager _entityManager = null!;
+    [InjectedDependency] private readonly EntitySystemManager _entitySystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
 
     private const string DebugOptionName = "Camera Aiming";
@@ -25,7 +25,7 @@ public partial class CameraSystem : NodeSystem
     /// <summary>
     /// Flag used for changing camera to camera of controlled node
     /// </summary>
-    private bool _controlledNodeChanged;
+    private bool _controlledEntityChanged;
     
     public override void _Ready()
     {
@@ -33,7 +33,7 @@ public partial class CameraSystem : NodeSystem
 
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
-        _signalBus.UpdateClientControlledNodeSignal += OnUpdateClientControlledNodeSignal;
+        _signalBus.UpdateClientControlledEntitySignal += OnUpdateClientControlledEntitySignal;
         // _signalBus.UpdateRotationSignal += OnUpdateRotation;
     }
 
@@ -44,24 +44,23 @@ public partial class CameraSystem : NodeSystem
         if (Networking.IsServer())
             return;
 
-        if (ENetClient.Instance.ClientControlledNode == null)
+        if (ENetClient.Instance.ClientControlledEntity == null)
             return;
 
-        if (!_componentManager.TryGetComponent<CameraComponent>(ENetClient.Instance.ClientControlledNode,
+        if (!_componentManager.TryGetComponent<CameraComponent>(ENetClient.Instance.ClientControlledEntity,
                 out var cameraComponent))
             return;
 
-        if (_controlledNodeChanged)
+        if (_controlledEntityChanged)
         {
-            cameraComponent.Camera?.MakeCurrent();
-            cameraComponent.Camera?.Size = cameraComponent.CameraSize;
-            _controlledNodeChanged = false;
+            cameraComponent.Camera.MakeCurrent();
+            _controlledEntityChanged = false;
         }
             
         if (!Input.IsActionPressed("aim"))
         {
             _timeHeldAiming = 0;
-            ResetCamera((ENetClient.Instance.ClientControlledNode, cameraComponent), delta);
+            ResetCamera((ENetClient.Instance.ClientControlledEntity, cameraComponent), delta);
             return;
         }
         
@@ -69,35 +68,57 @@ public partial class CameraSystem : NodeSystem
         if (_timeHeldAiming < AimingThresholdTime)
             return;
         
-        AimCamera((ENetClient.Instance.ClientControlledNode, cameraComponent), delta);
+        AimCamera((ENetClient.Instance.ClientControlledEntity, cameraComponent), delta);
+    }
+    
+    public override void _PhysicsProcess(double delta)
+    {
+        base._PhysicsProcess(delta);
+
+        if (Networking.IsServer())
+            return;
+        
+        // Set a node's rotation to face the same angle that their camera is looking at
+        _componentManager.GetEntitiesWithComponent<CameraComponent>(out var cameraEntities);
+        foreach (var entity in cameraEntities)
+        {
+            if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
+                continue;
+            
+            entity.Basis = new Basis(Vector3.Up, cameraComponent.AngleOfCameraPositionFromDefaultPosition);
+        }
     }
 
+    /// <summary>
+    /// Add camera system to debug display options
+    /// </summary>
+    /// <param name="args"></param>
     private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
     {
         args.SystemsList?.AddItem(DebugOptionName);
     }
 
-    private void OnUpdateClientControlledNodeSignal(Node node, ref UpdateClientControlledNodeSignal args)
+    private void OnUpdateClientControlledEntitySignal(Entity entity, ref UpdateClientControlledEntitySignal args)
     {
-        _controlledNodeChanged = true;
+        _controlledEntityChanged = true;
     }
 
-    // private void OnComponentsRegistered(Node node, ref ComponentsRegisteredSignal args)
+    // private void OnComponentsRegistered(Entity entity, ref ComponentsRegisteredSignal args)
     // {
-    //     if (Networking.IsServer() || ENetClient.Instance.ClientControlledNode == null)
+    //     if (Networking.IsServer() || ENetClient.Instance.ClientControlledEntity == null)
     //         return;
     //
-    //     if (node != ENetClient.Instance.ClientControlledNode)
+    //     if (entity != ENetClient.Instance.ClientControlledEntity)
     //         return;
     //
-    //     if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+    //     if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
     //         return;
     //     
     //     GD.Print("Setting camera and camera size");
     //     cameraComponent.Camera?.MakeCurrent();
     //     cameraComponent.Camera?.Size = 20f;
     //     
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entity,
     //             out var personalVisionComponent))
     //         return;
     //     
@@ -115,7 +136,7 @@ public partial class CameraSystem : NodeSystem
     //     personalVisionComponent.VisionCircle?.SetVisible(true);
     // }
 
-    // private void OnNodeSpawned(Guid netGuid, ref NodeSpawnedSignal args)
+    // private void OnEntitySpawned(Guid netGuid, ref EntitySpawnedSignal args)
     // {
     //     if (Networking.IsServer())
     //         return;
@@ -123,15 +144,15 @@ public partial class CameraSystem : NodeSystem
     //     if (ENetClient.Instance.EnetGuid != netGuid)
     //         return;
     //     
-    //     if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
+    //     if (!_entityManager.NetGuidDictionary.TryGetValue(netGuid, out var entityUpdateInfo))
     //         return;
     //
-    //     if (!_componentManager.TryGetComponent<CameraComponent>(nodeUpdateInfo.Node, out var cameraComponent))
+    //     if (!_componentManager.TryGetComponent<CameraComponent>(entityUpdateInfo.Node, out var cameraComponent))
     //         return;
     //     
     //     cameraComponent.Camera?.MakeCurrent();
     //
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(nodeUpdateInfo.Node,
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entityUpdateInfo.Node,
     //             out var personalVisionComponent))
     //         return;
     //
@@ -160,66 +181,65 @@ public partial class CameraSystem : NodeSystem
         if (Networking.IsServer())
             return;
         
-        // if (!_nodeManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var nodeUpdateInfo))
+        // if (!_entityManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var entityUpdateInfo))
         //     return;
         //
-        // var node = nodeUpdateInfo.Node;
+        // var entity = nodeUpdateInfo.Node;
         //
-        // if (!_componentManager.TryGetComponent<CameraComponent>(node, out var cameraComponent))
+        // if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
         //     return;
         //
         // args.DebugLabel.Clear();
-        // args.DebugLabel.AppendText("Player Position: " + node.GlobalPosition.ToString() + "\n");
+        // args.DebugLabel.AppendText("Player Position: " + entity.GlobalPosition.ToString() + "\n");
         // args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
         // args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
-        // args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((node, cameraComponent), MaxCameraDistance) + "\n");
+        // args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((entity, cameraComponent), MaxCameraDistance) + "\n");
     }
 
-    // private void OnUpdateRotation(Node<RotationComponent> node, ref UpdateRotationSignal args)
+    // private void OnUpdateRotation(Entity<RotationComponent> entity, ref UpdateRotationSignal args)
     // {
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(node,
+    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entity,
     //             out var personalVisionComponent))
     //         return;
     //
     //     // Vision cone faces -Z by default instead of X, so we need to rotate it by -90 degrees after we set it
-    //     personalVisionComponent.VisionCone?.Basis = node.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
+    //     personalVisionComponent.VisionCone?.Basis = entity.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
     // }
 
-    private void ResetCamera(Node<CameraComponent> node, double delta)
+    private void ResetCamera(Entity<CameraComponent> entity, double delta)
     {
-        if (node.Comp.Camera is null)
+        var visualGlobalPosition = entity.Owner.VisualGlobalTransform3D.Origin;
+        
+        if (entity.Comp.Camera is null)
             return;
+        
+        var cameraGlobalPosition = entity.Comp.Camera.GlobalPosition;
 
-        if (node.Comp.GlobalPosition.DistanceTo(node.Comp.Camera.GlobalPosition) < 0.01)
+        if (visualGlobalPosition.DistanceTo(cameraGlobalPosition) < 0.01)
             return;
         
         var weight = 1f - Mathf.Exp(-CameraResetSpeed * (float)delta);
-        node.Comp.Camera.SetGlobalPosition(node.Comp.Camera.GlobalPosition.Lerp(node.Comp.GlobalPosition, weight));
+        entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(visualGlobalPosition, weight));
     }
 
-    private void AimCamera(Node<CameraComponent> node, double delta)
+    private void AimCamera(Entity<CameraComponent> entity, double delta)
     {
-        if (node.Owner is not Node3D node3D)
-            return;
-        
-        if (node.Comp.Camera is null)
-            return;
-        
-        var newCameraPosition = GetNewCameraPosition(node, MaxCameraDistance);
+        var cameraGlobalPosition = entity.Comp.Camera.GlobalPosition;
+        var newCameraPosition = GetNewCameraPosition(entity, MaxCameraDistance);
         var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta);
         if (newCameraPosition == null)
             return;
         
-        node.Comp.Camera.SetGlobalPosition(node.Comp.Camera.GlobalPosition.Lerp(newCameraPosition.Value, weight));
+        entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(newCameraPosition.Value, weight));
         
         var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
 
         if (mouseOffsetFromCenter is null)
             return;
         
-        // We rotate the node around the Y axis since we're a top-down game
-        node.Comp.AngleOfCameraPositionFromDefaultPosition = mouseOffsetFromCenter.Value.Normalized().Angle();
-        // node3D.Basis = new Basis(Vector3.Up, mouseOffsetFromCenter.Value.Normalized().Angle());
+        // We rotate the entity around the Y axis since we're a top-down game
+        entity.Comp.AngleOfCameraPositionFromDefaultPosition = mouseOffsetFromCenter.Value.Normalized().Angle();
+        // entity.Basis = new Basis(Vector3.Up, mouseOffsetFromCenter.Value.Normalized().Angle());
     }
 
     private Vector2? GetMouseOffsetFromCenter()
@@ -227,9 +247,11 @@ public partial class CameraSystem : NodeSystem
         return GetViewport().GetMousePosition() - GetViewport().GetVisibleRect().Size / 2.0f;
     }
 
-    private Vector3? GetNewCameraPosition(Node<CameraComponent> node, float maxDistance)
+    private Vector3? GetNewCameraPosition(Entity<CameraComponent> entity, float maxDistance)
     {
-        if (node.Comp.Camera is null)
+        var visualGlobalPosition = entity.Owner.VisualGlobalTransform3D.Origin;
+        
+        if (entity.Comp.Camera is null)
             return null;
         
         var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
@@ -239,16 +261,16 @@ public partial class CameraSystem : NodeSystem
         
         // Camera size gives us the diameter of the height, which is our overall scale
         var viewportSize = GetViewport().GetVisibleRect().Size;
-        var scale = viewportSize.Y / node.Comp.Camera.Size;
+        var scale = viewportSize.Y / entity.Comp.Camera.Size;
         
         // Target position clamped by how far we actually want the camera to be able to go from the player
         var targetPosition = new Vector3(
-            node.Comp.GlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
-            node.Comp.GlobalPosition.Y,
-            node.Comp.GlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
+            visualGlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
+            visualGlobalPosition.Y,
+            visualGlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
 
-        if (node.Comp.GlobalPosition.DistanceTo(targetPosition) > maxDistance)
-            return node.Comp.GlobalPosition + (targetPosition - node.Comp.GlobalPosition).Normalized() * maxDistance;
+        if (visualGlobalPosition.DistanceTo(targetPosition) > maxDistance)
+            return visualGlobalPosition + (targetPosition - visualGlobalPosition).Normalized() * maxDistance;
         
         return targetPosition;
     }

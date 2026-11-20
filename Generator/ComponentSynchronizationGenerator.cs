@@ -143,7 +143,7 @@ public class ComponentSynchronizationGenerator : IIncrementalGenerator
         
         var sourceBuilder = new StringBuilder(@"using System;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
 ");
         sourceBuilder.AppendLine($@"
@@ -243,23 +243,16 @@ using Godot;");
             sourceBuilder.AppendLine($"using {name};");
         }
 
-        sourceBuilder.AppendLine(@"namespace Game.Temperance.NCS;
+        sourceBuilder.AppendLine(@"namespace Game.Temperance.EntityComponentSystem;
 
 public partial class ComponentManager
 {");
-        sourceBuilder.AppendLine(@"
-    /// <summary>
-    /// Nodes in the world and what components they have
-    /// First populated when a node spawns
-    /// </summary>
-    public readonly Dictionary<Node, Dictionary<string, Component>> ComponentDictionaryByNode = new();");
-        
-        // Dictionary of components by name for duplication and what nodes have that component
-        sourceBuilder.AppendLine(@"    public readonly Dictionary<string, (Component Component, List<Node> Nodes)> ComponentDictionary = new Dictionary<string, (Component Component, List<Node> Nodes)>()
+        // Dictionary of components by name for duplication and what entities have that component
+        sourceBuilder.AppendLine(@"    public readonly Dictionary<string, (Component Component, List<Entity> Entities)> EntitiesWithComponentDictionary = new Dictionary<string, (Component Component, List<Entity> Entities)>()
     {");
         foreach (var (component, componentId) in sortedComponentsAndIds)
         {
-            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", (new {component?.Name}(), new List<Node>()) }},");
+            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", (new {component?.Name}(), new List<Entity>()) }},");
         }
         sourceBuilder.AppendLine("    };");
         

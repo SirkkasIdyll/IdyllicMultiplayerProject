@@ -70,8 +70,8 @@ public static class Networking
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.LateJoinSynchronization):
                     client.ProcessLateJoinSynchronizationPacket(ref bufferReader);
                     break;
-                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeSpawns):
-                    client.ProcessNodeSpawnPacket(ref bufferReader);
+                case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.EntitySpawns):
+                    client.ProcessEntitySpawnPacket(ref bufferReader);
                     break;
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.NodeDespawns):
                     break;
@@ -82,7 +82,7 @@ public static class Networking
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.SynchronizeOnChange):
                     break;
                 case (ENetChannels.ReliableServer, (int)ReliableServerPacketType.ChangeControlledNode):
-                    client.ProcessChangeControlledNode(ref bufferReader);
+                    client.ProcessChangeControlledEntity(ref bufferReader);
                     break;
                 case (ENetChannels.UnreliableServer, (int)UnreliableServerPacketType.StateUpdates):
                     client.ProcessStateUpdates(ref bufferReader);
@@ -122,7 +122,7 @@ public enum UnreliableClientPacketType : byte
 public enum ReliableServerPacketType : byte
 {
     LateJoinSynchronization = 0,
-    NodeSpawns = 1,
+    EntitySpawns = 1,
     NodeDespawns = 2,
     ComponentAdded = 3,
     ComponentRemoved = 4,
@@ -178,18 +178,18 @@ public class PeerDisconnectedSignal : UserSignalArgs
 // {
 //     public required uint ServerTick; 
 //     public required uint ClientTick;
-//     public required uint NodesInMessage;
-//     public required (uint NodeNetworkId, bool[] ComponentsIncluded, Vector3 NodePosition, float Rotation, bool[]
-//         ComponentDetails) Nodes;
+//     public required uint EntitiesInMessage;
+//     public required (uint EntityNetworkId, bool[] ComponentsIncluded, Vector3 NodePosition, float Rotation, bool[]
+//         ComponentDetails) Entities;
 // }
 //
 // public class EventsAndOnChangeMessage : Message
 // {
 //     public required uint ServerTick; 
 //     public required uint ClientTick;
-//     public required uint NodesInMessage;
-//     public required (uint NodeNetworkId, bool[] ComponentsIncluded, Vector3 NodePosition, float Rotation, bool[]
-//         ComponentDetails) Nodes;
+//     public required uint EntitiesInMessage;
+//     public required (uint EntityNetworkId, bool[] ComponentsIncluded, Vector3 NodePosition, float Rotation, bool[]
+//         ComponentDetails) Entities;
 // }
 
 // public class NodeUpdateInfo
@@ -200,19 +200,19 @@ public class PeerDisconnectedSignal : UserSignalArgs
 //     public uint CurrSequence;
 //     public OrderedDictionary<uint, NodeState> PredictedNodeStates = new();
 //
-//     public NodeUpdateInfo(Node3D node, MetadataComponent? metadataComponent)
+//     public NodeUpdateInfo(Node3D entity, MetadataComponent? metadataComponent)
 //     {
-//         Node = node;
+//         Node = entity;
 //         MetadataComponent = metadataComponent;
 //     }
 // }
 //
-// public class SendNodeStatesSignal : UserSignalArgs
+// public class SendEntityStatesSignal : UserSignalArgs
 // {
 //     public NodeStates Message = new();
 // }
 //
-// public class ReceiveNodeStatesSignal : UserSignalArgs
+// public class ReceiveEntityStatesSignal : UserSignalArgs
 // {
 //     public NodeStates Message = new();
 // }

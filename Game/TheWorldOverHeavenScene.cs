@@ -1,6 +1,6 @@
 using System;
 using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
@@ -11,15 +11,15 @@ namespace Game;
 
 public partial class TheWorldOverHeavenScene : Node3D
 {
-	// Called when the node enters the scene tree for the first time.
+	// Called when the entity enters the scene tree for the first time.
 	public override void _EnterTree()
 	{
 		base._EnterTree();
 
-		// The NodeSystemManager is not a node but will add NodeSystems as children of this scene
-		// whereas the NodeManager is a node so we will add it as a child
-		NodeSystemManager.Instance.InitializeNodeSystems(this);
-		AddChild(NodeManager.Instance);
+		// The EntitySystemManager is not a entity but will add NodeSystems as children of this scene
+		// whereas the EntityManager is a entity so we will add it as a child
+		EntitySystemManager.Instance.InitializeNodeSystems(this);
+		AddChild(EntityManager.Instance);
 		AddChild(ComponentManager.Instance);
 		
 		// Add the required server or client instances depending on which we are
@@ -37,6 +37,8 @@ public partial class TheWorldOverHeavenScene : Node3D
 			AddChild(ENetClient.Instance);
 			ENetServer.Instance.Free();
 		}
+
+		var entity = new Entity();
 	}
 
 	public override void _Ready()
@@ -44,7 +46,7 @@ public partial class TheWorldOverHeavenScene : Node3D
 		base._Ready();
 		
 		if (Networking.IsServer())
-			NodeManager.Instance.TrySpawnNode("TheWorld", null, out _);
+			EntityManager.Instance.TrySpawnEntity("TheWorld", null, out _);
 		
 		var signal = new DependenciesInjectedSignal();
 		SignalBus.Instance.EmitDependenciesInjectedSignal(ref signal);

@@ -1,6 +1,6 @@
 using Game.Client.Scenes;
 using Game.Shared.Systems.Camera;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
@@ -13,11 +13,11 @@ namespace Game.Shared.Systems.Visuals;
 /// the visual location/rotation of a sprite versus the actual underlying position/rotation of the parent node
 /// </summary>
 [GlobalClass]
-public partial class VisualSystem : NodeSystem
+public partial class VisualSystem : EntitySystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
-    [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly EntityManager _entityManager = null!;
+    [InjectedDependency] private readonly EntitySystemManager _entitySystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
     
     private const string DebugOptionName = "Sprite Orientation";
@@ -38,7 +38,6 @@ public partial class VisualSystem : NodeSystem
     {
         base._Ready();
 
-        _signalBus.ComponentsRegisteredSignal += OnComponentsRegistered;
         _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
     }
@@ -50,24 +49,19 @@ public partial class VisualSystem : NodeSystem
         if (Networking.IsServer())
             return;
         
-        _componentManager.GetNodesWithComponent<SpriteComponent>(out var spriteNodes);
-        foreach (var node in spriteNodes)
+        _componentManager.GetEntitiesWithComponent<SpriteComponent>(out var spriteEntities);
+        foreach (var entity in spriteEntities)
         {
-            if (!_componentManager.TryGetComponent<SpriteComponent>(node, out var spriteComponent))
+            if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
                 continue;
             
-            OrientSpriteToParentRotation((node, spriteComponent));
+            OrientSpriteToParentRotation((entity, spriteComponent));
         }
 
-        foreach (var (node, _) in _componentManager.ComponentDictionaryByNode)
-        {
-            LerpVisualComponentPositions(node);
-        }
-    }
-
-    private void OnComponentsRegistered(Node node, ref ComponentsRegisteredSignal args)
-    {
-        SetTopLevelForVisualComponents(node);
+        // foreach (var (entity, _) in _componentManager.EntitiesWithComponentDictionary)
+        // {
+        //     LerpVisualComponentPositions(entity);
+        // }
     }
     
     /// <summary>
@@ -90,13 +84,10 @@ public partial class VisualSystem : NodeSystem
         if (Networking.IsServer())
             return;
 
-        if (ENetClient.Instance.ClientControlledNode == null)
+        if (ENetClient.Instance.ClientControlledEntity == null)
             return;
 
-        if (ENetClient.Instance.ClientControlledNode is not Node3D node3D)
-            return;
-
-        if (!_componentManager.TryGetComponent<SpriteComponent>(ENetClient.Instance.ClientControlledNode,
+        if (!_componentManager.TryGetComponent<SpriteComponent>(ENetClient.Instance.ClientControlledEntity,
                 out var spriteComponent))
             return;
         
@@ -104,9 +95,8 @@ public partial class VisualSystem : NodeSystem
         var verticalFacing = spriteComponent.Sprite3D?.Frame == 0 ? "down" : "up";
 
         args.DebugLabel.Clear();
-        args.DebugLabel.AppendText("Sprite ");
         args.DebugLabel.AppendText("Sprite is facing " + horizontalFacing + " and " + verticalFacing + "\n");
-        args.DebugLabel.AppendText("Sprite's basis is " + node3D.Basis.GetRotationQuaternion().GetAngle() + "\n");
-        GD.Print(node3D.Basis.GetRotationQuaternion().GetAngle());
+        args.DebugLabel.AppendText("Sprite's basis is " + ENetClient.Instance.ClientControlledEntity.Basis.GetRotationQuaternion().GetAngle() + "\n");
+        GD.Print(ENetClient.Instance.ClientControlledEntity.Basis.GetRotationQuaternion().GetAngle());
     }
 }

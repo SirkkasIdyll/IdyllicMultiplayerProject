@@ -1,4 +1,4 @@
-using Game.Shared.Systems.Camera;
+using Game.Temperance.EntityComponentSystem;
 using Godot;
 
 namespace Game.Shared.Systems.Visuals;
@@ -9,45 +9,42 @@ namespace Game.Shared.Systems.Visuals;
 /// </summary>
 public partial class VisualSystem
 {
-    /// <summary>
-    /// Setting top level on a node's transform separates its own position from its parent
-    /// Visual components should be slowly lerped to the actual position of the parent
-    /// Rather than immediately, and jarringly, jumping to the position communicated by the server
-    /// </summary>
-    private void SetTopLevelForVisualComponents(Node node)
-    {
-        foreach (var componentName in _visualComponentNames)
-        {
-            if (!_componentManager.ComponentNameToComponentIdDictionary.TryGetValue(componentName, out var componentId))
-                continue;
-            
-            if (!_componentManager.TryGetComponent(node, componentId, out var component))
-                continue;
-
-            component.TopLevel = true;
-        }
-    }
-    
-    public void LerpVisualComponentPositions(Node node)
-    {
-        if (node is not Node3D node3D)
-            return;
-        
-        foreach (var componentName in _visualComponentNames)
-        {
-            if (!_componentManager.ComponentNameToComponentIdDictionary.TryGetValue(componentName, out var componentId))
-                continue;
-
-            if (!_componentManager.TryGetComponent(node, componentId, out var component))
-                continue;
-            
-            var startingPosition = new Vector2(component.GlobalPosition.X, component.GlobalPosition.Z);
-            var targetPosition = new Vector2(node3D.GlobalPosition.X, node3D.GlobalPosition.Z);
-            var (newPositionX, newPositionZ) = startingPosition.DistanceTo(targetPosition) < 1f
-                ? startingPosition.Lerp(targetPosition, 0.95f)
-                : startingPosition.Lerp(targetPosition, 0.85f);
-            
-            component.SetGlobalPosition(new Vector3(newPositionX, component.GlobalPosition.Y, newPositionZ));
-        }
-    }
+    // /// <summary>
+    // /// Setting top level on a node's transform separates its own position from its parent
+    // /// Visual components should be slowly lerped to the actual position of the parent
+    // /// Rather than immediately, and jarringly, jumping to the position communicated by the server
+    // /// </summary>
+    // private void SetTopLevelForVisualComponents(Entity entity)
+    // {
+    //     foreach (var componentName in _visualComponentNames)
+    //     {
+    //         if (!_componentManager.ComponentNameToComponentIdDictionary.TryGetValue(componentName, out var componentId))
+    //             continue;
+    //         
+    //         if (!_componentManager.TryGetComponent(entity, componentId, out var component))
+    //             continue;
+    //
+    //         component.TopLevel = true;
+    //     }
+    // }
+    //
+    // public void LerpVisualComponentPositions(Entity entity)
+    // {
+    //     foreach (var componentName in _visualComponentNames)
+    //     {
+    //         if (!_componentManager.ComponentNameToComponentIdDictionary.TryGetValue(componentName, out var componentId))
+    //             continue;
+    //
+    //         if (!_componentManager.TryGetComponent(entity, componentId, out var component))
+    //             continue;
+    //         
+    //         var startingPosition = new Vector2(component.GlobalPosition.X, component.GlobalPosition.Z);
+    //         var targetPosition = new Vector2(entity.GlobalPosition.X, entity.GlobalPosition.Z);
+    //         var (newPositionX, newPositionZ) = startingPosition.DistanceTo(targetPosition) < 1f
+    //             ? startingPosition.Lerp(targetPosition, 0.95f)
+    //             : startingPosition.Lerp(targetPosition, 0.85f);
+    //         
+    //         component.SetGlobalPosition(new Vector3(newPositionX, component.GlobalPosition.Y, newPositionZ));
+    //     }
+    // }
 }

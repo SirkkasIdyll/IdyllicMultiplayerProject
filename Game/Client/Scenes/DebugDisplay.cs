@@ -13,7 +13,7 @@ public partial class DebugDisplay : Control
 	
 	private const string DebugOptionName = "FPS and Ping";
 	
-	// Called when the node enters the scene tree for the first time.
+	// Called when the entity enters the scene tree for the first time.
 	public override void _Ready()
 	{
 		_signalBus.UpdateDebugLabel += OnUpdateDebugLabel;

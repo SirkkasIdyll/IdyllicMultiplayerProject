@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Godot;
 using Game.Shared.Systems.Movement;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Network.Server;
 
@@ -16,16 +16,16 @@ public class TemperanceTest
 {
     private readonly Node _rootScene = new();
     private readonly ComponentManager _componentManager = ComponentManager.Instance;
-    private readonly NodeManager _nodeManager = NodeManager.Instance;
-    private readonly NodeSystemManager _nodeSystemManager = NodeSystemManager.Instance;
+    private readonly EntityManager _entityManager = EntityManager.Instance;
+    private readonly EntitySystemManager _entitySystemManager = EntitySystemManager.Instance;
 
     [Before]
     public void Before()
     {
         _rootScene.TreeEntered += () =>
         {
-            _nodeSystemManager.InitializeNodeSystems(_rootScene);
-            _rootScene.AddChild(_nodeManager);
+            _entitySystemManager.InitializeNodeSystems(_rootScene);
+            _rootScene.AddChild(_entityManager);
             
             ENetClient.Instance.Free();
             ENetServer.Instance.Free();
@@ -39,42 +39,42 @@ public class TemperanceTest
     [TestCase]
     public async Task ComponentManagerTest()
     {
-        var testNode = AddNode(new Node3D());
+        var testEntity = AddNode(new Entity());
         
         // Adds component
-        AssertBool(_componentManager.TryAddComponent<MovementComponent>(testNode)).AppendFailureMessage(
-            "Failed to add component to node.").IsTrue();
+        AssertBool(_componentManager.TryAddComponent<MovementComponent>(testEntity)).AppendFailureMessage(
+            "Failed to add component to entity.").IsTrue();
         
         // Gets component
-        AssertBool(_componentManager.TryGetComponent<MovementComponent>(testNode, out var movementComponent)).AppendFailureMessage(
-            "Failed to retrieve component from node after adding it.").IsTrue();
+        AssertBool(_componentManager.TryGetComponent<MovementComponent>(testEntity, out var movementComponent)).AppendFailureMessage(
+            "Failed to retrieve component from entity after adding it.").IsTrue();
         AssertObject(movementComponent).IsNotNull();
         
         // Gets component again
-        _componentManager.GetNodesWithComponent<MovementComponent>(out var list);
-        AssertBool(list.Contains(testNode)).AppendFailureMessage(
-            "Failed to retrieve node with a specific component type.").IsTrue();
+        _componentManager.GetEntitiesWithComponent<MovementComponent>(out var list);
+        AssertBool(list.Contains(testEntity)).AppendFailureMessage(
+            "Failed to retrieve entity with a specific component type.").IsTrue();
         
         // Removes component and waits some time for QueueFree() to process
-        _componentManager.RemoveComponent<MovementComponent>(testNode);
+        _componentManager.RemoveComponent<MovementComponent>(testEntity);
         await Task.Delay(100);
         
         // Has component
-        AssertBool(_componentManager.HasComponent<MovementComponent>(testNode)).AppendFailureMessage(
-            "Failed to remove component from a node.").IsFalse();
-        AssertBool(list.Contains(testNode)).AppendFailureMessage(
-            "Failed to remove node from list of nodes that have a specific component type.").IsFalse();
+        AssertBool(_componentManager.HasComponent<MovementComponent>(testEntity)).AppendFailureMessage(
+            "Failed to remove component from a entity.").IsFalse();
+        AssertBool(list.Contains(testEntity)).AppendFailureMessage(
+            "Failed to remove entity from list of entities that have a specific component type.").IsFalse();
     }
 
     /// <summary>
-    /// Tests that there are no duplicate names being used for nodes 
+    /// Tests that there are no duplicate names being used for entities 
     /// </summary>
     [TestCase]
-    public void DuplicateNodePrototypeTest()
+    public void DuplicateEntityPrototypeTest()
     {
-        Dictionary<string, string> nodeDictionary = []; // second value is the scene_file_path for spawning
+        Dictionary<string, string> entityDictionary = []; // second value is the scene_file_path for spawning
         
-        var prototypePaths = _nodeManager.RecursiveListDirectory("res://Resources/Prototypes");
+        var prototypePaths = _entityManager.RecursiveListDirectory("res://Resources/Prototypes");
             
         foreach (var prototypePath in prototypePaths)
         {
@@ -82,29 +82,29 @@ public class TemperanceTest
             if (!prototypePath.EndsWith(".tscn"))
                 continue;
 
-            var nodeNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
-            var nodeName = nodeNameWithExtension.Substring(0, nodeNameWithExtension.LastIndexOf('.'));
-            GD.Print("Node name: " + nodeName);
+            var entityNameWithExtension = prototypePath.Remove(0, prototypePath.LastIndexOf('/') + 1);
+            var entityName = entityNameWithExtension.Substring(0, entityNameWithExtension.LastIndexOf('.'));
+            GD.Print("Node name: " + entityName);
             
-            AssertBool(nodeDictionary.TryAdd(nodeName, prototypePath)).AppendFailureMessage("Duplicate node " +
-                "prototype with node name: \"" + nodeName + "\". Resolve the error by renaming the node.").IsTrue();
+            AssertBool(entityDictionary.TryAdd(entityName, prototypePath)).AppendFailureMessage("Duplicate entity " +
+                "prototype with entity name: \"" + entityName + "\". Resolve the error by renaming the entity.").IsTrue();
         }
     }
 
     [TestCase]
-    public void NodeManagerTest()
+    public void EntityManagerTest()
     {
-        AssertBool(_nodeManager.TrySpawnNode("TheWorld", null, out _)).AppendFailureMessage(
-            "Spawned node despite not being assigned as the server.").IsFalse();
+        AssertBool(_entityManager.TrySpawnEntity("TheWorld", null, out _)).AppendFailureMessage(
+            "Spawned entity despite not being assigned as the server.").IsFalse();
     }
 
     /// <summary>
-    /// Tests the basic functionality of the NodeSystemManager
+    /// Tests the basic functionality of the EntitySystemManager
     /// </summary>
     [TestCase]
-    public void NodeSystemManagerTest()
+    public void EntitySystemManagerTest()
     {
-        _nodeSystemManager.TryGetNodeSystem<MovementSystem>(out var movementSystem);
+        _entitySystemManager.TryGetEntitySystem<MovementSystem>(out var movementSystem);
         AssertObject(movementSystem).IsNotNull();
     }
 }

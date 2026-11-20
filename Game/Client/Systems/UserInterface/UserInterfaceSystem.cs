@@ -1,15 +1,15 @@
 ﻿using Godot;
-using Game.Temperance.NCS;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Signals;
 
 namespace Game.Client.Systems.UserInterface;
 
 [GlobalClass]
-public partial class UserInterfaceSystem : NodeSystem
+public partial class UserInterfaceSystem : EntitySystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
-    [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly EntityManager _entityManager = null!;
+    [InjectedDependency] private readonly EntitySystemManager _entitySystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
     private CanvasLayer _canvasLayer = new();
 
