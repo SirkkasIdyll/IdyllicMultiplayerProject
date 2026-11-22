@@ -12,7 +12,7 @@ public partial class Entity : Node3D
 {
     public ushort NetworkId { get; set; }
     
-    public Dictionary<string, Component> Components = [];
+    public readonly Dictionary<string, Component> Components = [];
     
     /// <summary>
     /// The visuals of an entity should lag behind the actual position/etc of the entity
