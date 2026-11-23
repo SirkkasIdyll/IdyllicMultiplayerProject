@@ -53,7 +53,7 @@ public partial class CameraSystem : EntitySystem
 
         if (_controlledEntityChanged)
         {
-            cameraComponent.Camera.MakeCurrent();
+            cameraComponent.Camera?.MakeCurrent();
             _controlledEntityChanged = false;
         }
             
@@ -102,73 +102,6 @@ public partial class CameraSystem : EntitySystem
     {
         _controlledEntityChanged = true;
     }
-
-    // private void OnComponentsRegistered(Entity entity, ref ComponentsRegisteredSignal args)
-    // {
-    //     if (Networking.IsServer() || ENetClient.Instance.ClientControlledEntity == null)
-    //         return;
-    //
-    //     if (entity != ENetClient.Instance.ClientControlledEntity)
-    //         return;
-    //
-    //     if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
-    //         return;
-    //     
-    //     GD.Print("Setting camera and camera size");
-    //     cameraComponent.Camera?.MakeCurrent();
-    //     cameraComponent.Camera?.Size = 20f;
-    //     
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entity,
-    //             out var personalVisionComponent))
-    //         return;
-    //     
-    //     personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
-    //     personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
-    //     personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
-    //     personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
-    //     personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
-    //     personalVisionComponent.VisionCone?.SetVisible(true);
-    //     
-    //     personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
-    //     personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
-    //     personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
-    //     personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
-    //     personalVisionComponent.VisionCircle?.SetVisible(true);
-    // }
-
-    // private void OnEntitySpawned(Guid netGuid, ref EntitySpawnedSignal args)
-    // {
-    //     if (Networking.IsServer())
-    //         return;
-    //     
-    //     if (ENetClient.Instance.EnetGuid != netGuid)
-    //         return;
-    //     
-    //     if (!_entityManager.NetGuidDictionary.TryGetValue(netGuid, out var entityUpdateInfo))
-    //         return;
-    //
-    //     if (!_componentManager.TryGetComponent<CameraComponent>(entityUpdateInfo.Node, out var cameraComponent))
-    //         return;
-    //     
-    //     cameraComponent.Camera?.MakeCurrent();
-    //
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entityUpdateInfo.Node,
-    //             out var personalVisionComponent))
-    //         return;
-    //
-    //     personalVisionComponent.VisionCone?.SpotAngle = personalVisionComponent.VisionConeAngle;
-    //     personalVisionComponent.VisionCone?.SpotAttenuation = personalVisionComponent.VisionConeAttenuation;
-    //     personalVisionComponent.VisionCone?.SpotRange = personalVisionComponent.VisionConeRange;
-    //     personalVisionComponent.VisionCone?.LightEnergy = personalVisionComponent.VisionConeEnergy;
-    //     personalVisionComponent.VisionCone?.LightColor = personalVisionComponent.VisionConeColor;
-    //     personalVisionComponent.VisionCone?.SetVisible(true);
-    //     
-    //     personalVisionComponent.VisionCircle?.OmniAttenuation = personalVisionComponent.VisionCircleAttenuation;
-    //     personalVisionComponent.VisionCircle?.LightColor = personalVisionComponent.VisionCircleColor;
-    //     personalVisionComponent.VisionCircle?.LightEnergy = personalVisionComponent.VisionCircleEnergy;
-    //     personalVisionComponent.VisionCircle?.OmniRange = personalVisionComponent.VisionCircleRange;
-    //     personalVisionComponent.VisionCircle?.SetVisible(true);
-    // }
     
     private void OnUpdateDebugLabel(string selectedSystem, ref UpdateDebugLabel args)
     {
@@ -180,20 +113,20 @@ public partial class CameraSystem : EntitySystem
         
         if (Networking.IsServer())
             return;
+
+        if (ENetClient.Instance.ClientControlledEntity == null)
+            return;
+
+        var entity = ENetClient.Instance.ClientControlledEntity;
         
-        // if (!_entityManager.NetGuidDictionary.TryGetValue(ENetClient.Instance.EnetGuid, out var entityUpdateInfo))
-        //     return;
-        //
-        // var entity = nodeUpdateInfo.Node;
-        //
-        // if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
-        //     return;
-        //
-        // args.DebugLabel.Clear();
-        // args.DebugLabel.AppendText("Player Position: " + entity.GlobalPosition.ToString() + "\n");
-        // args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
-        // args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
-        // args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((entity, cameraComponent), MaxCameraDistance) + "\n");
+        if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
+            return;
+        
+        args.DebugLabel.Clear();
+        args.DebugLabel.AppendText("Player Position: " + entity.GlobalPosition + "\n");
+        args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
+        args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
+        args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((entity, cameraComponent), MaxCameraDistance) + "\n");
     }
 
     // private void OnUpdateRotation(Entity<RotationComponent> entity, ref UpdateRotationSignal args)
@@ -224,14 +157,17 @@ public partial class CameraSystem : EntitySystem
 
     private void AimCamera(Entity<CameraComponent> entity, double delta)
     {
+        if (entity.Comp?.Camera == null)
+            return;
+        
         var cameraGlobalPosition = entity.Comp.Camera.GlobalPosition;
         var newCameraPosition = GetNewCameraPosition(entity, MaxCameraDistance);
         var weight = 1f - Mathf.Exp(-CameraAimSpeed * (float)delta);
         if (newCameraPosition == null)
             return;
-        
+
         entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(newCameraPosition.Value, weight));
-        
+
         var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
 
         if (mouseOffsetFromCenter is null)

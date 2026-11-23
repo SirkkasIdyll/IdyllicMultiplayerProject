@@ -102,7 +102,7 @@ public partial class EntityManager : Node
     /// </summary>
     public bool TrySpawnEntity(string entityName, ushort? entityNetworkId, [NotNullWhen(true)] out Entity? entity)
     {
-        return TrySpawnEntity(entityName, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1), entityNetworkId, out entity);
+        return TrySpawnEntity(entityName, Transform3D.Identity, entityNetworkId, out entity);
     }
 
     /// <summary>
@@ -111,27 +111,63 @@ public partial class EntityManager : Node
     /// </summary>
     public bool TrySpawnEntity(string entityName, Vector3 globalPosition, ushort? entityNetworkId, [NotNullWhen(true)] out Entity? entity)
     {
-        return TrySpawnEntity(entityName, globalPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1), entityNetworkId, out entity);
+        return TrySpawnEntity(entityName, new Transform3D(Basis.Identity, globalPosition), entityNetworkId, out entity);
     }
 
     /// <summary>
     /// Tries to spawn a entity at global position, global rotation, and default scale then add it as a child of the root scene
     /// Leave the entityNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnEntity(string entityName, Vector3 globalPosition, Vector3 globalRotation, ushort? entityNetworkId,
+    public bool TrySpawnEntity(string entityName, Vector3 globalPosition, Quaternion globalRotation, ushort? entityNetworkId,
         [NotNullWhen(true)] out Entity? entity)
     {
-        return TrySpawnEntity(entityName, globalPosition, globalRotation, new Vector3(1, 1, 1), entityNetworkId, out entity);
+        return TrySpawnEntity(entityName, new Transform3D(new Basis(globalRotation), globalPosition), entityNetworkId, out entity);
     }
 
     /// <summary>
     /// Tries to spawn a entity at global position, global rotation, and global scale then add it as a child of the root scene
     /// Leave the entityNetworkId null unless you know what it is
     /// </summary>
-    public bool TrySpawnEntity(string entityName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale, ushort? entityNetworkId,
+    // public bool TrySpawnEntity(string entityName, Vector3 globalPosition, Vector3 globalRotation, Vector3 globalScale, ushort? entityNetworkId,
+    //     [NotNullWhen(true)] out Entity? entity)
+    // {
+    //     entity = null;
+    //     // TODO: This will stop working once we add in despawning
+    //     // Server can come up with its own network ID, clients should have received the network ID from the server
+    //     if (Networking.IsServer())
+    //         entityNetworkId ??= (ushort)EntityNetworkIdDictionary.Count;
+    //
+    //     // If it doesn't have a network ID then it doesn't exist on the server so it shouldn't exist on the client...
+    //     if (entityNetworkId == null)
+    //         return false;
+    //
+    //     // Node with that network ID already exists, no need to spawn it again
+    //     if (NetworkIdEntityDictionary.TryGetValue(entityNetworkId.Value, out entity))
+    //         return true;
+    //     
+    //     if (!NodeScenePathDictionary.TryGetValue(entityName, out var sceneFilePath))
+    //         return false;
+    //     
+    //     entity = GD.Load<PackedScene>(sceneFilePath).Instantiate<Entity>();
+    //     GetParent().AddChild(entity);
+    //     
+    //     entity.SetGlobalPosition(globalPosition);
+    //     entity.SetGlobalRotation(globalRotation);
+    //     entity.GlobalScale(globalScale);
+    //
+    //     EntityNetworkIdDictionary.Add(entity, entityNetworkId.Value);
+    //     NetworkIdEntityDictionary.Add(entityNetworkId.Value, entity);
+    //
+    //     var signal = new EntitySpawnedSignal(entity);
+    //     _signalBus.EmitEntitySpawnedSignal(entity, ref signal);
+    //     return true;
+    // }
+
+    public bool TrySpawnEntity(string entityName, Transform3D globalTransform, ushort? entityNetworkId,
         [NotNullWhen(true)] out Entity? entity)
     {
         entity = null;
+        
         // TODO: This will stop working once we add in despawning
         // Server can come up with its own network ID, clients should have received the network ID from the server
         if (Networking.IsServer())
@@ -140,7 +176,7 @@ public partial class EntityManager : Node
         // If it doesn't have a network ID then it doesn't exist on the server so it shouldn't exist on the client...
         if (entityNetworkId == null)
             return false;
-
+        
         // Node with that network ID already exists, no need to spawn it again
         if (NetworkIdEntityDictionary.TryGetValue(entityNetworkId.Value, out entity))
             return true;
@@ -150,11 +186,8 @@ public partial class EntityManager : Node
         
         entity = GD.Load<PackedScene>(sceneFilePath).Instantiate<Entity>();
         GetParent().AddChild(entity);
+        entity.SetGlobalTransform(globalTransform);
         
-        entity.SetGlobalPosition(globalPosition);
-        entity.SetGlobalRotation(globalRotation);
-        entity.GlobalScale(globalScale);
-
         EntityNetworkIdDictionary.Add(entity, entityNetworkId.Value);
         NetworkIdEntityDictionary.Add(entityNetworkId.Value, entity);
 

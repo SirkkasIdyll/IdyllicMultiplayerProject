@@ -42,27 +42,29 @@ public partial class VisualSystem : EntitySystem
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
     }
 
-    public override void _Process(double delta)
-    {
-        base._Process(delta);
-
-        if (Networking.IsServer())
-            return;
-        
-        _componentManager.GetEntitiesWithComponent<SpriteComponent>(out var spriteEntities);
-        foreach (var entity in spriteEntities)
-        {
-            if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
-                continue;
-            
-            OrientSpriteToParentRotation((entity, spriteComponent));
-        }
-
-        // foreach (var (entity, _) in _componentManager.EntitiesWithComponentDictionary)
-        // {
-        //     LerpVisualComponentPositions(entity);
-        // }
-    }
+    // public override void _Process(double delta)
+    // {
+    //     base._Process(delta);
+    //
+    //     if (Networking.IsServer())
+    //         return;
+    //     
+    //     _componentManager.GetEntitiesWithComponent<SpriteComponent>(out var spriteEntities);
+    //     foreach (var entity in spriteEntities)
+    //     {
+    //         var thing = (CharacterBody3D)entity;
+    //         
+    //         if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
+    //             continue;
+    //         
+    //         OrientSpriteToParentRotation((entity, spriteComponent));
+    //     }
+    //
+    //     // foreach (var (entity, _) in _componentManager.EntitiesWithComponentDictionary)
+    //     // {
+    //     //     LerpVisualComponentPositions(entity);
+    //     // }
+    // }
     
     /// <summary>
     /// Add visual system to debug display options
@@ -87,8 +89,9 @@ public partial class VisualSystem : EntitySystem
         if (ENetClient.Instance.ClientControlledEntity == null)
             return;
 
-        if (!_componentManager.TryGetComponent<SpriteComponent>(ENetClient.Instance.ClientControlledEntity,
-                out var spriteComponent))
+        var entity = ENetClient.Instance.ClientControlledEntity;
+
+        if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
             return;
         
         var horizontalFacing = spriteComponent.Sprite3D?.FlipH == true ? "left" : "right";
@@ -96,7 +99,7 @@ public partial class VisualSystem : EntitySystem
 
         args.DebugLabel.Clear();
         args.DebugLabel.AppendText("Sprite is facing " + horizontalFacing + " and " + verticalFacing + "\n");
-        args.DebugLabel.AppendText("Sprite's basis is " + ENetClient.Instance.ClientControlledEntity.Basis.GetRotationQuaternion().GetAngle() + "\n");
-        GD.Print(ENetClient.Instance.ClientControlledEntity.Basis.GetRotationQuaternion().GetAngle());
+        args.DebugLabel.AppendText("Sprite's basis is " + entity.Basis.GetRotationQuaternion().GetAngle() + "\n");
+        GD.Print(entity.Basis.GetRotationQuaternion().GetAngle());
     }
 }
