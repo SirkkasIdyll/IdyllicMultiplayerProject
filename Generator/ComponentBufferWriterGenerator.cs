@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Judgement;
 
@@ -59,7 +56,7 @@ public class ComponentBufferWriterGenerator : IIncrementalGenerator
             sourceBuilder.AppendLine($"using {component.ContainingNamespace.ToDisplayString()};");
         }
         
-        sourceBuilder.AppendLine(@"using Game.Temperance.NCS;
+        sourceBuilder.AppendLine(@"using Game.Temperance.EntityComponentSystem;
 
 namespace Game.Temperance.Network;
 

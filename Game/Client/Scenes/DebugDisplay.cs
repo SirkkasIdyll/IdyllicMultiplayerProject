@@ -13,18 +13,18 @@ public partial class DebugDisplay : Control
 	
 	private const string DebugOptionName = "FPS and Ping";
 	
-	// Called when the node enters the scene tree for the first time.
+	// Called when the entity enters the scene tree for the first time.
 	public override void _Ready()
 	{
 		_signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
 		
 		_systemsList?.Clear();
 		_systemsList?.AddItem(DebugOptionName);
-		var signal = new FetchDebugMenuOptions()
+		var signal = new RegisterDebugMenuOptions()
 		{
 			SystemsList = _systemsList
 		};
-		_signalBus.EmitFetchDebugMenuOptions(ref signal);
+		_signalBus.EmitRegisterDebugMenuOptions(ref signal);
 		_systemsList?.SortItemsByText();
 		_systemsList?.Select(0);
 	}
@@ -68,7 +68,7 @@ public partial class DebugDisplay : Control
 	}
 }
 
-public partial class FetchDebugMenuOptions : UserSignalArgs
+public partial class RegisterDebugMenuOptions : UserSignalArgs
 {
 	public ItemList? SystemsList;
 }

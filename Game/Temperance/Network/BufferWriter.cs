@@ -142,6 +142,34 @@ public ref struct BufferWriter(byte[] buffer)
     }
 
     /// <summary>
+    /// Overwrites the bits starting at the specific location in the buffer
+    /// </summary>
+    /// <param name="content">The potentially 32-bit range of values to add to the buffer</param>
+    /// <param name="bits">The number of bits we're actually adding</param>
+    /// <param name="location">The location, in bits, to insert new content at</param>
+    public void StoreOrWriteAt(uint content, int bits, int location)
+    {
+        // Nothing to write (why? why would you do this?)
+        if (bits == 0)
+            return;
+        
+        // Stop trying to write negative bits to save on bandwidth
+        if (bits is < 0 or > 32)
+            throw new ArgumentOutOfRangeException(nameof(bits));
+        
+        if (location + bits > _buffer.Length * 8)
+            throw new InvalidOperationException("Potential buffer overflow");
+
+        // Take up to 32 bits from the content that we want to insert into our temp buffer
+        var bitsToInsert = (ulong)content & Mask(bits);
+        
+        // Potentially 5 byte span because the starting location might be at the end of a byte
+        // In that scenario we can't write a uint32 because that'd be more than a four byte span....
+        _buffer.Slice(location / 8)
+        BinaryPrimitives.WriteUInt32LittleEndian();
+    }
+
+    /// <summary>
     /// If for some reason you already know what bytes you want to write...
     /// </summary>
     /// <param name="bytes"></param>

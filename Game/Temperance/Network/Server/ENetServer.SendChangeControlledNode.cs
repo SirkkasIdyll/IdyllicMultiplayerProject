@@ -6,11 +6,11 @@ namespace Game.Temperance.Network.Server;
 
 public partial class ENetServer
 {
-    private readonly Dictionary<ushort, Peer> _changedControlledNodes = [];
+    private readonly Dictionary<ushort, Peer> _changedControlledEntities = [];
     
-    private void BroadcastChangeControlledNode()
+    private void BroadcastChangeControlledEntity()
     {
-        foreach (var (networkId, peer) in _changedControlledNodes)
+        foreach (var (networkId, peer) in _changedControlledEntities)
         {
             var buffer = new byte[10000];
             var bufferWriter = new BufferWriter(buffer);
@@ -21,7 +21,7 @@ public partial class ENetServer
             // Write server tick
             bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
             
-            // Write node network ID
+            // Write entity network ID
             bufferWriter.StoreOrWrite(networkId, sizeof(ushort) * 8);
             
             bufferWriter.FinalWrite(out var byteIndex);
@@ -29,6 +29,6 @@ public partial class ENetServer
             Broadcast(ENetChannels.ReliableServer, buffer, [peer], PacketFlags.Reliable);
         }
         
-        _changedControlledNodes.Clear();
+        _changedControlledEntities.Clear();
     }
 }

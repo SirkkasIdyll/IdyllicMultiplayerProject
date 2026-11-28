@@ -1,5 +1,6 @@
-﻿using Godot;
-using Game.Temperance.NCS;
+﻿using Game.Shared.Systems.Visuals;
+using Godot;
+using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
 using Game.Temperance.Network.Client;
 using Game.Temperance.Signals;
@@ -7,156 +8,61 @@ using Game.Temperance.Signals;
 namespace Game.Shared.Systems.Movement;
 
 [GlobalClass]
-public partial class MovementSystem : NodeSystem
+public partial class MovementSystem : EntitySystem
 {
     [InjectedDependency] private readonly ComponentManager _componentManager = null!;
-    [InjectedDependency] private readonly NodeManager _nodeManager = null!;
-    // [InjectedDependency] private readonly NodeSystemManager _nodeSystemManager = null!;
+    [InjectedDependency] private readonly EntityManager _entityManager = null!;
+    [InjectedDependency] private readonly EntitySystemManager _entitySystemManager = null!;
     [InjectedDependency] private readonly SignalBus _signalBus = null!;
     
     public override void _Ready()
     {
         base._Ready();
 
-        // _signalBus.ReceiveMovementInputSignal += OnReceiveMovementInput;
     }
 
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
-
-        // TODO: TRACK INPUT AT SPECIFIC NETWORK TICK FOR CLIENT CON TROLLED NODE
+    
+        // TODO: TRACK INPUT AT SPECIFIC NETWORK TICK FOR CLIENT CONTROLLED NODE
         // TODO: SOMETHING SOMETHING RECONCILE INCORRECT POSITIONS BUT NOT VISUALS
-        _componentManager.GetNodesWithComponent<MovementComponent>(out var nodes);
-        foreach (var node in nodes)
+        _componentManager.GetEntitiesWithComponent<MovementComponent>(out var entities);
+        foreach (var entity in entities)
         {
-            if (node is not CharacterBody3D characterBody3D)
+            if (!_componentManager.TryGetComponent<MovementComponent>(entity, out var movementComponent))
                 continue;
-            
-            if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
+
+            if (movementComponent.CharacterBody == null)
                 continue;
+
+            // Movement should always originate from the entity's position
+            var characterBody = movementComponent.CharacterBody;
+            characterBody.GlobalPosition = entity.GlobalPosition;
             
-            characterBody3D.Velocity = new Vector3
+            characterBody.Velocity = new Vector3
             {
                 X = movementComponent.MovementSpeed * movementComponent.InputDirection.X,
                 Z = movementComponent.MovementSpeed * movementComponent.InputDirection.Y
             };
+
+            if (characterBody.Velocity.IsZeroApprox())
+                continue;
             
-            if (!characterBody3D.Velocity.IsZeroApprox())
-                characterBody3D.MoveAndSlide();
+            // After movement, we need to sync the parent entity's position with the character body's
+            // since the entity's position is what gets networked
+            characterBody.MoveAndSlide();
+            entity.GlobalPosition = characterBody.GlobalPosition;
         }
         
-        if (Networking.IsServer())
+        if (Networking.IsServer() || ENetClient.Instance.ClientControlledEntity == null)
             return;
-
-        if (ENetClient.Instance.ClientControlledNode == null)
-            return;
-
-        if (!_componentManager.TryGetComponent<MovementComponent>(ENetClient.Instance.ClientControlledNode,
-                out var movementComponent2))
+    
+        if (!_componentManager.TryGetComponent<MovementComponent>(ENetClient.Instance.ClientControlledEntity,
+                out var clientMovementComponent))
             return;
         
         var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        movementComponent2.InputDirection = input;
+        clientMovementComponent.InputDirection = input;
     }
-
-    // private void OnReceiveMovementInput(Guid netGuid, Vector2 input, ref ReceiveMovementInputSignal signal)
-    // {
-        // if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-        //     return;
-        //
-        // if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
-        //     return;
-        //
-        // movementComponent.InputDirection = input;
-        // GD.Print("Updated movement input");
-    // }
-
-    // private void OnSendNodeStates(ref SendNodeStatesSignal args)
-    // {
-    //     foreach (var nodeState in args.Message.NodeState)
-    //     {
-    //         if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
-    //             continue;
-    //         
-    //         if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-    //             continue;
-    //         
-    //         var node = nodeUpdateInfo.Node;
-    //
-    //         if (!_componentManager.TryGetComponent<MovementComponent>(node, out var movementComponent))
-    //             continue;
-    //
-    //         nodeState.Transform = new GdTransform3
-    //         {
-    //             Basis = new GdBasis3
-    //             {
-    //                 X = new GdVector3 { X = node.Transform.Basis.X.X, Y = node.Transform.Basis.X.Y, Z = node.Transform.Basis.X.Z },
-    //                 Y = new GdVector3 { X = node.Transform.Basis.Y.X, Y = node.Transform.Basis.Y.Y, Z = node.Transform.Basis.Y.Z },
-    //                 Z = new GdVector3 { X = node.Transform.Basis.Z.X, Y = node.Transform.Basis.Z.Y, Z = node.Transform.Basis.Z.Z }
-    //             },
-    //             Origin = new GdVector3 { X = node.Transform.Origin.X, Y = node.Transform.Origin.Y, Z = node.Transform.Origin.Z }
-    //         };
-    //
-    //         nodeState.MovementComponentState = new MovementComponentState
-    //         {
-    //             InputDirection = new GdVector2 {  X = movementComponent.InputDirection.X, Y = movementComponent.InputDirection.Y },
-    //             MovementSpeed = movementComponent.MovementSpeed
-    //         };
-    //     }
-    // }
-    //
-    // private void OnReceiveNodeStates(ref ReceiveNodeStatesSignal args)
-    // {
-    //     foreach (var nodeState in args.Message.NodeState)
-    //     {
-    //         if (nodeState.MovementComponentState is null)
-    //             continue;
-    //         
-    //         var movementComponentState =  nodeState.MovementComponentState;
-    //         
-    //         if (!Guid.TryParse(nodeState.NodeNetworkGuid, out var netGuid))
-    //             continue;
-    //
-    //         if (!_nodeManager.NetGuidDictionary.TryGetValue(netGuid, out var nodeUpdateInfo))
-    //             continue;
-    //
-    //         var node = nodeUpdateInfo.Node;
-    //
-    //         if (!_componentManager.TryGetComponent<MovementComponent>(nodeUpdateInfo.Node, out var movementComponent))
-    //             continue;
-    //
-    //         var targetTransform3D = new Transform3D
-    //         {
-    //             Basis = new Basis(
-    //                 new Vector3(nodeState.Transform.Basis.X.X, nodeState.Transform.Basis.X.Y,
-    //                     nodeState.Transform.Basis.X.Z),
-    //                 new Vector3(nodeState.Transform.Basis.Y.X, nodeState.Transform.Basis.Y.Y,
-    //                     nodeState.Transform.Basis.Y.Z),
-    //                 new Vector3(nodeState.Transform.Basis.Z.X, nodeState.Transform.Basis.Z.Y,
-    //                     nodeState.Transform.Basis.Z.Z)
-    //             ),
-    //             Origin = new Vector3(
-    //                 nodeState.Transform.Origin.X,
-    //                 nodeState.Transform.Origin.Y,
-    //                 nodeState.Transform.Origin.Z
-    //             )
-    //         };
-    //         
-    //         var distance = node.Transform.Origin.DistanceTo(targetTransform3D.Origin);
-    //         if (distance != 0f)
-    //         {
-    //             // This was originally a frame-rate independent interpolation example given by the Godot docs
-    //             // Delta is generally around 30 ms
-    //             // var udelta = nodeState.Sequence - nodeUpdateInfo.CurrSequence;
-    //             // var speed = 90f;
-    //             // var interpolationSpeed = 1f - MathF.Exp(-speed * ((float)udelta / 1000));
-    //             // GD.Print("For delta: " + fdelta + " interpolation speed is " + interpolationSpeed);
-    //             node.SetTransform(node.Transform.InterpolateWith(targetTransform3D, .60f));
-    //         }
-    //         
-    //         movementComponent.InputDirection = new Vector2(movementComponentState.InputDirection.X, movementComponentState.InputDirection.Y);
-    //         movementComponent.MovementSpeed = movementComponentState.MovementSpeed;
-    //     }
-    // }
 }
