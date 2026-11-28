@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Godot;
 using Game.Temperance.Signals;
 
@@ -216,6 +217,45 @@ public partial class ComponentManager : Node
         if (EntitiesWithComponentDictionary.TryGetValue(typeof(T).Name, out var componentAndEntities))
             entities = componentAndEntities.Entities;
     }
+
+    public void GetEntitiesWithComponents<T1, T2>(out List<Entity> entities) where T1 : Component where T2 : Component
+    {
+        entities = [];
+        var hasT1 = EntitiesWithComponentDictionary.TryGetValue(typeof(T1).Name, out var t1CompAndEntities);
+        var hasT2 = EntitiesWithComponentDictionary.TryGetValue(typeof(T2).Name, out var t2CompAndEntities);
+
+        if (hasT1 && hasT2)
+            entities = [.. t1CompAndEntities.Entities.Intersect(t2CompAndEntities.Entities)];
+        else if (hasT1 && !hasT2)
+            entities = t1CompAndEntities.Entities;
+        else if (!hasT1 && hasT2)
+            entities = t2CompAndEntities.Entities;
+    }
+
+    public void GetEntitiesWithComponents<T1, T2, T3>(out List<Entity> entities)
+        where T1 : Component where T2 : Component where T3 : Component
+    {
+        entities = [];
+        var hasT1 = EntitiesWithComponentDictionary.TryGetValue(typeof(T1).Name, out var t1CompAndEntities);
+        var hasT2 = EntitiesWithComponentDictionary.TryGetValue(typeof(T2).Name, out var t2CompAndEntities);
+        var hasT3 = EntitiesWithComponentDictionary.TryGetValue(typeof(T3).Name, out var t3CompAndEntities);
+        
+        if (hasT1 && hasT2 && hasT3)
+            entities = [.. t1CompAndEntities.Entities.Intersect(t2CompAndEntities.Entities.Intersect(t3CompAndEntities.Entities))];
+        else if (hasT1 && hasT2 && !hasT3)
+            entities = [.. t1CompAndEntities.Entities.Intersect(t2CompAndEntities.Entities)];
+        else if (hasT1 && !hasT2 && hasT3)
+            entities = [.. t1CompAndEntities.Entities.Intersect(t3CompAndEntities.Entities)];
+        else if (hasT1 && !hasT2 && !hasT3)
+            entities = t1CompAndEntities.Entities;
+        else if (!hasT1 && hasT2 && hasT3)
+            entities = [.. t2CompAndEntities.Entities.Intersect(t3CompAndEntities.Entities)];
+        else if (!hasT1 && hasT2 && !hasT3)
+            entities = [.. t2CompAndEntities.Entities];
+        else if (!hasT1 && !hasT2 && hasT3)
+            entities = [.. t3CompAndEntities.Entities];
+    }
+    
 }
 
 public class ComponentAddedSignal(Entity<Component> entity) : UserSignalArgs

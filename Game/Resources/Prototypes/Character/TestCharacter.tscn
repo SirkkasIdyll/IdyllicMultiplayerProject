@@ -7,19 +7,11 @@
 
 [node name="TestCharacter" unique_id=377517059 instance=ExtResource("1_vg6n3")]
 
-[node name="SpriteComponent" type="Node3D" parent="." index="0" unique_id=505401521 node_paths=PackedStringArray("Sprite3D")]
-script = ExtResource("3_3shwg")
-Sprite3D = NodePath("Sprite3D")
-metadata/_custom_type_script = "uid://be6nkpayys20u"
+[node name="@Camera3D@90330" parent="CameraComponent" parent_id_path=PackedInt32Array(1303677640) index="0" unique_id=1906534280]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 20, 0)
+size = 20.0
 
-[node name="Sprite3D" type="Sprite3D" parent="SpriteComponent" index="0" unique_id=1873701755]
-pixel_size = 0.08
-billboard = 1
-texture_filter = 0
-texture = ExtResource("2_ut7n5")
-hframes = 2
-
-[node name="PersonalVisionComponent" type="Node" parent="." index="3" unique_id=1828207464 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
+[node name="PersonalVisionComponent" type="Node" parent="." index="2" unique_id=1828207464 node_paths=PackedStringArray("VisionCone", "VisionCircle")]
 script = ExtResource("3_ut7n5")
 VisionCone = NodePath("@SpotLight3D@101787")
 VisionCircle = NodePath("@OmniLight3D@101788")
@@ -29,3 +21,16 @@ metadata/_custom_type_script = "uid://i2wcab2fiosk"
 spot_angle = 75.0
 
 [node name="@OmniLight3D@101788" type="OmniLight3D" parent="PersonalVisionComponent" index="1" unique_id=1607856608]
+
+[node name="SpriteComponent" type="Node" parent="." index="3" unique_id=194076322 node_paths=PackedStringArray("Sprite3D")]
+script = ExtResource("3_3shwg")
+Sprite3D = NodePath("@Sprite3D@192527")
+Texture = ExtResource("2_ut7n5")
+metadata/_custom_type_script = "uid://be6nkpayys20u"
+
+[node name="@Sprite3D@192527" type="Sprite3D" parent="SpriteComponent" index="0" unique_id=267302403]
+pixel_size = 0.08
+billboard = 1
+texture_filter = 0
+texture = ExtResource("2_ut7n5")
+hframes = 2

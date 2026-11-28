@@ -20,11 +20,11 @@ public partial class DebugDisplay : Control
 		
 		_systemsList?.Clear();
 		_systemsList?.AddItem(DebugOptionName);
-		var signal = new FetchDebugMenuOptions()
+		var signal = new RegisterDebugMenuOptions()
 		{
 			SystemsList = _systemsList
 		};
-		_signalBus.EmitFetchDebugMenuOptions(ref signal);
+		_signalBus.EmitRegisterDebugMenuOptions(ref signal);
 		_systemsList?.SortItemsByText();
 		_systemsList?.Select(0);
 	}
@@ -68,7 +68,7 @@ public partial class DebugDisplay : Control
 	}
 }
 
-public partial class FetchDebugMenuOptions : UserSignalArgs
+public partial class RegisterDebugMenuOptions : UserSignalArgs
 {
 	public ItemList? SystemsList;
 }

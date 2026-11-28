@@ -8,6 +8,7 @@ namespace Game.Temperance.EntityComponentSystem;
 /// the components that it has, the visual position of the entity compared to the global position,
 /// etc.
 /// </summary>
+[GlobalClass]
 public partial class Entity : Node3D
 {
     public ushort NetworkId { get; set; }
@@ -19,8 +20,7 @@ public partial class Entity : Node3D
     /// to avoid rubberbanding. Use this when you need to place the visuals for an entity.
     /// Anything else should use the normal GlobalTransform3D.
     /// </summary>
-    public Transform3D VisualGlobalTransform3D;
-    
+    public Transform3D VisualGlobalTransform;
 }
 
 /// <summary>

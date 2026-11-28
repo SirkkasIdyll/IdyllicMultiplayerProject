@@ -20,8 +20,7 @@ public partial class EntityManager : Node
     private readonly SignalBus _signalBus = SignalBus.Instance;
 
     public readonly Dictionary<string, string> NodeScenePathDictionary = []; // second value is the scene_file_path for spawning
-    public readonly Dictionary<Entity, ushort> EntityNetworkIdDictionary = new();
-    public readonly Dictionary<ushort, Entity> NetworkIdEntityDictionary = new();
+    public readonly BidirectionalDictionary<Entity, ushort> EntityNetworkIdDictionary = new();
 
     private EntityManager()
     {
@@ -178,7 +177,7 @@ public partial class EntityManager : Node
             return false;
         
         // Node with that network ID already exists, no need to spawn it again
-        if (NetworkIdEntityDictionary.TryGetValue(entityNetworkId.Value, out entity))
+        if (EntityNetworkIdDictionary.Inverse.TryGetValue(entityNetworkId.Value, out entity))
             return true;
         
         if (!NodeScenePathDictionary.TryGetValue(entityName, out var sceneFilePath))
@@ -189,7 +188,6 @@ public partial class EntityManager : Node
         entity.SetGlobalTransform(globalTransform);
         
         EntityNetworkIdDictionary.Add(entity, entityNetworkId.Value);
-        NetworkIdEntityDictionary.Add(entityNetworkId.Value, entity);
 
         var signal = new EntitySpawnedSignal(entity);
         _signalBus.EmitEntitySpawnedSignal(entity, ref signal);

@@ -1,11 +1,14 @@
 [gd_scene format=3 uid="uid://ds0l0sivaq2w8"]
 
+[ext_resource type="Script" uid="uid://y2tggqih2okr" path="res://Temperance/EntityComponentSystem/Entity.cs" id="1_4ctj6"]
 [ext_resource type="Script" uid="uid://bmq3pauk0ua5j" path="res://Shared/Systems/Camera/CameraComponent.cs" id="2_xdxlx"]
 [ext_resource type="Script" uid="uid://b8mmgwirc3x7b" path="res://Shared/Systems/Movement/MovementComponent.cs" id="2_yr3uu"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ito1u"]
 
-[node name="BaseCharacter" type="CharacterBody3D" unique_id=377517059]
+[node name="Entity" type="Node3D" unique_id=611936685]
+script = ExtResource("1_4ctj6")
+metadata/_custom_type_script = "uid://y2tggqih2okr"
 
 [node name="MovementComponent" type="Node" parent="." unique_id=212555500 node_paths=PackedStringArray("CharacterBody", "CollisionShape")]
 script = ExtResource("2_yr3uu")
@@ -14,6 +17,7 @@ CollisionShape = NodePath("@CharacterBody3D@89208/@CollisionShape3D@89209")
 metadata/_custom_type_script = "uid://b8mmgwirc3x7b"
 
 [node name="@CharacterBody3D@89208" type="CharacterBody3D" parent="MovementComponent" unique_id=736671916]
+axis_lock_linear_y = true
 
 [node name="@CollisionShape3D@89209" type="CollisionShape3D" parent="MovementComponent/@CharacterBody3D@89208" unique_id=264505269]
 shape = SubResource("CapsuleShape3D_ito1u")

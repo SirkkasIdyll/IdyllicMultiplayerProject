@@ -48,8 +48,12 @@ public partial class CameraComponent : Component
         }
     } = 20f;
 
-    [SynchronizedField(Min = -2 * Mathf.Pi, Max = 2 * Mathf.Pi, Precision = 0.01f)]
-    public float AngleOfCameraPositionFromDefaultPosition;
+    /// <summary>
+    /// The normalized vector that indicates where the mouse is on the screen
+    /// Take the angle of this and use it to set the rotation the entity is facing towards
+    /// </summary>
+    [SynchronizedField(Min = -1, Max = 1, Precision = 0.01f)]
+    public Vector2 CameraAimInput;
     
     public override void _Ready()
     {

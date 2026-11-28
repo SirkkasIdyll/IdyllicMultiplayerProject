@@ -23,15 +23,9 @@ public partial class ENetServer : Node
     private const ushort MaxDuplicatePeers = 0;
     private readonly Host _server = new();
     
-    // The Guid used won't change between disconnects,
-    // but the peer may change as a result of disconnects
-    // and the entity they control may not even exist yet
-    private readonly Dictionary<Guid, Peer?> _verifiedPeers = new();
-    
-    // A entity may be controlled by a peer,
-    // but sometimes the peer will disconnect and be reassigned to a different Peer ID
-    // So we keep it nullable in case someone else connects
-    private readonly Dictionary<ushort, Peer?> _entitiesControlledByPeers = new();
+    // TODO: I have no idea how I'm going to handle disconnects and reconnects yet
+    private readonly BidirectionalDictionary<Guid, Peer> _verifiedPeers = new();
+    private readonly BidirectionalDictionary<ushort, Peer> _entitiesControlledByPeers = new();
     
     /// <summary>
     /// When this value exceeds the <see cref="Networking"/> server tick length
@@ -209,7 +203,7 @@ public partial class ENetServer : Node
         }
             
         // Check if they're trying to verify themselves with a guid that belongs to another peer
-        if (_verifiedPeers.ContainsKey(guid) && _verifiedPeers[guid].HasValue)
+        if (_verifiedPeers.ContainsKey(guid))
         {
             GD.Print("ENet Peer id: " + peer.ID + " attempted to connect with already verified guid: " + guid + " belonging to a connected peer. Disconnecting.");
             DisconnectPeer(peer);
@@ -217,9 +211,9 @@ public partial class ENetServer : Node
         }
             
         // Not really sure if I want to disconnect just the weird actor, or potentially both people in this case
-        if (_verifiedPeers.ContainsKey(guid) && _verifiedPeers[guid].HasValue && _verifiedPeers.ContainsValue(peer) && !Equals(_verifiedPeers[guid]!.Value, peer))
+        if (_verifiedPeers.ContainsValue(peer))
         {
-            GD.Print("ENet Peer id: " + peer.ID + " is already verified but attempting to connect with different guid. Disconnecting.");
+            GD.Print("ENet Peer id: " + peer.ID + " is already verified but attempting to connect again. Disconnecting.");
             DisconnectPeer(peer);
             return false;
         }
@@ -229,7 +223,7 @@ public partial class ENetServer : Node
         
         // TODO: Replace this later with a proper join -> spawn flow
         var temporaryNetworkId = (ushort)_entityManager.EntityNetworkIdDictionary.Count;
-        if (EntityManager.Instance.TrySpawnEntity("TestCharacter", new Vector3(0, 2, 0), temporaryNetworkId, out _))
+        if (EntityManager.Instance.TrySpawnEntity("TestCharacter", new Vector3(0, 5, 0), temporaryNetworkId, out _))
         {
             _entitiesControlledByPeers.Add(temporaryNetworkId, peer);
             _changedControlledEntities.TryAdd(temporaryNetworkId, peer);
@@ -288,14 +282,8 @@ public partial class ENetServer : Node
     /// <param name="peer"></param>
     private void DisconnectPeer(Peer peer)
     {
-        var verifiedPeer = _verifiedPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
-        if (verifiedPeer.Value != null)
-            _verifiedPeers[verifiedPeer.Key] = null;
-        
-        var entityControlledByPeer =
-            _entitiesControlledByPeers.FirstOrDefault(x => x.Value != null && Equals(x.Value.Value, peer));
-        if (entityControlledByPeer.Value != null)
-            _entitiesControlledByPeers[entityControlledByPeer.Key] = null;
+        _verifiedPeers.Inverse.Remove(peer);
+        _entitiesControlledByPeers.Inverse.Remove(peer);
         
         peer.DisconnectNow(0);
     }

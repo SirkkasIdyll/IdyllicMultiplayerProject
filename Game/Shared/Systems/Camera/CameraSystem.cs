@@ -1,4 +1,5 @@
 ﻿using Game.Client.Scenes;
+using Game.Shared.Systems.Visuals;
 using Godot;
 using Game.Temperance.EntityComponentSystem;
 using Game.Temperance.Network;
@@ -31,7 +32,7 @@ public partial class CameraSystem : EntitySystem
     {
         base._Ready();
 
-        _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
+        _signalBus.RegisterDebugMenuOptions += OnRegisterDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
         _signalBus.UpdateClientControlledEntitySignal += OnUpdateClientControlledEntitySignal;
         // _signalBus.UpdateRotationSignal += OnUpdateRotation;
@@ -47,8 +48,9 @@ public partial class CameraSystem : EntitySystem
         if (ENetClient.Instance.ClientControlledEntity == null)
             return;
 
-        if (!_componentManager.TryGetComponent<CameraComponent>(ENetClient.Instance.ClientControlledEntity,
-                out var cameraComponent))
+        var entity = ENetClient.Instance.ClientControlledEntity;
+
+        if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
             return;
 
         if (_controlledEntityChanged)
@@ -60,7 +62,8 @@ public partial class CameraSystem : EntitySystem
         if (!Input.IsActionPressed("aim"))
         {
             _timeHeldAiming = 0;
-            ResetCamera((ENetClient.Instance.ClientControlledEntity, cameraComponent), delta);
+            cameraComponent.CameraAimInput = Vector2.Zero;
+            // ResetCamera((entity, cameraComponent), delta);
             return;
         }
         
@@ -68,15 +71,14 @@ public partial class CameraSystem : EntitySystem
         if (_timeHeldAiming < AimingThresholdTime)
             return;
         
-        AimCamera((ENetClient.Instance.ClientControlledEntity, cameraComponent), delta);
+        var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
+        cameraComponent.CameraAimInput = mouseOffsetFromCenter.Normalized();;
+        // AimCamera((entity, cameraComponent), delta);
     }
     
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
-
-        if (Networking.IsServer())
-            return;
         
         // Set a node's rotation to face the same angle that their camera is looking at
         _componentManager.GetEntitiesWithComponent<CameraComponent>(out var cameraEntities);
@@ -84,8 +86,11 @@ public partial class CameraSystem : EntitySystem
         {
             if (!_componentManager.TryGetComponent<CameraComponent>(entity, out var cameraComponent))
                 continue;
+
+            if (cameraComponent.CameraAimInput == Vector2.Zero)
+                continue;
             
-            entity.Basis = new Basis(Vector3.Up, cameraComponent.AngleOfCameraPositionFromDefaultPosition);
+            entity.Basis = new Basis(Vector3.Up, cameraComponent.CameraAimInput.Angle());
         }
     }
 
@@ -93,7 +98,7 @@ public partial class CameraSystem : EntitySystem
     /// Add camera system to debug display options
     /// </summary>
     /// <param name="args"></param>
-    private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
+    private void OnRegisterDebugMenuOptions(ref RegisterDebugMenuOptions args)
     {
         args.SystemsList?.AddItem(DebugOptionName);
     }
@@ -123,38 +128,15 @@ public partial class CameraSystem : EntitySystem
             return;
         
         args.DebugLabel.Clear();
-        args.DebugLabel.AppendText("Player Position: " + entity.GlobalPosition + "\n");
+        args.DebugLabel.AppendText("Player Position: " + entity.GlobalPosition.ToString("0.00") + "\n");
         args.DebugLabel.AppendText("Mouse Offset from Center: " + GetMouseOffsetFromCenter() + "\n");
         args.DebugLabel.AppendText("Viewport Size: " + GetViewport().GetVisibleRect().Size + "\n");
         args.DebugLabel.AppendText("New Camera Position: " + GetNewCameraPosition((entity, cameraComponent), MaxCameraDistance) + "\n");
     }
-
-    // private void OnUpdateRotation(Entity<RotationComponent> entity, ref UpdateRotationSignal args)
-    // {
-    //     if (!_componentManager.TryGetComponent<PersonalVisionComponent>(entity,
-    //             out var personalVisionComponent))
-    //         return;
-    //
-    //     // Vision cone faces -Z by default instead of X, so we need to rotate it by -90 degrees after we set it
-    //     personalVisionComponent.VisionCone?.Basis = entity.Comp.Basis.Inverse().Rotated(Vector3.Up, -Mathf.Pi / 2f);
-    // }
-
-    private void ResetCamera(Entity<CameraComponent> entity, double delta)
-    {
-        var visualGlobalPosition = entity.Owner.VisualGlobalTransform3D.Origin;
-        
-        if (entity.Comp.Camera is null)
-            return;
-        
-        var cameraGlobalPosition = entity.Comp.Camera.GlobalPosition;
-
-        if (visualGlobalPosition.DistanceTo(cameraGlobalPosition) < 0.01)
-            return;
-        
-        var weight = 1f - Mathf.Exp(-CameraResetSpeed * (float)delta);
-        entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(visualGlobalPosition, weight));
-    }
-
+    
+    /// <summary>
+    /// Lerps the camera's global position towards the camera's aim input
+    /// </summary>
     private void AimCamera(Entity<CameraComponent> entity, double delta)
     {
         if (entity.Comp?.Camera == null)
@@ -167,47 +149,60 @@ public partial class CameraSystem : EntitySystem
             return;
 
         entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(newCameraPosition.Value, weight));
-
-        var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
-
-        if (mouseOffsetFromCenter is null)
-            return;
-        
-        // We rotate the entity around the Y axis since we're a top-down game
-        entity.Comp.AngleOfCameraPositionFromDefaultPosition = mouseOffsetFromCenter.Value.Normalized().Angle();
-        // entity.Basis = new Basis(Vector3.Up, mouseOffsetFromCenter.Value.Normalized().Angle());
     }
-
-    private Vector2? GetMouseOffsetFromCenter()
+    
+    /// <summary>
+    /// The character is always displayed at the center of the screen by default
+    /// So to aim the camera, we just need to figure out where the mouse is from the center of the screen
+    /// </summary>
+    private Vector2 GetMouseOffsetFromCenter()
     {
         return GetViewport().GetMousePosition() - GetViewport().GetVisibleRect().Size / 2.0f;
     }
-
+    
+    /// <summary>
+    /// Allows the camera position to drift a set max distance away from the entity it belongs to
+    /// based on the camera's aim input
+    /// </summary>
     private Vector3? GetNewCameraPosition(Entity<CameraComponent> entity, float maxDistance)
     {
-        var visualGlobalPosition = entity.Owner.VisualGlobalTransform3D.Origin;
+        var visualGlobalPosition = entity.Owner.VisualGlobalTransform.Origin;
         
         if (entity.Comp.Camera is null)
-            return null;
-        
-        var mouseOffsetFromCenter = GetMouseOffsetFromCenter();
-        
-        if (mouseOffsetFromCenter is null)
             return null;
         
         // Camera size gives us the diameter of the height, which is our overall scale
         var viewportSize = GetViewport().GetVisibleRect().Size;
         var scale = viewportSize.Y / entity.Comp.Camera.Size;
         
-        // Target position clamped by how far we actually want the camera to be able to go from the player
+        // Target position gets clamped by how far we actually want the camera to be able to go from the player
         var targetPosition = new Vector3(
-            visualGlobalPosition.X + mouseOffsetFromCenter.Value.X / scale,
-            visualGlobalPosition.Y,
-            visualGlobalPosition.Z + mouseOffsetFromCenter.Value.Y / scale);
+            visualGlobalPosition.X + entity.Comp.CameraAimInput.X / scale,
+            entity.Comp.Camera.GlobalPosition.Y,
+            visualGlobalPosition.Z + entity.Comp.CameraAimInput.Y / scale);
 
         if (visualGlobalPosition.DistanceTo(targetPosition) > maxDistance)
             return visualGlobalPosition + (targetPosition - visualGlobalPosition).Normalized() * maxDistance;
         
         return targetPosition;
+    }
+    
+    /// <summary>
+    /// Slowly lerps/resets the camera's global position back to the entity it belongs to
+    /// </summary>
+    private void ResetCameraPosition(Entity<CameraComponent> entity, double delta)
+    {
+        var visualGlobalPosition = entity.Owner.VisualGlobalTransform.Origin;
+        
+        if (entity.Comp.Camera is null)
+            return;
+        
+        var cameraGlobalPosition = entity.Comp.Camera.GlobalPosition;
+
+        if (visualGlobalPosition.DistanceTo(cameraGlobalPosition) < 0.01)
+            return;
+        
+        var weight = 1f - Mathf.Exp(-CameraResetSpeed * (float)delta);
+        entity.Comp.Camera.SetGlobalPosition(cameraGlobalPosition.Lerp(visualGlobalPosition, weight));
     }
 }

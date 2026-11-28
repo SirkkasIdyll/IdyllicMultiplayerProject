@@ -15,7 +15,7 @@ public partial class MovementComponent : Component
     [Export]
     public CollisionShape3D? CollisionShape;
     
-    [SynchronizedField(Min = 0f, Max = 1f, Precision = 0.1f)]
+    [SynchronizedField(Min = -1f, Max = 1f, Precision = 0.01f)]
     public Vector2 InputDirection = Vector2.Zero;
     
     [Export]
@@ -31,6 +31,7 @@ public partial class MovementComponent : Component
             CharacterBody = new CharacterBody3D();
             AddChild(CharacterBody);
             CharacterBody.Owner = GetTree().EditedSceneRoot;
+            CharacterBody.AxisLockLinearY = true;
         }
         
         if (CollisionShape == null)

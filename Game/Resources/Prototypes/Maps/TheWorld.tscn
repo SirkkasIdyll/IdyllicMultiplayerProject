@@ -1,20 +1,22 @@
 [gd_scene format=3 uid="uid://dv154vjeex7qb"]
 
-[ext_resource type="PackedScene" uid="uid://cy8hp3r3mtwir" path="res://Resources/Prototypes/BaseNode.tscn" id="1_ur7jy"]
+[ext_resource type="Script" uid="uid://y2tggqih2okr" path="res://Temperance/EntityComponentSystem/Entity.cs" id="1_ur7jy"]
 
-[node name="TheWorld" unique_id=242226116 instance=ExtResource("1_ur7jy")]
+[node name="TheWorld" type="Node3D" unique_id=759182457]
+script = ExtResource("1_ur7jy")
+metadata/_custom_type_script = "uid://y2tggqih2okr"
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." index="0" unique_id=1828096665]
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." unique_id=1024746123]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 cast_shadow = 0
 use_collision = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" index="0" unique_id=1460639877]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1218046057]
 cast_shadow = 0
 use_collision = true
 size = Vector3(16.75, 0.5, 18.5)
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D" index="0" unique_id=1273086111]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D" unique_id=1051155472]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.58862305, -5.030286)
 cast_shadow = 0
 operation = 2
@@ -22,14 +24,14 @@ radius = 1.5532227
 height = 3.177246
 sides = 16
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D" index="1" unique_id=1474250931]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D" unique_id=555697252]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6419992, 5.130645, -9.403168)
 visible = false
 cast_shadow = 0
 use_collision = true
 size = Vector3(16.75, 0.5, 18.5)
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D/CSGBox3D" index="0" unique_id=1791982436]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D/CSGBox3D" unique_id=1015518655]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.58862305, -5.030286)
 visible = false
 cast_shadow = 0
@@ -38,13 +40,13 @@ radius = 1.5532227
 height = 3.177246
 sides = 16
 
-[node name="CSGBox3D2" type="CSGBox3D" parent="CSGCombiner3D" index="1" unique_id=782358164]
+[node name="CSGBox3D2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=187830613]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 3.8281317, 1.9535952, -1.258667)
 cast_shadow = 0
 use_collision = true
 size = Vector3(1, 3.5517578, 9.092773)
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D2" index="0" unique_id=929511034]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGCombiner3D/CSGBox3D2" unique_id=1853726587]
 transform = Transform3D(0.07011598, 0.98969585, 0.12484357, -0.56659573, -0.06349157, 0.82154614, 0.82100725, -0.12833935, 0.55630565, -0.06185603, -0.49603176, 0.008021206)
 cast_shadow = 0
 operation = 2
@@ -52,16 +54,16 @@ radius = 2.0
 height = 2.625
 sides = 16
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2" index="1" unique_id=1153758360]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2" unique_id=200319244]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7807617, -0.19999993, 4.0549307)
 cast_shadow = 0
 size = Vector3(8.561523, 3.95, 1)
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" index="0" unique_id=1863191704]
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D/CSGBox3D2/CSGBox3D" unique_id=488920544]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.0307617, 0.025000095, -4.4450693)
 cast_shadow = 0
 size = Vector3(8.561523, 3.95, 0.5)
 
-[node name="OmniLight3D" type="OmniLight3D" parent="CSGCombiner3D" index="2" unique_id=2077095143]
+[node name="OmniLight3D" type="OmniLight3D" parent="CSGCombiner3D" unique_id=1147883032]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5544715, 2.740635, -0.8680067)
 omni_range = 14.697

@@ -13,7 +13,7 @@ public partial class ENetClient
         // Read the entity network ID
         bufferReader.Read(sizeof(ushort) * 8, out var entityNetworkId);
 
-        if (!_entityManager.NetworkIdEntityDictionary.TryGetValue((ushort)entityNetworkId, out var entity))
+        if (!_entityManager.EntityNetworkIdDictionary.Inverse.TryGetValue((ushort)entityNetworkId, out var entity))
             return;
 
         ClientControlledEntity = entity;

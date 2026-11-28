@@ -19,6 +19,9 @@ public partial class ENetServer
         // Write server tick
         bufferWriter.StoreOrWrite(_serverTick, sizeof(uint) * 8);
         
+        // Placeholder for client tick before we broadcast
+        bufferWriter.StoreOrWrite(1234, sizeof(uint) * 8);
+        
         // Write count of entities
         bufferWriter.StoreOrWrite((uint)entities.Count, 10);
         
@@ -32,7 +35,7 @@ public partial class ENetServer
             
             // Write entity position
             bufferWriter.WriteVector3(entity.GlobalPosition, -5000, 5000, 0.01f);
-
+        
             // Write entity rotation
             bufferWriter.WriteQuaternion(entity.Quaternion);
             
@@ -45,7 +48,7 @@ public partial class ENetServer
             for (ushort i = 0; i < _componentManager.ComponentIdToComponentNameDictionary.Count; i++)
             {
                 var componentName = _componentManager.ComponentIdToComponentNameDictionary[i];
-
+        
                 if (!components.TryGetValue(componentName, out var component))
                     continue;
                 

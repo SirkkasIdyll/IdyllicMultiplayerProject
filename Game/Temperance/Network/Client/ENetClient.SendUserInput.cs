@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Shared.Systems.Camera;
 using Game.Shared.Systems.Movement;
 using Godot;
@@ -7,6 +8,9 @@ namespace Game.Temperance.Network.Client;
 
 public partial class ENetClient
 {
+    public Dictionary<uint, Vector2> MovementInputHistory = [];
+    public Dictionary<uint, Vector2> CameraAimInputHistory = [];
+    
     private void BroadcastUserInput()
     {
         if (ClientControlledEntity == null)
@@ -29,9 +33,11 @@ public partial class ENetClient
 
         // Write input vector
         bufferWriter.WriteVector2(movementComponent.InputDirection, -1f, 1f, 0.01f);
+        MovementInputHistory[_clientTick] = movementComponent.InputDirection;
         
         // Write camera angle
-        bufferWriter.WriteFloat(cameraComponent.AngleOfCameraPositionFromDefaultPosition, -2 * Mathf.Pi, 2 * Mathf.Pi, 0.01f);
+        bufferWriter.WriteVector2(cameraComponent.CameraAimInput, -1f, 1f, 0.01f);
+        CameraAimInputHistory[_clientTick] = cameraComponent.CameraAimInput;
         
         bufferWriter.FinalWrite(out var byteIndex);
         Array.Resize(ref buffer, byteIndex);

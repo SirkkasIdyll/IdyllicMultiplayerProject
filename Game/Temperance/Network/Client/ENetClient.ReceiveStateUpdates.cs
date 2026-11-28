@@ -7,7 +7,7 @@ public partial class ENetClient
         // Read server tick
         bufferReader.Read(sizeof(uint) * 8, out var serverTick);
         
-                // Read count of entities in the packet
+        // Read count of entities in the packet
         bufferReader.Read(10, out var entities);
 
         if (entities == 0)
@@ -19,7 +19,7 @@ public partial class ENetClient
             bufferReader.Read(sizeof(ushort) * 8, out var entityNetworkId);
             
             // If we're on an unreliable channel, we'll just skip it if it isn't spawned yet
-            if (!_entityManager.NetworkIdEntityDictionary.TryGetValue((ushort)entityNetworkId, out var entity))
+            if (!_entityManager.EntityNetworkIdDictionary.Inverse.TryGetValue((ushort)entityNetworkId, out var entity))
                 continue;
             
             // Read entity position

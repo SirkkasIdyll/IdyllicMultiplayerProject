@@ -24,11 +24,14 @@ public partial class VisualSystem
         _signalBus.EmitUpdateSpriteRotationSignal(entity, ref signal);
         
         // Sprites shows back between 30 and 150 degrees, front otherwise
-        entity.Comp.Sprite3D.Frame = entity.Owner.Basis.GetRotationQuaternion().GetAngle() is <= -Mathf.Pi / 6f and >= -5f * Mathf.Pi / 6f ? 1 : 0;
+        // Okay well that used to be true but now I'm just kind of guessing with quaternions
+        entity.Comp.Sprite3D.Frame = entity.Owner.Basis.GetRotationQuaternion().Y <= -0.2f ||
+        entity.Owner.Basis.GetRotationQuaternion().W <= -0.2f ? 1 : 0;
         
         // Sprite faces right from 270 and 90 degrees
         var initialFlipH = entity.Comp.Sprite3D.FlipH;
-        entity.Comp.Sprite3D.FlipH = entity.Owner.Basis.GetRotationQuaternion().GetAngle() is < -Mathf.Pi / 2 or > Mathf.Pi / 2f;
+        entity.Comp.Sprite3D.FlipH = entity.Owner.Basis.GetRotationQuaternion().GetAngle() > Mathf.Pi / 2f;
+        // entity.Comp.Sprite3D.FlipH = entity.Owner.Basis.GetRotationQuaternion().GetAngle() is < -Mathf.Pi / 2 or > Mathf.Pi / 2f;
         
         if (initialFlipH == entity.Comp.Sprite3D.FlipH)
             return;

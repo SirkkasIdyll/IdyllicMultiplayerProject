@@ -259,7 +259,7 @@ public partial class ComponentManager
         sourceBuilder.AppendLine("");
         
         // Lookup dictionary to find component name from ID
-        sourceBuilder.AppendLine(@"    public readonly Dictionary<ushort, string> ComponentIdToComponentNameDictionary = new Dictionary<ushort, string>()
+        sourceBuilder.AppendLine(@"    public readonly BidirectionalDictionary<ushort, string> ComponentIdToComponentNameDictionary = new BidirectionalDictionary<ushort, string>()
     {");
         foreach (var (component, componentId) in sortedComponentsAndIds)
         {
@@ -268,15 +268,6 @@ public partial class ComponentManager
         sourceBuilder.AppendLine("    };");
         
         sourceBuilder.AppendLine("");
-        
-        // Lookup dictionary to find component ID from name
-        sourceBuilder.AppendLine(@"    public readonly Dictionary<string, ushort> ComponentNameToComponentIdDictionary = new Dictionary<string, ushort>()
-    {");
-        foreach (var (component, componentId) in sortedComponentsAndIds)
-        {
-            sourceBuilder.AppendLine($"        {{ \"{component?.Name}\", {componentId} }},");
-        }
-        sourceBuilder.AppendLine("    };");
         
         
         sourceBuilder.AppendLine("}");

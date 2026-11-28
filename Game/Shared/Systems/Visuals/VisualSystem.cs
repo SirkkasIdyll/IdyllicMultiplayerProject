@@ -22,55 +22,38 @@ public partial class VisualSystem : EntitySystem
     
     private const string DebugOptionName = "Sprite Orientation";
     
-    /// <summary>
-    /// The components that have a visual element to them,
-    /// and need to have their transforms separated from the parent node's physics body
-    /// for the purposes of smoothing appearance to underlying physics values
-    /// </summary>
-    private string[] _visualComponentNames =
-    [
-        nameof(CameraComponent),
-        nameof(PersonalVisionComponent),
-        nameof(SpriteComponent)
-    ];
-    
     public override void _Ready()
     {
         base._Ready();
 
-        _signalBus.FetchDebugMenuOptions += OnFetchDebugMenuOptions;
+        _signalBus.RegisterDebugMenuOptions += OnRegisterDebugMenuOptions;
         _signalBus.UpdateDebugLabel += OnUpdateDebugLabel;
     }
 
-    // public override void _Process(double delta)
-    // {
-    //     base._Process(delta);
-    //
-    //     if (Networking.IsServer())
-    //         return;
-    //     
-    //     _componentManager.GetEntitiesWithComponent<SpriteComponent>(out var spriteEntities);
-    //     foreach (var entity in spriteEntities)
-    //     {
-    //         var thing = (CharacterBody3D)entity;
-    //         
-    //         if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
-    //             continue;
-    //         
-    //         OrientSpriteToParentRotation((entity, spriteComponent));
-    //     }
-    //
-    //     // foreach (var (entity, _) in _componentManager.EntitiesWithComponentDictionary)
-    //     // {
-    //     //     LerpVisualComponentPositions(entity);
-    //     // }
-    // }
+    public override void _PhysicsProcess(double delta)
+    {
+        base._PhysicsProcess(delta);
+    
+        if (Networking.IsServer())
+            return;
+        
+        _componentManager.GetEntitiesWithComponent<SpriteComponent>(out var spriteEntities);
+        foreach (var entity in spriteEntities)
+        {
+            if (!_componentManager.TryGetComponent<SpriteComponent>(entity, out var spriteComponent))
+                continue;
+            
+            OrientSpriteToParentRotation((entity, spriteComponent));
+            spriteComponent.Sprite3D?.GlobalPosition =
+                entity.VisualGlobalTransform.Origin.Lerp(entity.GlobalTransform.Origin, 0.95f);
+        }
+    }
     
     /// <summary>
     /// Add visual system to debug display options
     /// </summary>
     /// <param name="args"></param>
-    private void OnFetchDebugMenuOptions(ref FetchDebugMenuOptions args)
+    private void OnRegisterDebugMenuOptions(ref RegisterDebugMenuOptions args)
     {
         args.SystemsList?.AddItem(DebugOptionName);
     }
@@ -99,7 +82,14 @@ public partial class VisualSystem : EntitySystem
 
         args.DebugLabel.Clear();
         args.DebugLabel.AppendText("Sprite is facing " + horizontalFacing + " and " + verticalFacing + "\n");
-        args.DebugLabel.AppendText("Sprite's basis is " + entity.Basis.GetRotationQuaternion().GetAngle() + "\n");
+        args.DebugLabel.AppendText("Sprite's basis is " + entity.Basis.ToString("0.00") + "\n");
+        args.DebugLabel.AppendText("Sprite's quaternion is " + entity.Basis.GetRotationQuaternion().ToString("0.00") + "\n");
+        args.DebugLabel.AppendText("Sprite's basis angle is " + entity.Basis.GetRotationQuaternion().GetAngle().ToString("0.00") + "\n");
         GD.Print(entity.Basis.GetRotationQuaternion().GetAngle());
     }
+}
+
+public partial class UpdateVisualTransform(Entity entity) : UserSignalArgs
+{
+    private Entity _entity = entity;
 }
